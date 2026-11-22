@@ -22,6 +22,13 @@ class NoteRulesTest {
         assertEquals("Reisen", NoteRules.validBucketName(" Reisen "))
     }
 
+    @Test fun sketchOnlyIsSupported() {
+        val encoded = PaperDrawingCodec.encode(
+            listOf(InkStroke(0xff000000.toInt(), 3f, listOf(InkPoint(0.3f, 0.4f))))
+        )
+        assertTrue(NoteRules.canSubmit("", encoded))
+    }
+
     @Test fun materialKeysRemainStable() {
         assertEquals(BucketMaterial.WICKER, BucketMaterial.fromKey("wicker"))
         assertEquals(BucketMaterial.ZINC, BucketMaterial.fromKey("unknown-future-key"))

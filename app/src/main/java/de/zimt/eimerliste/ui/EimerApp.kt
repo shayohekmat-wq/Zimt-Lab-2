@@ -497,25 +497,78 @@ private fun BucketTile(
     bucket: BucketEntity,
     count: Int,
     highlighted: Boolean,
+    isHeld: Boolean,
+    isEjecting: Boolean,
+    impactToken: Int,
     onBoundsChanged: (Rect) -> Unit,
     onHold: () -> Unit,
     onRelease: () -> Unit,
     onOpen: () -> Unit,
     paperPending: Boolean
 ) {
+    // Short spring after an actual database commit.
+    val impact = remember { Animatable(0f) }
+    val wobble = remember { Animatable(0f) }
+    val ejectFlight = remember { Animatable(0f) }
+    LaunchedEffect(impactToken) {
+        if (impactToken > 0 && ValueAnimator.areAnimatorsEnabled()) {
+            impact.snapTo(0f)
+            impact.animateTo(1f, tween(95, easing = FastOutSlowInEasing))
+            impact.animateTo(0f, spring(dampingRatio = .34f, stiffness = Spring.StiffnessMedium))
+        } else {
+            impact.snapTo(0f)
+        }
+    }
+    LaunchedEffect(isHeld, isEjecting) {
+        if (!ValueAnimator.areAnimatorsEnabled()) {
+            wobble.snapTo(0f)
+        } else if (isEjecting) {
+            repeat(3) {
+                wobble.animateTo(-3.2f, tween(80))
+                wobble.animateTo(3.2f, tween(90))
+            }
+            wobble.animateTo(0f, tween(110))
+        } else if (isHeld) {
+            // Never run a permanent animation outside a real long-press.
+            while (true) {
+                wobble.animateTo(-1.7f, tween(125))
+                wobble.animateTo(1.7f, tween(125))
+                delay(8L)
+            }
+        } else {
+            wobble.animateTo(0f, tween(130))
+        }
+    }
+    LaunchedEffect(isEjecting) {
+        ejectFlight.snapTo(0f)
+        if (isEjecting && ValueAnimator.areAnimatorsEnabled()) {
+            ejectFlight.animateTo(1f, tween(475, easing = FastOutSlowInEasing))
+        }
+    }
+    val statusText = when {
+        isEjecting -> "✦ ZETTEL KOMMT!"
+        isHeld -> "✦ JETZT SCHÜTTELN"
+        highlighted -> "HIER EINWERFEN"
+        count == 1 -> "1 Zettel"
+        else -> "$count Zettel"
+    }
+
     Column(
         Modifier.fillMaxWidth()
             .onGloballyPositioned { onBoundsChanged(it.boundsInRoot()) }
             .semantics {
                 role = Role.Button
-                contentDescription = "${bucket.name}, ${if (count == 1) "1 Zettel" else "$count Zettel"}"
+                contentDescription = "${bucket.name}, ${if (count == 1) "1 Zettel" else "$count Zettel"}" +
+                    if (isHeld) ", zum Schütteln ausgewählt" else ""
                 onClick(label = if (paperPending) "Zettel einwerfen" else "Eimer öffnen") {
                     onOpen()
                     true
                 }
             }
             .clip(RoundedCornerShape(12.dp))
-            .background(if (highlighted) Color(0x665E4429) else Color(0x26120A07))
+            .background(
+                if (highlighted) Color(0x774F3D29) else Color(0x26120A07)
+            )
             .border(
                 if (highlighted) 2.dp else 1.dp,
                 if (highlighted) Ink.Brass else Color(0x355E452C),
@@ -534,13 +587,42 @@ private fun BucketTile(
             .padding(vertical = 6.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        BucketArtwork(
-            material = BucketMaterial.fromKey(bucket.material),
-            title = bucket.name,
-            modifier = Modifier.fillMaxWidth().aspectRatio(1.08f)
-        )
+        Box(
+            Modifier.fillMaxWidth().aspectRatio(1.08f),
+            contentAlignment = Alignment.Center
+        ) {
+            BucketArtwork(
+                material = BucketMaterial.fromKey(bucket.material),
+                title = bucket.name,
+                modifier = Modifier.fillMaxSize().graphicsLayer {
+                    rotationZ = wobble.value + impact.value * 1.1f
+                    translationY = impact.value * 5.dp.toPx()
+                    scaleX = 1f + .022f * impact.value
+                    scaleY = 1f - .042f * impact.value
+                    transformOrigin = TransformOrigin(.5f, .84f)
+                }
+            )
+            if (isEjecting) {
+                FoldedPaperArtwork(
+                    progress = 3f,
+                    message = "",
+                    drawing = null,
+                    modifier = Modifier
+                        .align(Alignment.Center)
+                        .size(width = 85.dp, height = 60.dp)
+                        .graphicsLayer {
+                            translationY = -(87.dp.toPx() * ejectFlight.value)
+                            translationX = 14.dp.toPx() * ejectFlight.value
+                            rotationZ = -16f * ejectFlight.value
+                            scaleX = .75f + .25f * ejectFlight.value
+                            scaleY = .75f + .25f * ejectFlight.value
+                            alpha = 1f - .55f * ejectFlight.value
+                        }
+                )
+            }
+        }
         Text(
-            if (highlighted) "HIER EINWERFEN" else if (count == 1) "1 Zettel" else count.toString() + " Zettel",
+            statusText,
             color = if (highlighted) Ink.Brass else Ink.Muted,
             fontSize = 12.sp,
             modifier = Modifier.padding(bottom = 8.dp)

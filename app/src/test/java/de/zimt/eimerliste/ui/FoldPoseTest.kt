@@ -35,4 +35,23 @@ class FoldPoseTest {
         assertEquals(0f, FoldPose.at(-8f).right, 0f)
         assertEquals(1f, FoldPose.at(99f).corner, 0f)
     }
+    @Test fun allFoldPhasesAreMonotonicAndBounded() {
+        var previous = FoldPose.at(0f)
+        for (step in 1..300) {
+            val current = FoldPose.at(step / 100f)
+            for (value in listOf(current.right, current.bottom, current.corner)) {
+                org.junit.Assert.assertTrue(value in 0f..1f)
+            }
+            org.junit.Assert.assertTrue(current.right >= previous.right)
+            org.junit.Assert.assertTrue(current.bottom >= previous.bottom)
+            org.junit.Assert.assertTrue(current.corner >= previous.corner)
+            previous = current
+        }
+    }
+
+    @Test fun outOfRangeProgressDoesNotChangeFinishedOrUnfoldedPose() {
+        assertEquals(FoldPose.at(0f), FoldPose.at(-100f))
+        assertEquals(FoldPose.at(3f), FoldPose.at(100f))
+    }
+
 }

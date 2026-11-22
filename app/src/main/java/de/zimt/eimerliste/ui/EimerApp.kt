@@ -5,6 +5,7 @@ import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.*
 import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -71,6 +72,9 @@ fun EimerApp(vm: EimerViewModel = viewModel()) {
 
         // A draft and its folded version are never deleted until the destination write succeeds.
         var draft by rememberSaveable { mutableStateOf("") }
+        var drawing by rememberSaveable { mutableStateOf<String?>(null) }
+        var sketchOpen by remember { mutableStateOf(false) }
+        var heldBucketId by remember { mutableStateOf<String?>(null) }
         var pendingPaper by rememberSaveable { mutableStateOf<String?>(null) }
         var paperReady by remember { mutableStateOf(false) }
         var saving by remember { mutableStateOf(false) }
@@ -109,7 +113,7 @@ fun EimerApp(vm: EimerViewModel = viewModel()) {
         }
 
         val foldPaper: () -> Unit = {
-            if (pendingPaper == null && buckets.isNotEmpty() && NoteRules.canSubmit(draft)) {
+            if (pendingPaper == null && buckets.isNotEmpty() && NoteRules.canSubmit(draft, drawing)) {
                 // Hide the IME before showing the movable, folded slip.
                 keyboard?.hide()
                 focus.clearFocus()
@@ -124,9 +128,10 @@ fun EimerApp(vm: EimerViewModel = viewModel()) {
                 saving = true
                 scope.launch {
                     try {
-                        vm.addNote(targetId, textToSave)
+                        vm.addNote(targetId, textToSave, drawing)
                         haptics.performHapticFeedback(HapticFeedbackType.LongPress)
                         draft = ""
+                        drawing = null
                         pendingPaper = null
                         dragOffset = Offset.Zero
                         hoveredBucket = null
@@ -137,6 +142,26 @@ fun EimerApp(vm: EimerViewModel = viewModel()) {
                         snackbar.showSnackbar("Nicht gespeichert. Dein gefalteter Zettel bleibt erhalten.")
                     } finally {
                         saving = false
+                    }
+                }
+            }
+        }
+
+        ObserveBucketShake(heldBucketId) { bucketId ->
+            if (pendingPaper == null) {
+                heldBucketId = null
+                scope.launch {
+                    try {
+                        val note = vm.randomNote(bucketId)
+                        if (note == null) {
+                            snackbar.showSnackbar("Dieser Eimer ist noch leer.")
+                        } else {
+                            haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                            openBucket = null
+                            openNote = note
+                        }
+                    } catch (_: Exception) {
+                        snackbar.showSnackbar("Zufallszettel konnte nicht geöffnet werden.")
                     }
                 }
             }
@@ -195,6 +220,16 @@ fun EimerApp(vm: EimerViewModel = viewModel()) {
                                 count = countsByBucket[bucket.id] ?: 0,
                                 highlighted = hoveredBucket == bucket.id,
                                 onBoundsChanged = { rect -> bucketBounds[bucket.id] = rect },
+                                onHold = {
+                                    if (pendingPaper == null) {
+                                        heldBucketId = bucket.id
+                                        haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                                        scope.launch { snackbar.showSnackbar("Eimer halten und zweimal schütteln …") }
+                                    }
+                                },
+                                onRelease = {
+                                    if (heldBucketId == bucket.id) heldBucketId = null
+                                },
                                 onOpen = {
                                     if (pendingPaper != null) {
                                         deliver(bucket.id)
@@ -211,6 +246,12 @@ fun EimerApp(vm: EimerViewModel = viewModel()) {
                 if (pendingPaper == null) {
                     PaperComposer(
                         draft = draft,
+                        drawing = drawing,
+                        onEditDrawing = {
+                            keyboard?.hide()
+                            focus.clearFocus()
+                            sketchOpen = true
+                        },
                         onDraftChange = { draft = it.take(NoteRules.MAX_NOTE_LENGTH) },
                         onFold = foldPaper,
                         enabled = buckets.isNotEmpty() && !saving,
@@ -221,6 +262,7 @@ fun EimerApp(vm: EimerViewModel = viewModel()) {
                 } else {
                     PaperDropTray(
                         message = pendingPaper.orEmpty(),
+                        drawing = drawing,
                         progress = fold.value,
                         ready = paperReady && !saving,
                         dragOffset = dragOffset,
@@ -300,12 +342,37 @@ fun EimerApp(vm: EimerViewModel = viewModel()) {
                 BucketContents(
                     bucket = visibleBucket,
                     notes = if (visibleBucket.id == selectedId) notes else emptyList(),
-                    onNote = { openNote = it }
+                    onNote = { openNote = it },
+                    onRandom = {
+                        scope.launch {
+                            try {
+                                val note = vm.randomNote(visibleBucket.id)
+                                if (note != null) {
+                                    openBucket = null
+                                    openNote = note
+                                } else {
+                                    snackbar.showSnackbar("Dieser Eimer ist noch leer.")
+                                }
+                            } catch (_: Exception) {
+                                snackbar.showSnackbar("Konnte keinen Zufallszettel ziehen.")
+                            }
+                        }
+                    }
                 )
             }
         }
         openNote?.let { note ->
             DialogPaper(note = note, onDismiss = { openNote = null })
+        }
+        if (sketchOpen) {
+            PaperSketchEditor(
+                initialPayload = drawing,
+                onDismiss = { sketchOpen = false },
+                onApply = {
+                    drawing = it
+                    sketchOpen = false
+                }
+            )
         }
     }
 }

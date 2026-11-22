@@ -736,7 +736,12 @@ private fun CreateBucketDialog(onClose:()->Unit,onCreate:(String,BucketMaterial)
 }
 
 @Composable
-private fun BucketContents(bucket:BucketEntity,notes:List<NoteEntity>,onNote:(NoteEntity)->Unit) {
+private fun BucketContents(
+    bucket: BucketEntity,
+    notes: List<NoteEntity>,
+    onNote: (NoteEntity) -> Unit,
+    onRandom: () -> Unit
+) {
     Column(Modifier.fillMaxWidth().padding(horizontal=20.dp).heightIn(min=260.dp,max=650.dp)) {
         Text(bucket.name,fontFamily=FontFamily.Serif,fontSize=30.sp,fontWeight=FontWeight.Bold)
         Text(
@@ -744,7 +749,12 @@ private fun BucketContents(bucket:BucketEntity,notes:List<NoteEntity>,onNote:(No
                 notes.size.toString()+" gefaltete "+if(notes.size==1) "Notiz" else "Notizen",
             color=Ink.BrassDark,fontSize=12.sp
         )
-        Spacer(Modifier.height(14.dp))
+        TextButton(
+            onClick = onRandom,
+            enabled = notes.isNotEmpty(),
+            modifier = Modifier.align(Alignment.End)
+        ) { Text("✦ Zufallszettel ziehen", color = Ink.BrassDark) }
+        Spacer(Modifier.height(7.dp))
         if(notes.isEmpty()) {
             Text("Schreib einen Wunsch, falte ihn dreimal und zieh ihn auf diesen Eimer.",
                 color=Ink.InkBlack,modifier=Modifier.padding(vertical=30.dp))
@@ -765,12 +775,23 @@ private fun BucketContents(bucket:BucketEntity,notes:List<NoteEntity>,onNote:(No
                         ) {
                             Text("✉",fontSize=22.sp,color=Ink.BrassDark)
                             Spacer(Modifier.width(13.dp))
-                            Text(
-                                note.text,
-                                maxLines=2,
-                                overflow=TextOverflow.Ellipsis,
-                                color=Ink.InkBlack,fontSize=16.sp,fontFamily=FontFamily.Serif
-                            )
+                            Column(Modifier.weight(1f)) {
+                                Text(
+                                    note.text.ifBlank { "✎ Eine Skizze" },
+                                    maxLines=2,
+                                    overflow=TextOverflow.Ellipsis,
+                                    color=Ink.InkBlack,fontSize=16.sp,fontFamily=FontFamily.Serif
+                                )
+                                if (note.drawingPayload != null) {
+                                    Text("Mit Zeichnung", fontSize=10.sp, color=Ink.BrassDark)
+                                }
+                            }
+                            if (note.drawingPayload != null) {
+                                SketchPreview(
+                                    note.drawingPayload,
+                                    Modifier.size(width=62.dp,height=45.dp)
+                                )
+                            }
                         }
                     }
                 }
@@ -785,12 +806,20 @@ private fun DialogPaper(note:NoteEntity,onDismiss:()->Unit) {
         onDismissRequest=onDismiss,
         title={Text("Dein Wunsch",fontFamily=FontFamily.Serif,color=Ink.InkBlack)},
         text={
-            PaperSheet(Modifier.fillMaxWidth().heightIn(min=160.dp)) {
-                Text(
-                    note.text,
-                    Modifier.padding(22.dp),
-                    color=Ink.InkBlack,fontFamily=FontFamily.Serif,fontSize=20.sp,lineHeight=29.sp
-                )
+            PaperSheet(Modifier.fillMaxWidth().heightIn(min=180.dp)) {
+                Column(Modifier.fillMaxWidth().padding(20.dp)) {
+                    if (note.text.isNotBlank()) {
+                        Text(
+                            note.text,
+                            color=Ink.InkBlack,fontFamily=FontFamily.Serif,
+                            fontSize=19.sp,lineHeight=26.sp
+                        )
+                    }
+                    if (note.drawingPayload != null) {
+                        Spacer(Modifier.height(9.dp))
+                        SketchPreview(note.drawingPayload, Modifier.fillMaxWidth().height(170.dp))
+                    }
+                }
             }
         },
         confirmButton={TextButton(onClick=onDismiss){Text("Wieder falten",color=Ink.BrassDark)}},

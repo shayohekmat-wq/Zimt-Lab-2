@@ -242,9 +242,19 @@ fun EimerApp(vm: EimerViewModel = viewModel()) {
                             val hit = bucketBounds.entries.firstOrNull { (_, rect) ->
                                 rect.contains(pointer)
                             }?.key
+                            if (hit != null) {
+                                // Keep the paper at the bucket while the database write is pending.
+                                hoveredBucket = hit
+                                deliver(hit)
+                            } else {
+                                // Missed drops never consume a note.
+                                hoveredBucket = null
+                                dragOffset = Offset.Zero
+                            }
+                        },
+                        onDragCancel = {
                             hoveredBucket = null
                             dragOffset = Offset.Zero
-                            if (hit != null) deliver(hit)
                         },
                         onCancel = {
                             if (!saving) {
@@ -493,6 +503,7 @@ private fun PaperDropTray(
     onDragStart: (Offset) -> Unit,
     onDrag: (Offset) -> Unit,
     onDragEnd: () -> Unit,
+    onDragCancel: () -> Unit,
     onCancel: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -522,7 +533,7 @@ private fun PaperDropTray(
                             detectDragGestures(
                                 onDragStart = onDragStart,
                                 onDragEnd = onDragEnd,
-                                onDragCancel = onDragEnd,
+                                onDragCancel = onDragCancel,
                                 onDrag = { change, delta ->
                                     change.consume()
                                     onDrag(delta)

@@ -166,7 +166,16 @@ fun FoldedPaperArtwork(
             }
         }
 
-        // Ink is visible on the original sheet, then disappears beneath the first flap.
+        // Sketch and text are independent ink layers: mixed notes must retain both.
+        // Both layers fade together as the first flap covers the sheet.
+        if (pose.right < .70f && drawing != null) {
+            SketchPreview(
+                raw = drawing,
+                modifier = Modifier.fillMaxSize()
+                    .padding(8.dp)
+                    .graphicsLayer { alpha = (1f - pose.right / .70f).coerceIn(0f, 1f) }
+            )
+        }
         if (pose.right < .70f && message.isNotBlank()) {
             Text(
                 message,
@@ -178,13 +187,6 @@ fun FoldedPaperArtwork(
                 fontFamily = FontFamily.Serif,
                 fontSize = 11.sp,
                 color = Ink.InkBlack
-            )
-        } else if (pose.right < .70f && drawing != null) {
-            SketchPreview(
-                raw = drawing,
-                modifier = Modifier.fillMaxSize()
-                    .padding(8.dp)
-                    .graphicsLayer { alpha = (1f - pose.right / .70f).coerceIn(0f, 1f) }
             )
         }
     }

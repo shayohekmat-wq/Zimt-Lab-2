@@ -126,7 +126,8 @@ private fun SketchCanvas(
 @Composable
 fun PaperSketchEditor(
     initialPayload: String?,
-    onDismiss: () -> Unit,
+    text: String,
+    onTextEdit: (String?) -> Unit,
     onApply: (String?) -> Unit
 ) {
     // Persist the in-progress sketch across activity recreation, e.g. rotation.
@@ -139,7 +140,11 @@ fun PaperSketchEditor(
     var status by remember { mutableStateOf<String?>(null) }
     val inkLabel = if (widthDp < 6f) "Feiner Stift" else "Weicher Pinsel"
 
-    Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
+    // System Back also preserves the sketch draft instead of silently discarding strokes.
+    Dialog(
+        onDismissRequest = { onApply(workingPayload) },
+        properties = DialogProperties(usePlatformDefaultWidth = false)
+    ) {
         Column(
             Modifier.fillMaxWidth(.95f).fillMaxHeight(.88f)
                 .background(Ink.Walnut, RoundedCornerShape(18.dp))
@@ -156,6 +161,22 @@ fun PaperSketchEditor(
                 modifier = Modifier.padding(bottom = 8.dp)
             )
             PaperSheet(Modifier.fillMaxWidth().weight(1f)) {
+                // Text and ink are parts of the SAME sheet, not separate modes.
+                // Draw over the entire sheet including its visible edges; no hidden 16dp margins.
+                if (text.isNotBlank()) {
+                    Text(
+                        text = text,
+                        color = Ink.InkBlack,
+                        fontFamily = FontFamily.Serif,
+                        fontSize = 17.sp,
+                        lineHeight = 23.sp,
+                        maxLines = 12,
+                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                        modifier = Modifier.align(Alignment.TopStart)
+                            .fillMaxWidth()
+                            .padding(start = 14.dp, end = 14.dp, top = 12.dp)
+                    )
+                }
                 SketchCanvas(
                     strokes = strokes,
                     active = active,
@@ -173,7 +194,7 @@ fun PaperSketchEditor(
                         }
                     },
                     onActive = { active = it },
-                    modifier = Modifier.fillMaxSize().padding(16.dp)
+                    modifier = Modifier.fillMaxSize()
                 )
             }
             Spacer(Modifier.height(7.dp))
@@ -227,10 +248,17 @@ fun PaperSketchEditor(
                 Text(status.orEmpty(), fontSize = 12.sp, color = Ink.Brass)
             }
             Row(
-                Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End,
+                Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                TextButton(onClick = onDismiss) { Text("Abbrechen", color = Ink.Muted) }
+                TextButton(
+                    onClick = { onTextEdit(workingPayload) },
+                    modifier = Modifier.semantics {
+                        contentDescription = "Zur Textbearbeitung wechseln und die Skizze behalten"
+                    }
+                ) {
+                    Text("▤  Text bearbeiten", color = Ink.Paper, fontSize = 14.sp)
+                }
                 Spacer(Modifier.width(4.dp))
                 Button(
                     onClick = {

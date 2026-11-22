@@ -29,6 +29,12 @@ class NoteRulesTest {
         assertTrue(NoteRules.canSubmit("", encoded))
     }
 
+    @Test fun embeddedParagraphsRemainPartOfTheNote() {
+        val text = "Erster Absatz\\nZweiter Absatz"
+        assertTrue(NoteRules.canSubmit(text))
+        assertEquals(text, NoteRules.normalize(text))
+    }
+
     @Test fun materialKeysRemainStable() {
         assertEquals(BucketMaterial.WICKER, BucketMaterial.fromKey("wicker"))
         assertEquals(BucketMaterial.ZINC, BucketMaterial.fromKey("unknown-future-key"))

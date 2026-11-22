@@ -15,7 +15,6 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -45,6 +44,9 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -77,6 +79,7 @@ fun EimerApp(vm: EimerViewModel = viewModel()) {
         var draft by rememberSaveable { mutableStateOf("") }
         var drawing by rememberSaveable { mutableStateOf<String?>(null) }
         var sketchOpen by remember { mutableStateOf(false) }
+        var focusTextOnReturn by remember { mutableStateOf(false) }
         var heldBucketId by remember { mutableStateOf<String?>(null) }
         var pendingPaper by rememberSaveable { mutableStateOf<String?>(null) }
         var paperReady by remember { mutableStateOf(false) }
@@ -251,6 +254,8 @@ fun EimerApp(vm: EimerViewModel = viewModel()) {
                     PaperComposer(
                         draft = draft,
                         drawing = drawing,
+                        focusTextOnReturn = focusTextOnReturn,
+                        onTextFocusHandled = { focusTextOnReturn = false },
                         onEditDrawing = {
                             keyboard?.hide()
                             focus.clearFocus()
@@ -376,7 +381,12 @@ fun EimerApp(vm: EimerViewModel = viewModel()) {
         if (sketchOpen) {
             PaperSketchEditor(
                 initialPayload = drawing,
-                onDismiss = { sketchOpen = false },
+                text = draft,
+                onTextEdit = {
+                    drawing = it
+                    sketchOpen = false
+                    focusTextOnReturn = true
+                },
                 onApply = {
                     drawing = it
                     sketchOpen = false
@@ -516,6 +526,8 @@ private fun BucketTile(
 private fun PaperComposer(
     draft: String,
     drawing: String?,
+    focusTextOnReturn: Boolean,
+    onTextFocusHandled: () -> Unit,
     onEditDrawing: () -> Unit,
     onDraftChange: (String) -> Unit,
     onFold: () -> Unit,
@@ -523,6 +535,15 @@ private fun PaperComposer(
     compact: Boolean,
     modifier: Modifier = Modifier
 ) {
+    val focusRequester = remember { FocusRequester() }
+    val keyboardController = LocalSoftwareKeyboardController.current
+    LaunchedEffect(focusTextOnReturn) {
+        if (focusTextOnReturn) {
+            focusRequester.requestFocus()
+            keyboardController?.show()
+            onTextFocusHandled()
+        }
+    }
     Column(modifier) {
         if (!compact) {
             Text(
@@ -542,15 +563,20 @@ private fun PaperComposer(
                     value = draft,
                     onValueChange = onDraftChange,
                     enabled = enabled,
-                    modifier = Modifier.weight(1f).heightIn(min = 53.dp, max = if (compact) 78.dp else 134.dp),
+                    singleLine = false,
+                    modifier = Modifier.weight(1f).focusRequester(focusRequester)
+                        .heightIn(min = 53.dp, max = if (compact) 78.dp else 134.dp),
                     textStyle = TextStyle(
                         fontFamily = FontFamily.Serif,
                         color = Ink.InkBlack,
                         fontSize = 17.sp,
                         lineHeight = 23.sp
                     ),
-                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-                    keyboardActions = KeyboardActions(onDone = { onFold() }),
+                    // IME Enter inserts a real newline. Folding is only an explicit button action.
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Text,
+                        imeAction = ImeAction.Default
+                    ),
                     decorationBox = { inner ->
                         Box {
                             if (draft.isEmpty()) {

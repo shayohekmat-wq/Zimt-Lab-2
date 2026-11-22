@@ -149,3 +149,28 @@ Der Quellcode von `EimerApp.kt` erhält bei einem Drag-and-drop-Fehlwurf den Ent
 
 ## Gates / Status
 Quellstand vor diesem Plan: 0.2.0, versionCode 3, `de.zimt.eimerliste`, Room-Schema v1. Kein neuer Release ohne tatsächlich erfolgreiche Debug- und Unit-Tests, Release-Build, Zertifikats-Fingerprint-Prüfung gegen 0.1.0 und verlustfreien Update-Test. GitHub-Workflow wird auf `main` bei Push ausgelöst; sein Erfolg ist separat nachzuweisen. Kein Realgerätetest behauptet.
+
+
+---
+
+# Zyklus 22.11.2026 14:01 · 0.3.2: Eimer mit TalkBack bedienbar machen
+
+## Verifizierter Ausgangspunkt
+Main HEAD vor dem Zyklus: 86c58bb (Fehlwurf-Meldung); App weiterhin 0.2.0 / versionCode 3. Die BucketTile-Oberfläche reagiert über detectTapGestures, besitzt aber keine semantische Aktivierungsaktion. Dadurch kann ein Screenreader den Eimer nicht zuverlässig per Doppeltipp öffnen bzw. einen gefalteten Zettel einwerfen. Das ist ein eigenständiger Accessibility-Fehler; Skizzen und Schütteln werden nicht neu gebaut.
+
+## P0 – Kleiner, risikoarmer Code-Fix
+- BucketTile erhält einen eindeutigen semantischen Namen aus Eimername und Zettelanzahl sowie Role.Button.
+- Semantics.onClick ruft exakt denselben onOpen-Pfad auf wie ein Pointer-Tap. Mit gefaltetem Papier ist die Aktion „Zettel einwerfen“, sonst „Eimer öffnen“.
+- Kein zusätzliches clickable über pointerInput legen (würde Gesten/Long-press beeinflussen). Pointer-Schüttelgeste bleibt erhalten; Zufallszettel-Button bleibt im Eimer erreichbar.
+
+## P1 – Prüfungen
+- Kotlin/Compose Debug-Compile und Unit-Tests; Release-Compile; CI-Jobs und Logs auswerten.
+- TalkBack auf echtem Android: Fokus, Name, Anzahl, Doppeltipp, gefalteten Zettel einwerfen, Eimer halten + schütteln, Zufallszettel per Button.
+- 200%-Schrift, 48-dp-Aktivierungsfläche, IME, Rotation, Fehlwurf und Entwurfserhalt regressionsprüfen.
+
+## P2 – Nachfolgend, nicht Teil dieses Fixes
+- Skizzen-Editor-Zwischenstand über Prozessneustart erhalten; vollständiger verlustfreier Update-/Restore-Test.
+- CharmingX4-Prozeduralgrafiken unverändert, keine neuen Assets und keine Änderung an Room-Schema oder applicationId.
+
+## Release-Gate
+Kein Versionssprung und keine neue Update-APK allein wegen eines Code-Commits. Release erst nach nachgewiesenem CI-Erfolg, Vergleich des Signaturzertifikats mit 0.1.0 und Test auf erhaltene Bestandsdaten. Debug- und unsigned-APK nicht als Update verteilen.

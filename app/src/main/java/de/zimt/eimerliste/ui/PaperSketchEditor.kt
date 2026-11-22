@@ -1,5 +1,8 @@
 package de.zimt.eimerliste.ui
 
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.background
@@ -15,6 +18,10 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.TransformOrigin
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
@@ -35,6 +42,7 @@ import androidx.compose.ui.window.DialogProperties
 import de.zimt.eimerliste.domain.InkPoint
 import de.zimt.eimerliste.domain.InkStroke
 import de.zimt.eimerliste.domain.PaperDrawingCodec
+import kotlinx.coroutines.launch
 
 private val sketchColors = listOf(
     0xff35271e.toInt(), // warm black ink
@@ -139,14 +147,42 @@ fun PaperSketchEditor(
     var widthDp by remember { mutableFloatStateOf(3f) }
     var status by remember { mutableStateOf<String?>(null) }
     val inkLabel = if (widthDp < 6f) "Feiner Stift" else "Weicher Pinsel"
+    val paperZoom = remember { Animatable(0.12f) }
+    val scope = rememberCoroutineScope()
+    val haptics = LocalHapticFeedback.current
+    var leaving by remember { mutableStateOf(false) }
 
-    // System Back also preserves the sketch draft instead of silently discarding strokes.
+    // The enlarged sheet emerges from the small paper composer.
+    LaunchedEffect(Unit) {
+        paperZoom.animateTo(1f, tween(390, easing = FastOutSlowInEasing))
+        haptics.performHapticFeedback(HapticFeedbackType.SegmentTick)
+    }
+
+    fun leaveAndKeepSketch(onFinished: () -> Unit) {
+        if (leaving) return
+        leaving = true
+        scope.launch {
+            paperZoom.animateTo(0.12f, tween(275, easing = FastOutSlowInEasing))
+            haptics.performHapticFeedback(HapticFeedbackType.GestureEnd)
+            onFinished()
+        }
+    }
+
+    // Back also animates and preserves the sketch. No cancellation loses strokes.
     Dialog(
-        onDismissRequest = { onApply(workingPayload) },
+        onDismissRequest = { leaveAndKeepSketch { onApply(workingPayload) } },
         properties = DialogProperties(usePlatformDefaultWidth = false)
     ) {
         Column(
             Modifier.fillMaxWidth(.95f).fillMaxHeight(.88f)
+                .graphicsLayer {
+                    scaleX = 0.40f + 0.60f * paperZoom.value
+                    scaleY = 0.14f + 0.86f * paperZoom.value
+                    rotationX = 16f * (1f - paperZoom.value)
+                    alpha = 0.45f + 0.55f * paperZoom.value
+                    transformOrigin = TransformOrigin(0.5f, 0.96f)
+                    cameraDistance = 20f * density
+                }
                 .background(Ink.Walnut, RoundedCornerShape(18.dp))
                 .padding(14.dp)
         ) {
@@ -252,7 +288,8 @@ fun PaperSketchEditor(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 TextButton(
-                    onClick = { onTextEdit(workingPayload) },
+                    onClick = { leaveAndKeepSketch { onTextEdit(workingPayload) } },
+                    enabled = !leaving,
                     modifier = Modifier.semantics {
                         contentDescription = "Zur Textbearbeitung wechseln und die Skizze behalten"
                     }
@@ -266,9 +303,10 @@ fun PaperSketchEditor(
                         if (strokes.isNotEmpty() && encoded == null) {
                             status = "Die Zeichnung ist zu groß, bitte einen Strich zurücknehmen."
                         } else {
-                            onApply(encoded)
+                            leaveAndKeepSketch { onApply(encoded) }
                         }
                     },
+                    enabled = !leaving,
                     colors = ButtonDefaults.buttonColors(containerColor = Ink.Brass, contentColor = Ink.InkBlack)
                 ) { Text("Übernehmen") }
             }

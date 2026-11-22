@@ -1,3 +1,9 @@
+## 23. November – Vollflächiges Zeichenpapier (P0)
+- P0: Zeichenkoordinaten für Editor und gespeicherte Vorschau auf **gesamte PaperSheet-Fläche** normalisieren; keine Insets auf der Zeichen-Canvas. Zacken und Seiten über denselben tatsächlichen Papierpfad maskieren, sodass Striche bis an die sichtbare Kante reichen, aber nie auf den Holzgrund auslaufen.
+- P0: PaperSheet clippt **alle Inhalte** mit dem vorhandenen tornPath, einschließlich Live-Strichen, Text und gespeicherter Ansicht. Keine destruktive Migration: bestehende normalisierte Skizzen weiterhin dekodieren.
+- P1: Textmodus-Schalter direkt unter der Papierkante links, in Messing-Optik analog zum Stiftmodus. Zwei getrennte, durch Größe/Strich symbolisierte Werkzeug-Kreise statt Werkzeugnamen; TalkBack-Namen erhalten.
+- P1: Regressionsprüfung bei schmalem Bildschirm, großen Pinseln, Rotation, TalkBack und gespeichertem Zettel. Release 0.2.4 mit steigendem versionCode, ursprünglichem Zertifikat; APK nur nach erfolgreicher CI und Signaturprüfung.
+
 ## 23. November · Zeichenpapier UX-Hotfix (priorisiert)
 1. P0: Keine Dialog-Pop-Skalierung: Blatt von oben entfalten; Controls erst nach Papierbewegung. Systemweit reduzierte Animationen respektieren.
 2. P0: Zeichenebene mit Sicherheitsabstand innerhalb des sichtbaren Papierbereichs; gespeicherte Ansicht mit identischen Koordinaten für Text und Skizze.

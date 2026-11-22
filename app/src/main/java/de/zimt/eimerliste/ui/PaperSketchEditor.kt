@@ -213,7 +213,7 @@ fun PaperSketchEditor(
                         overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
                         modifier = Modifier.align(Alignment.TopStart)
                             .fillMaxWidth()
-                            .padding(start = 17.dp, end = 12.dp, top = 14.dp)
+                            .padding(start = 17.dp, end = 12.dp, top = 21.dp)
                     )
                 }
                 SketchCanvas(

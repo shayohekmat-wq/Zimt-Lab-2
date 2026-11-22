@@ -68,3 +68,37 @@ Eine emotionale, spielerische Bucket-Liste für zwei oder mehr Menschen. Keine T
 
 ## Bewusst offene Abhängigkeiten
 Der produktive Mehrpersonenmodus braucht einen bereitgestellten Backend-Dienst und Authentifizierungs-Konfiguration; ohne diese darf die App nur als lokal verwendbarer Prototyp ausgewiesen werden. Release-Key und Backuport müssen sicher eingerichtet werden; beides wird nicht in diesem öffentlichen Repository abgelegt.
+
+
+---
+
+# Build 0.2 · Skizzen & Zufallszettel – Umsetzung
+
+Stand: 22.11.2026, vor Veröffentlichung. Fortsetzung von 0.1.1. Nächster planmäßiger Zyklus um 08:00 (Europe/Berlin) fokussiert 0.3, **nur falls 0.2 tatsächlich erfolgreich signiert und geprüft wurde**.
+
+## Produktprinzip
+Ein einziger Papierzettel trägt Text, Skizze oder beides. Er kann jederzeit vor dem Einwurf bearbeitet werden; der Eimer ist eine physische, leicht bedienbare Entscheidungshilfe. Spaß ohne Datenverlust.
+
+## Umfang & Abnahmekriterien
+1. **Zeichenpapier**: Pinsel-Button im Zettel-Composer. Vergrößerter Papierfetzen mit Stift, drei Farben, zwei Strichbreiten, Undo/Redo; eine Zeichnung kann **ohne Text** gespeichert werden. Vorhandener Text bleibt erhalten.
+2. **Vektorzeichnung**: Strokes als relative 0–1-Koordinaten mit versioniertem Format, damit Rotation, verschiedene Displaygrößen, Rendering und späterer Sync funktionieren. Begrenzte Punkte/Größe, defensiver Parser, alte Zettel bleiben lesbar.
+3. **Dreifaches Falten**: Vor dem Einwurf bleiben Text und Zeichnung im Entwurf. Fehlwurf oder Datenbankfehler löscht keinen Inhalt. Der Papierfetzen darf erst nach erfolgreicher Datenbank-Transaktion verschwinden.
+4. **Schüttel-Eimer**: Eimer mit Finger gedrückt halten + bewusst zweimal schütteln, dann zufälligen enthaltenen Zettel öffnen. Sensor nur während der Berührung aktiv; Schwelle, Sperrzeit und Trigger-Debounce; kein permanentes Sensor-Polling.
+5. **Fallback / Inklusion**: Im geöffneten Eimer steht „Zufallszettel ziehen“, auch ohne Sensor oder für Menschen, die das Gerät nicht schütteln können. Leere Eimer führen zu einer freundlichen, klaren Meldung.
+6. **Optische Qualität**: eigene, prozedural gerenderte Eimer mit lebendigeren Materialien, besseren Geflecht-/Metall-/Papierdetails und stabilen Etiketten; keine fremden Bilder ohne ausdrücklich dokumentierte kommerzielle Lizenz. Beim 0.2-Release genügt optische Verfeinerung ohne neue Assets.
+7. **Update & Datensicherheit**: applicationId `de.zimt.eimerliste` und Room-Schema v1 bleiben gleich. Vorhandene `drawingPayload`/`drawingPayloadVersion`-Felder werden verwendet, **keine destruktiven Migrationen**. versionCode höher als 2. Gleiches privates Signaturzertifikat wie 0.1.0/0.1.1.
+8. **Qualität**: Gradle debug + Release + Unit-Tests. Parser: gültig/ungültig, reine Zeichnung und Obergrenzen testen. Interaktionen auf echtem Androidgerät bis zur Freigabe **nicht als getestet deklarieren**.
+
+## UX-Details
+- Pinsel ist ein separater, klar beschrifteter Schalter, keine Geste versteckt hinter dem Textfeld.
+- Der Zeichenbereich nimmt beim Arbeiten den Großteil des Displays ein; Abbrechen verändert keine zuvor gespeicherte Zeichnung.
+- Undo/Redo wird nur für tatsächlich vorhandene Striche angeboten.
+- Schütteln hat eine visuelle Aufforderung und dezentes Haptikfeedback; einfache Antipp-Alternative bleibt jederzeit verfügbar.
+- Kleine Screens, IME-Insets, Statusleisten-Safe-Areas und TalkBack sind Teil des Review.
+
+## Nicht im 0.2-Release
+- Live-Synchronisierung anderer Nutzer (braucht einen abgesicherten Backend-Dienst), Bildimporte, unendliche Leinwand, fortgeschrittene Layer.
+- Kein Versprechen automatischer Veröffentlichung, falls Release-Signaturschlüssel in der Laufumgebung fehlt.
+
+## Nächster 0.3-Zyklus: Design/Erlebnis/Robustheit
+Priorisierung nach 0.2-Build und Fehlerprotokoll: gefaltete Notizen im Eimer differenzieren, Zettel-Entfalten, sicherer Undo für Aktionen, Accessibility- und Material-Politur, optimierte Renderpfade, langfristiger Export/Import und echtes Wiederherstellungsszenario. Jede Änderung mit User-Story, Fehleranalyse, Test und Update-Prüfung.

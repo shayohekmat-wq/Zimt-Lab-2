@@ -20,6 +20,9 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInParent
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.material.icons.Icons
@@ -158,6 +161,11 @@ fun PaperSketchEditor(
     val scope = rememberCoroutineScope()
     val haptics = LocalHapticFeedback.current
     var leaving by remember { mutableStateOf(false) }
+    var returnToText by remember { mutableStateOf(false) }
+    var paperHeightPx by remember { mutableFloatStateOf(1f) }
+    var paperTopPx by remember { mutableFloatStateOf(0f) }
+    var editorHeightPx by remember { mutableFloatStateOf(1f) }
+    val density = LocalDensity.current
 
     // The enlarged sheet emerges from the small paper composer.
     LaunchedEffect(Unit) {
@@ -165,11 +173,12 @@ fun PaperSketchEditor(
         haptics.performHapticFeedback(HapticFeedbackType.SegmentTick)
     }
 
-    fun leaveAndKeepSketch(onFinished: () -> Unit) {
+    fun leaveAndKeepSketch(toText: Boolean = false, onFinished: () -> Unit) {
         if (leaving) return
         leaving = true
+        returnToText = toText
         scope.launch {
-            paperZoom.animateTo(0f, tween(330, easing = FastOutSlowInEasing))
+            paperZoom.animateTo(0f, tween(if (toText) 490 else 330, easing = FastOutSlowInEasing))
             haptics.performHapticFeedback(HapticFeedbackType.GestureEnd)
             onFinished()
         }
@@ -182,6 +191,7 @@ fun PaperSketchEditor(
     ) {
         Column(
             Modifier.fillMaxWidth(.95f).fillMaxHeight(.88f)
+                .onGloballyPositioned { editorHeightPx = it.size.height.toFloat() }
                 .graphicsLayer { alpha = 1f }
                 .background(Ink.Walnut, RoundedCornerShape(18.dp))
                 .padding(14.dp)
@@ -196,10 +206,26 @@ fun PaperSketchEditor(
                 color = Ink.Muted, fontSize = 12.sp,
                 modifier = Modifier.padding(bottom = 8.dp)
             )
-            PaperSheet(Modifier.fillMaxWidth().weight(1f).graphicsLayer {
-                transformOrigin = TransformOrigin(0.5f, 0f)
-                scaleY = if (ValueAnimator.areAnimatorsEnabled()) 0.02f + 0.98f * paperZoom.value else 1f
-            }) {
+            PaperSheet(Modifier.fillMaxWidth().weight(1f)
+                .onGloballyPositioned {
+                    paperHeightPx = it.size.height.toFloat()
+                    paperTopPx = it.positionInParent().y
+                }
+                .graphicsLayer {
+                    transformOrigin = TransformOrigin(0.5f, 0f)
+                    val t = if (ValueAnimator.areAnimatorsEnabled()) paperZoom.value else 1f
+                    if (returnToText) {
+                        // The destination is the real-size composer near the bottom,
+                        // not a collapsed strip stuck at the top of this dialog.
+                        val targetHeight = with(density) { 95.dp.toPx() }
+                        val targetScale = (targetHeight / paperHeightPx).coerceIn(.08f, 1f)
+                        scaleY = targetScale + (1f - targetScale) * t
+                        translationY = (editorHeightPx - paperTopPx - targetHeight -
+                            with(density) { 14.dp.toPx() }).coerceAtLeast(0f) * (1f - t)
+                    } else {
+                        scaleY = if (ValueAnimator.areAnimatorsEnabled()) 0.02f + .98f * t else 1f
+                    }
+                }) {
                 // Text and ink are parts of the SAME sheet, not separate modes.
                 // Draw over the entire sheet including its visible edges; no hidden 16dp margins.
                 if (text.isNotBlank()) {
@@ -238,7 +264,7 @@ fun PaperSketchEditor(
             }
             Row(Modifier.fillMaxWidth().padding(top = 3.dp), verticalAlignment = Alignment.CenterVertically) {
                 IconButton(
-                    onClick = { leaveAndKeepSketch { onTextEdit(workingPayload) } },
+                    onClick = { leaveAndKeepSketch(toText = true) { onTextEdit(workingPayload) } },
                     enabled = !leaving,
                     modifier = Modifier.background(Ink.BrassDark.copy(alpha = .28f), CircleShape)
                         .semantics { contentDescription = "Zur Textbearbeitung wechseln und Skizze behalten" }

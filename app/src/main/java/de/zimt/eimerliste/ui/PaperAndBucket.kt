@@ -10,6 +10,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
@@ -119,6 +120,14 @@ fun BucketArtwork(
                 BucketMaterial.ENAMEL -> listOf(Color(0xFFBFB4A0), Color(0xFFF3E5CD), Color(0xFFA99C86))
                 BucketMaterial.BRASS -> listOf(Color(0xFF775126), Color(0xFFE0B565), Color(0xFF8F642E))
             }
+            // Small contact shadow grounds the 3D object without a bitmap asset.
+            drawOval(
+                brush = Brush.horizontalGradient(
+                    listOf(Color.Transparent, Color(0x66000000), Color.Transparent)
+                ),
+                topLeft = Offset(.19f * w, .845f * h),
+                size = Size(.62f * w, .09f * h)
+            )
             // A handle behind the rim, giving the object its silhouette.
             drawArc(
                 color = if (material == BucketMaterial.ZINC) Color(0xFFD5D2C2) else Ink.BrassDark,
@@ -133,13 +142,24 @@ fun BucketArtwork(
             clipPath(outer) {
                 when(material) {
                     BucketMaterial.WICKER -> {
-                        for (i in 0..15) {
-                            val y = h * (.31f + .039f * i)
-                            drawLine(Color(0x8C4B2918), Offset(.12f*w, y), Offset(.89f*w,y), w*.012f)
+                        // Original, resolution-independent woven willow. Alternating light/dark
+                        // strokes create over-under weaving without licensed photo assets.
+                        for (i in 0..13) {
+                            val y = h * (.315f + .042f * i)
+                            drawLine(Color(0xBB4E311D), Offset(.14f*w, y + w*.013f),
+                                Offset(.86f*w, y + w*.013f), w*.019f)
+                            drawLine(Color(0xAEE5BA7C), Offset(.14f*w, y),
+                                Offset(.86f*w, y), w*.017f)
                         }
-                        for (i in 0..16) {
-                            val x = w*(.13f + i * .048f)
-                            drawLine(Color(0x799C6533),Offset(x,.28f*h),Offset(x-.07f*w,.9f*h),w*.015f)
+                        for (j in 0..13) {
+                            val x = w * (.18f + j*.050f)
+                            drawLine(Color(0xAD51301A), Offset(x,.30f*h),
+                                Offset(x-.025f*w,.9f*h), w*.018f)
+                            for (i in 0..6) {
+                                val y = h*(.33f+i*.084f+(j%2)*.042f)
+                                drawLine(Color(0xAADDAC6F),Offset(x,y),
+                                    Offset(x-.006f*w,y+h*.029f),w*.014f)
+                            }
                         }
                     }
                     BucketMaterial.WOOD -> {
@@ -149,11 +169,22 @@ fun BucketArtwork(
                         }
                     }
                     BucketMaterial.PAPER -> {
+                        // Cardboard fold lines with gentle wear, rather than a flat brown fill.
                         drawLine(Color(0x55FFF3D2), Offset(.42f*w,.3f*h),Offset(.5f*w,.84f*h),w*.025f)
+                        drawLine(Color(0x684B321E), Offset(.28f*w,.32f*h),Offset(.39f*w,.82f*h),w*.006f)
+                        drawLine(Color(0x66F8DBB5), Offset(.31f*w,.33f*h),Offset(.42f*w,.82f*h),w*.009f)
                     }
                     else -> {
                         drawLine(Color.White.copy(alpha = .18f),Offset(.27f*w,.33f*h),Offset(.32f*w,.83f*h),w*.022f)
                         drawLine(Color.Black.copy(alpha = .13f),Offset(.75f*w,.33f*h),Offset(.69f*w,.83f*h),w*.025f)
+                        // Slight vertical rolling and uneven hand-worn patina.
+                        for (i in 0..10) {
+                            val x = w*(.21f+i*.05f)
+                            drawLine(
+                                if(i%3==0) Color(0x22FFFFFF) else Color(0x16000000),
+                                Offset(x,.35f*h),Offset(x-.025f*w,.82f*h),w*.0025f
+                            )
+                        }
                     }
                 }
             }
@@ -181,7 +212,11 @@ fun BucketArtwork(
         Box(
             Modifier.fillMaxWidth(.57f)
                 .offset(y = 20.dp)
-                .background(Ink.Paper, RoundedCornerShape(4.dp))
+                .shadow(3.dp, RoundedCornerShape(4.dp))
+                .background(
+                    Brush.verticalGradient(listOf(Color(0xFFFFF1D3), Ink.Paper, Color(0xFFE7D0A7))),
+                    RoundedCornerShape(4.dp)
+                )
                 .border(1.dp, Ink.PaperEdge, RoundedCornerShape(4.dp))
                 .padding(horizontal=5.dp, vertical=7.dp),
             contentAlignment = Alignment.Center

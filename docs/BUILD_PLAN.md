@@ -125,3 +125,27 @@ Abnahme: Kein Text-Clipping, kein dauerhafter Render-Loop im Ruhezustand, keine 
 
 ## Release-Gate
 Aktueller Quellstand: 0.2.0, versionCode 3. Keine erneute Implementierung von Skizzen/Schütteln. Vor neuer Versionsnummer: Debug-Build, Unit-Tests, Release-Build, Signatur-Fingerprint gegen 0.1.0 und verlustfreier Update-Test. Ohne Nachweis keine Update-APK. Paketkennung de.zimt.eimerliste und Room-Schema v1 unverändert. Realgerätetest ausdrücklich offen.
+
+
+---
+
+# Zyklus 22.11.2026 11:04 · 0.3.1: verlässliche Rückmeldung beim Fehlwurf
+
+## Befund und Priorisierung
+Der Quellcode von `EimerApp.kt` erhält bei einem Drag-and-drop-Fehlwurf den Entwurf (`pendingPaper` und `drawing`) und setzt den Versatz zurück. Anders als bei einem Datenbankfehler wird jedoch keine verständliche Rückmeldung angezeigt. Dies ist besonders für TalkBack und bei kleinen Displays unklar. Die Skizzen-/Schüttelfunktionen aus 0.2 werden **nicht** neu implementiert.
+
+### P0 – Kleiner risikoarmer Fix (vor Release)
+- Beim Loslassen außerhalb eines Eimers eine kurze, lokalisierbare Snackbar: „Keinen Eimer getroffen. Dein Zettel bleibt erhalten – ziehe ihn erneut oder tippe auf einen Eimer.“
+- Nur bei echtem Fehlwurf melden, nicht bei abgebrochener Drag-Geste oder erfolgreichem Treffer. Keine blockierende Meldung und kein Reset des Drafts.
+- Regression: Text-only, Sketch-only, kombinierte Zettel, mehrfacher Fehlwurf, Treffer per Tap und Drag, DB-Schreibfehler.
+
+### P1 – Barrierefreiheit
+- Bucket-Tile als benannte, bedienbare Semantik-Aktion (Eimername + Zettelanzahl) statt nur unsichtbarer Pointer-Geste. TalkBack: per Tap öffnen bzw. gefalteten Zettel einwerfen; Schütteln bleibt optional.
+- Touch-Flächen mindestens 48 dp, 200%-Schrift und reduzierten Bewegungsmodus auf Gerät prüfen.
+
+### P2 – Robustheit und visuelle Treue
+- Wiederherstellung von Zeichnungs-Editor-Zustand bei Prozessneustart prüfen; keine UI-Optik ändern, bevor die Tests stehen.
+- Bestehende prozedurale charmingX4-Materialien beibehalten; keine Drittgrafiken ohne dokumentierte kommerzielle Provenienz.
+
+## Gates / Status
+Quellstand vor diesem Plan: 0.2.0, versionCode 3, `de.zimt.eimerliste`, Room-Schema v1. Kein neuer Release ohne tatsächlich erfolgreiche Debug- und Unit-Tests, Release-Build, Zertifikats-Fingerprint-Prüfung gegen 0.1.0 und verlustfreien Update-Test. GitHub-Workflow wird auf `main` bei Push ausgelöst; sein Erfolg ist separat nachzuweisen. Kein Realgerätetest behauptet.

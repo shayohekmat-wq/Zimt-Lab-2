@@ -5,9 +5,10 @@ object NoteRules {
 
     fun normalize(text: String): String = text.trim()
 
-    fun canSubmit(text: String): Boolean {
+    fun canSubmit(text: String, drawingPayload: String? = null): Boolean {
         val clean = normalize(text)
-        return clean.isNotEmpty() && clean.length <= MAX_NOTE_LENGTH
+        return clean.length <= MAX_NOTE_LENGTH &&
+            (clean.isNotEmpty() || PaperDrawingCodec.hasInk(drawingPayload))
     }
 
     fun validBucketName(text: String): String? =

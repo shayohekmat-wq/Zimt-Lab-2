@@ -40,6 +40,8 @@ class EimerViewModel(application: Application) : AndroidViewModel(application) {
         repository.renameBucket(id, name)
     }
 
-    suspend fun addNote(bucketId: String, text: String): String =
-        repository.createNote(bucketId, text)
+    suspend fun addNote(bucketId: String, text: String, drawingPayload: String? = null): String =
+        repository.createNote(bucketId, text, drawingPayload)
+
+    suspend fun randomNote(bucketId: String) = repository.randomNote(bucketId)
 }

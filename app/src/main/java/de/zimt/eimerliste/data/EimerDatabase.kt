@@ -65,6 +65,9 @@ interface EimerDao {
     @Query("SELECT bucketId, COUNT(*) AS noteCount FROM notes WHERE deletedAt IS NULL GROUP BY bucketId")
     fun observeCounts(): Flow<List<BucketCount>>
 
+    @Query("SELECT * FROM notes WHERE bucketId = :bucketId AND deletedAt IS NULL ORDER BY RANDOM() LIMIT 1")
+    suspend fun randomNote(bucketId: String): NoteEntity?
+
     @Insert
     suspend fun addBucket(bucket: BucketEntity)
 

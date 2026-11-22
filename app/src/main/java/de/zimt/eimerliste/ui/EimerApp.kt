@@ -812,7 +812,7 @@ private fun PaperDropTray(
 @Composable
 private fun CreateBucketDialog(onClose:()->Unit,onCreate:(String,BucketMaterial)->Unit) {
     var name by rememberSaveable { mutableStateOf("") }
-    var material by remember { mutableStateOf(BucketMaterial.ZINC) }
+    var material by rememberSaveable { mutableStateOf(BucketMaterial.ZINC) }
     AlertDialog(
         onDismissRequest=onClose,
         title={

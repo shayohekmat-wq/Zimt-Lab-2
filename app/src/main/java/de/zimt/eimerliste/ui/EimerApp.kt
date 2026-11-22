@@ -36,6 +36,9 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.onClick
+import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
@@ -230,6 +233,7 @@ fun EimerApp(vm: EimerViewModel = viewModel()) {
                                 onRelease = {
                                     if (heldBucketId == bucket.id) heldBucketId = null
                                 },
+                                paperPending = pendingPaper != null,
                                 onOpen = {
                                     if (pendingPaper != null) {
                                         deliver(bucket.id)
@@ -460,11 +464,20 @@ private fun BucketTile(
     onBoundsChanged: (Rect) -> Unit,
     onHold: () -> Unit,
     onRelease: () -> Unit,
-    onOpen: () -> Unit
+    onOpen: () -> Unit,
+    paperPending: Boolean
 ) {
     Column(
         Modifier.fillMaxWidth()
             .onGloballyPositioned { onBoundsChanged(it.boundsInRoot()) }
+            .semantics {
+                role = Role.Button
+                contentDescription = "${bucket.name}, ${if (count == 1) "1 Zettel" else "$count Zettel"}"
+                onClick(label = if (paperPending) "Zettel einwerfen" else "Eimer öffnen") {
+                    onOpen()
+                    true
+                }
+            }
             .clip(RoundedCornerShape(12.dp))
             .background(if (highlighted) Color(0x665E4429) else Color(0x26120A07))
             .border(

@@ -8,8 +8,8 @@ Eine emotionale, spielerische Bucket-Liste für zwei oder mehr Menschen. Keine T
 ## Kritischer Nutzungspfad
 1. Eine Person legt einen Eimer an, wählt Material und Namen.
 2. Sie wählt einen Eimer, tippt auf den Papierfetzen am unteren Bildschirmrand und schreibt eine Idee.
-3. Enter oder der Senden-Button bestätigt. Die Papiernotiz faltet sich **viermal**, wird in den Eimer geworfen und ist **vor Beginn der Animation bereits dauerhaft gespeichert**.
-4. Der nächste leere Papierfetzen erscheint. Ein optionales taktiles und akustisches Feedback bestätigt den Vorgang.
+3. Enter oder der Falten-Button startet **drei Faltungen**. Der gefaltete Zettel bleibt lokal als Entwurf erhalten und kann per Drag-and-drop in **jeden sichtbaren Eimer** geworfen werden. Erst beim erfolgreichen Ablegen in einem Eimer wird der Zettel dauerhaft gespeichert; bei einem Schreibfehler bleibt er erneut verwendbar.
+4. Wird das Ziel verfehlt, springt der Zettel zurück in die Ablage; er kann erneut gezogen oder per Tippen auf einen Eimer zugeordnet werden. Nach erfolgreichem Einwurf erscheint ein neuer Papierfetzen. Ein optionales taktiles und akustisches Feedback bestätigt den Vorgang.
 5. Ein Tipp auf den Eimer öffnet seine Zettelsammlung; ein Tipp auf einen Zettel entfaltet ihn zum Lesen.
 6. Bei gemeinsamer Nutzung erscheinen neue Zettel nach Synchronisierung auf allen berechtigten Geräten; offline erstellte Notizen werden nicht verworfen.
 
@@ -18,8 +18,8 @@ Eine emotionale, spielerische Bucket-Liste für zwei oder mehr Menschen. Keine T
 ### 0.1 · Lokales Kern-Erlebnis (zuerst)
 - [ ] Native Android-App mit stabiler Paketkennung, Versionsnummer und klarer Navigation
 - [ ] Einmaliges Onboarding ohne Registrierung; Eimer neu erstellen, umbenennen und Material wählen
-- [ ] Papier-Eingabefeld mit Bildschirmtastatur, Enter/Senden, leeren Eingaben vorbeugen
-- [ ] Echte vierstufige Falt- und Wurfsequenz; zuerst Daten speichern, dann Animation
+- [x] Papier-Eingabefeld bleibt beim Einblenden der Tastatur oberhalb der IME sichtbar (edge-to-edge Insets), Enter/Falten, leeren Eingaben vorbeugen
+- [x] Dreistufige Faltsequenz und manuelles Ziehen auf beliebigen sichtbaren Eimer, mit Rückkehr bei Fehlwurf; Speicherung erst bei erfolgreicher Ablage
 - [ ] Eimer öffnen, Inhalte ansehen, Zettel lesen/entfalten
 - [ ] Dauerhafte lokale Datenhaltung, IDs und Datenmodell für spätere Zeichnungen
 - [ ] Leere Zustände, Fehler- und Ladezustände, TalkBack und große Schrift
@@ -58,7 +58,7 @@ Eine emotionale, spielerische Bucket-Liste für zwei oder mehr Menschen. Keine T
 - [ ] Ende-zu-Ende-Test ZIMT-Integration auf echten Bestandsdaten
 
 ## Qualitäts-Gates
-**Daten:** Keine Animation vor erfolgreichem Write. Kein `fallbackToDestructiveMigration`. Schema-Migrationen aus jeder veröffentlichten Version prüfen. Export/Restore vor der ersten produktiven Nutzung. Bei Konflikt nicht unsichtbar überschreiben.
+**Daten:** Ein gefalteter Zettel bleibt als wiederherstellbarer Entwurf bestehen; ein erfolgreicher Einwurf wird erst nach erfolgreichem Write quittiert. Kein `fallbackToDestructiveMigration`. Schema-Migrationen aus jeder veröffentlichten Version prüfen. Export/Restore vor der ersten produktiven Nutzung. Bei Konflikt nicht unsichtbar überschreiben.
 
 **Erlebnis:** 48-dp-Touchflächen; kontrastreiche Beschriftung, glaubwürdige Tiefe, keine unlesbaren Mini-Zettel, kein aufdringliches Dauerfunkeln. Motion-Reduction und Low-End-Modus.
 

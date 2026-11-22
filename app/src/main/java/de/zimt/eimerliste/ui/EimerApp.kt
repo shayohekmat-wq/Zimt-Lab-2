@@ -4,6 +4,7 @@ import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.*
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -16,17 +17,26 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.platform.LocalAccessibilityManager
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.boundsInRoot
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -44,6 +54,7 @@ import de.zimt.eimerliste.domain.BucketMaterial
 import de.zimt.eimerliste.domain.NoteRules
 import kotlinx.coroutines.launch
 import kotlin.math.min
+import kotlin.math.sin
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -53,59 +64,104 @@ fun EimerApp(vm: EimerViewModel = viewModel()) {
         val counts by vm.counts.collectAsStateWithLifecycle()
         val selectedId by vm.selectedBucketId.collectAsStateWithLifecycle()
         val notes by vm.selectedNotes.collectAsStateWithLifecycle()
+
         var openBucket by rememberSaveable { mutableStateOf<String?>(null) }
         var openNote by remember { mutableStateOf<NoteEntity?>(null) }
         var createDialog by remember { mutableStateOf(false) }
+
+        // A draft and its folded version are never deleted until the destination write succeeds.
         var draft by rememberSaveable { mutableStateOf("") }
-        var busy by remember { mutableStateOf(false) }
-        var foldingText by remember { mutableStateOf<String?>(null) }
-        val folding = remember { Animatable(0f) }
+        var pendingPaper by rememberSaveable { mutableStateOf<String?>(null) }
+        var paperReady by remember { mutableStateOf(false) }
+        var saving by remember { mutableStateOf(false) }
+        val fold = remember { Animatable(0f) }
+        var dragOffset by remember { mutableStateOf(Offset.Zero) }
+        var pointerStart by remember { mutableStateOf(Offset.Zero) }
+        var paperBounds by remember { mutableStateOf<Rect?>(null) }
+        val bucketBounds = remember { mutableStateMapOf<String, Rect>() }
+        var hoveredBucket by remember { mutableStateOf<String?>(null) }
+
         val scope = rememberCoroutineScope()
         val snackbar = remember { SnackbarHostState() }
+        val keyboard = LocalSoftwareKeyboardController.current
+        val focus = LocalFocusManager.current
+        val haptics = LocalHapticFeedback.current
+        val density = LocalDensity.current
+        val imeVisible = WindowInsets.ime.getBottom(density) > 0
 
-        val selectedBucket = buckets.firstOrNull { it.id == selectedId }
-        val countByBucket = remember(counts) { counts.associate { it.bucketId to it.noteCount } }
+        val countsByBucket = remember(counts) { counts.associate { it.bucketId to it.noteCount } }
 
-        LaunchedEffect(buckets, selectedId) {
-            if (buckets.isNotEmpty() && selectedBucket == null) vm.selectBucket(buckets.first().id)
+        // Repeatable folding if the activity is recreated halfway through an animation.
+        LaunchedEffect(pendingPaper) {
+            dragOffset = Offset.Zero
+            hoveredBucket = null
+            paperReady = false
+            fold.snapTo(0f)
+            if (pendingPaper != null) {
+                for (step in 1..3) {
+                    fold.animateTo(
+                        step.toFloat(),
+                        animationSpec = tween(durationMillis = 260, easing = FastOutSlowInEasing)
+                    )
+                }
+                paperReady = true
+            }
         }
 
-        val send: () -> Unit = {
-            val bucketId = selectedId
-            val message = draft
-            if (!busy && bucketId != null && NoteRules.canSubmit(message)) {
+        val foldPaper: () -> Unit = {
+            if (pendingPaper == null && buckets.isNotEmpty() && NoteRules.canSubmit(draft)) {
+                // Hide the IME before showing the movable, folded slip.
+                keyboard?.hide()
+                focus.clearFocus()
+                pendingPaper = draft
+            }
+        }
+
+        val deliver: (String) -> Unit = { targetId ->
+            val textToSave = pendingPaper
+            val destination = buckets.firstOrNull { it.id == targetId }
+            if (textToSave != null && destination != null && paperReady && !saving) {
+                saving = true
                 scope.launch {
-                    busy = true
                     try {
-                        // Persist first. A failed write must never look like a successfully thrown note.
-                        vm.addNote(bucketId, message)
+                        vm.addNote(targetId, textToSave)
+                        haptics.performHapticFeedback(HapticFeedbackType.LongPress)
                         draft = ""
-                        foldingText = message
-                        folding.snapTo(0f)
-                        for (step in 1..4) {
-                            folding.animateTo(
-                                step.toFloat(),
-                                animationSpec = tween(durationMillis=245,easing=FastOutSlowInEasing)
-                            )
-                        }
-                        folding.animateTo(5f, tween(durationMillis=430,easing=FastOutSlowInEasing))
-                    } catch (error: Exception) {
-                        snackbar.showSnackbar("Der Zettel konnte nicht gespeichert werden. Dein Text bleibt erhalten.")
+                        pendingPaper = null
+                        dragOffset = Offset.Zero
+                        hoveredBucket = null
+                        snackbar.showSnackbar("Zettel in „" + destination.name + "“ gelandet.")
+                    } catch (_: Exception) {
+                        dragOffset = Offset.Zero
+                        hoveredBucket = null
+                        snackbar.showSnackbar("Nicht gespeichert. Dein gefalteter Zettel bleibt erhalten.")
                     } finally {
-                        busy = false
-                        foldingText = null
+                        saving = false
                     }
                 }
             }
         }
 
-        Box(Modifier.fillMaxSize()) {
+        Box(Modifier.fillMaxSize().safeDrawingPadding().imePadding()) {
             WoodBackdrop(Modifier.fillMaxSize())
             Column(Modifier.fillMaxSize()) {
-                Header(
-                    onAdd = { createDialog = true },
-                    bucketCount = buckets.size
-                )
+                if (!imeVisible) {
+                    Header(onAdd = { createDialog = true }, bucketCount = buckets.size)
+                } else {
+                    Row(
+                        Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, top = 6.dp, bottom = 5.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            "Ein Gedanke auf Papier",
+                            fontFamily = FontFamily.Serif,
+                            color = Ink.Paper,
+                            fontSize = 19.sp,
+                            modifier = Modifier.weight(1f)
+                        )
+                        Text("✎", color = Ink.Brass, fontSize = 22.sp)
+                    }
+                }
                 if (buckets.isEmpty()) {
                     EmptyStage(
                         modifier = Modifier.weight(1f),
@@ -113,58 +169,108 @@ fun EimerApp(vm: EimerViewModel = viewModel()) {
                     )
                 } else {
                     Text(
-                        "WÄHLE EINEN EIMER · TIPPE ZUM ÖFFNEN",
-                        modifier=Modifier.padding(start=22.dp,top=11.dp,bottom=4.dp),
-                        fontSize=10.sp,letterSpacing=1.1.sp,color=Ink.Muted
+                        when {
+                            pendingPaper != null -> "ZIEH DEN ZETTEL IN EINEN EIMER"
+                            imeVisible -> "DEINE EIMER"
+                            else -> "DEINE EIMER · ANTIPPEN ZUM ÖFFNEN"
+                        },
+                        modifier = Modifier.padding(start = 22.dp, top = 7.dp, bottom = 4.dp),
+                        fontSize = 10.sp,
+                        letterSpacing = 1.sp,
+                        color = if (pendingPaper != null) Ink.Brass else Ink.Muted
                     )
                     LazyVerticalGrid(
-                        columns=GridCells.Fixed(2),
-                        modifier=Modifier.weight(1f),
-                        contentPadding=PaddingValues(horizontal=13.dp, vertical=7.dp),
-                        horizontalArrangement=Arrangement.spacedBy(7.dp),
-                        verticalArrangement=Arrangement.spacedBy(15.dp)
+                        columns = GridCells.Fixed(2),
+                        modifier = Modifier.weight(1f),
+                        contentPadding = PaddingValues(horizontal = 13.dp, vertical = 7.dp),
+                        horizontalArrangement = Arrangement.spacedBy(7.dp),
+                        verticalArrangement = Arrangement.spacedBy(13.dp)
                     ) {
-                        items(buckets, key={it.id}) { bucket ->
+                        items(buckets, key = { it.id }) { bucket ->
+                            DisposableEffect(bucket.id) {
+                                onDispose { bucketBounds.remove(bucket.id) }
+                            }
                             BucketTile(
-                                bucket=bucket,
-                                count=countByBucket[bucket.id] ?: 0,
-                                selected=bucket.id==selectedId,
-                                onOpen={
-                                    vm.selectBucket(bucket.id)
-                                    openBucket=bucket.id
+                                bucket = bucket,
+                                count = countsByBucket[bucket.id] ?: 0,
+                                highlighted = hoveredBucket == bucket.id,
+                                onBoundsChanged = { rect -> bucketBounds[bucket.id] = rect },
+                                onOpen = {
+                                    if (pendingPaper != null) {
+                                        deliver(bucket.id)
+                                    } else {
+                                        vm.selectBucket(bucket.id)
+                                        openBucket = bucket.id
+                                    }
                                 }
                             )
                         }
                     }
                 }
                 WoodenShelf()
-                PaperComposer(
-                    title = selectedBucket?.name,
-                    draft = draft,
-                    onDraftChange = { draft = it.take(NoteRules.MAX_NOTE_LENGTH) },
-                    onSend = send,
-                    enabled = selectedId != null && !busy,
-                    modifier=Modifier.fillMaxWidth().padding(horizontal=13.dp,vertical=14.dp)
-                )
+                if (pendingPaper == null) {
+                    PaperComposer(
+                        draft = draft,
+                        onDraftChange = { draft = it.take(NoteRules.MAX_NOTE_LENGTH) },
+                        onFold = foldPaper,
+                        enabled = buckets.isNotEmpty() && !saving,
+                        compact = imeVisible,
+                        modifier = Modifier.fillMaxWidth()
+                            .padding(horizontal = 13.dp, vertical = if (imeVisible) 7.dp else 13.dp)
+                    )
+                } else {
+                    PaperDropTray(
+                        message = pendingPaper.orEmpty(),
+                        progress = fold.value,
+                        ready = paperReady && !saving,
+                        dragOffset = dragOffset,
+                        onPaperBounds = { paperBounds = it },
+                        onDragStart = { point ->
+                            pointerStart = (paperBounds?.topLeft ?: Offset.Zero) + point
+                            dragOffset = Offset.Zero
+                            hoveredBucket = null
+                        },
+                        onDrag = { delta ->
+                            dragOffset += delta
+                            val pointer = pointerStart + dragOffset
+                            hoveredBucket = bucketBounds.entries.firstOrNull { (_, rect) ->
+                                rect.contains(pointer)
+                            }?.key
+                        },
+                        onDragEnd = {
+                            val pointer = pointerStart + dragOffset
+                            val hit = bucketBounds.entries.firstOrNull { (_, rect) ->
+                                rect.contains(pointer)
+                            }?.key
+                            hoveredBucket = null
+                            dragOffset = Offset.Zero
+                            if (hit != null) deliver(hit)
+                        },
+                        onCancel = {
+                            if (!saving) {
+                                pendingPaper = null
+                                hoveredBucket = null
+                                dragOffset = Offset.Zero
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 13.dp, vertical = 12.dp)
+                    )
+                }
             }
-            SnackbarHost(hostState=snackbar, modifier=Modifier.align(Alignment.TopCenter))
-            foldingText?.let { text ->
-                FoldedPaperOverlay(
-                    message=text,
-                    progress=folding.value,
-                    modifier=Modifier.align(Alignment.BottomCenter).padding(bottom=106.dp)
-                )
-            }
+            SnackbarHost(
+                hostState = snackbar,
+                modifier = Modifier.align(Alignment.TopCenter).padding(top = 8.dp)
+            )
         }
 
         if (createDialog) {
             CreateBucketDialog(
-                onClose={ createDialog=false },
-                onCreate={ name, material ->
+                onClose = { createDialog = false },
+                onCreate = { name, material ->
                     scope.launch {
                         try {
-                            vm.addBucket(name,material)
-                            createDialog=false
+                            vm.addBucket(name, material)
+                            createDialog = false
                         } catch (error: Exception) {
                             snackbar.showSnackbar(error.message ?: "Der Eimer konnte nicht angelegt werden.")
                         }
@@ -176,141 +282,175 @@ fun EimerApp(vm: EimerViewModel = viewModel()) {
         val visibleBucket = buckets.firstOrNull { it.id == openBucket }
         if (visibleBucket != null) {
             ModalBottomSheet(
-                onDismissRequest={ openBucket=null },
-                containerColor=Ink.Paper,
-                contentColor=Ink.InkBlack,
-                dragHandle={ BottomSheetDefaults.DragHandle(color=Ink.BrassDark) }
+                onDismissRequest = { openBucket = null },
+                containerColor = Ink.Paper,
+                contentColor = Ink.InkBlack,
+                dragHandle = { BottomSheetDefaults.DragHandle(color = Ink.BrassDark) }
             ) {
                 BucketContents(
-                    bucket=visibleBucket,
-                    notes=if (visibleBucket.id==selectedId) notes else emptyList(),
-                    onNote={ openNote=it }
+                    bucket = visibleBucket,
+                    notes = if (visibleBucket.id == selectedId) notes else emptyList(),
+                    onNote = { openNote = it }
                 )
             }
         }
         openNote?.let { note ->
-            DialogPaper(
-                note=note,
-                onDismiss={ openNote=null }
-            )
+            DialogPaper(note = note, onDismiss = { openNote = null })
         }
     }
 }
 
 @Composable
-private fun Header(onAdd: () -> Unit, bucketCount:Int) {
-    Row(
-        Modifier.fillMaxWidth().padding(start=23.dp,end=20.dp,top=21.dp,bottom=9.dp),
-        verticalAlignment=Alignment.CenterVertically
+private fun Header(onAdd: () -> Unit, bucketCount: Int) {
+    Column(Modifier.fillMaxWidth().padding(start = 22.dp, end = 20.dp, top = 24.dp, bottom = 9.dp)) {
+        Text(
+            "UNSERE KLEINEN GROSSEN PLÄNE",
+            letterSpacing = 1.55.sp,
+            fontSize = 9.sp,
+            color = Ink.Brass,
+            modifier = Modifier.padding(bottom = 4.dp)
+        )
+        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+            Column(Modifier.weight(1f)) {
+                Text(
+                    "Eimer-Liste",
+                    fontFamily = FontFamily.Serif,
+                    fontSize = 32.sp,
+                    lineHeight = 36.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Ink.Paper
+                )
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    "Wünsche sammeln, Momente erleben.",
+                    fontSize = 12.sp,
+                    color = Ink.Muted,
+                    lineHeight = 16.sp
+                )
+            }
+            Spacer(Modifier.width(12.dp))
+            Box(
+                Modifier.size(48.dp).clip(CircleShape)
+                    .background(Brush.verticalGradient(listOf(Ink.Brass, Ink.BrassDark)))
+                    .clickable(onClick = onAdd)
+                    .semantics { contentDescription = "Neuen Eimer erstellen" },
+                contentAlignment = Alignment.Center
+            ) {
+                Text("+", fontSize = 29.sp, color = Ink.InkBlack)
+            }
+        }
+    }
+}
+
+@Composable
+private fun EmptyStage(modifier: Modifier, onCreate: () -> Unit) {
+    Column(
+        modifier.fillMaxWidth().padding(24.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
     ) {
-        Column(Modifier.weight(1f)) {
-            Text(
-                "Eimer-Liste",
-                fontFamily=FontFamily.Serif,
-                fontSize=33.sp, lineHeight=36.sp,
-                fontWeight=FontWeight.Bold,
-                color=Ink.Paper
-            )
-            Text(
-                "Für alles, was wir noch erleben wollen",
-                fontSize=12.sp,color=Ink.Muted
-            )
-        }
-        Box(
-            Modifier.size(48.dp).clip(CircleShape)
-                .background(Brush.verticalGradient(listOf(Ink.Brass,Ink.BrassDark)))
-                .clickable(onClick=onAdd),
-            contentAlignment=Alignment.Center
-        ) {
-            Text("+",fontSize=29.sp,color=Ink.InkBlack)
-        }
-    }
-}
-
-@Composable
-private fun EmptyStage(modifier:Modifier,onCreate:()->Unit) {
-    Column(modifier.fillMaxWidth().padding(24.dp), horizontalAlignment=Alignment.CenterHorizontally, verticalArrangement=Arrangement.Center) {
         BucketArtwork(
-            material=BucketMaterial.WICKER,
-            title="Dein erster Eimer",
-            modifier=Modifier.size(width=210.dp,height=224.dp)
+            material = BucketMaterial.WICKER,
+            title = "Dein erster Eimer",
+            modifier = Modifier.size(width = 210.dp, height = 224.dp)
         )
         Spacer(Modifier.height(8.dp))
-        Text("Jeder Wunsch beginnt mit einem Zettel.",
-            fontFamily=FontFamily.Serif,fontSize=21.sp,color=Ink.Paper,textAlign=TextAlign.Center)
+        Text(
+            "Jeder Wunsch beginnt mit einem Zettel.",
+            fontFamily = FontFamily.Serif,
+            fontSize = 21.sp,
+            color = Ink.Paper,
+            textAlign = TextAlign.Center
+        )
         Spacer(Modifier.height(16.dp))
         Button(
-            onClick=onCreate,
-            colors=ButtonDefaults.buttonColors(containerColor=Ink.Brass,contentColor=Ink.InkBlack)
+            onClick = onCreate,
+            colors = ButtonDefaults.buttonColors(containerColor = Ink.Brass, contentColor = Ink.InkBlack)
         ) { Text("Ersten Eimer erstellen") }
     }
 }
 
 @Composable
-private fun BucketTile(bucket:BucketEntity,count:Int,selected:Boolean,onOpen:()->Unit) {
+private fun BucketTile(
+    bucket: BucketEntity,
+    count: Int,
+    highlighted: Boolean,
+    onBoundsChanged: (Rect) -> Unit,
+    onOpen: () -> Unit
+) {
     Column(
         Modifier.fillMaxWidth()
+            .onGloballyPositioned { onBoundsChanged(it.boundsInRoot()) }
             .clip(RoundedCornerShape(12.dp))
-            .background(if(selected) Color(0x304C3B2A) else Color(0x1A120A07))
-            .border(1.dp,if(selected) Ink.BrassDark else Color(0x354E3726),RoundedCornerShape(12.dp))
-            .clickable(onClick=onOpen)
-            .padding(vertical=6.dp),
-        horizontalAlignment=Alignment.CenterHorizontally
+            .background(if (highlighted) Color(0x665E4429) else Color(0x26120A07))
+            .border(
+                if (highlighted) 2.dp else 1.dp,
+                if (highlighted) Ink.Brass else Color(0x355E452C),
+                RoundedCornerShape(12.dp)
+            )
+            .clickable(onClick = onOpen)
+            .padding(vertical = 6.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
         BucketArtwork(
-            material=BucketMaterial.fromKey(bucket.material),
-            title=bucket.name,
-            modifier=Modifier.fillMaxWidth().aspectRatio(1.08f)
+            material = BucketMaterial.fromKey(bucket.material),
+            title = bucket.name,
+            modifier = Modifier.fillMaxWidth().aspectRatio(1.08f)
         )
         Text(
-            if(count==1) "1 Zettel" else count.toString()+" Zettel",
-            color=if(selected) Ink.Brass else Ink.Muted,
-            fontSize=12.sp,
-            modifier=Modifier.padding(bottom=8.dp)
+            if (highlighted) "HIER EINWERFEN" else if (count == 1) "1 Zettel" else count.toString() + " Zettel",
+            color = if (highlighted) Ink.Brass else Ink.Muted,
+            fontSize = 12.sp,
+            modifier = Modifier.padding(bottom = 8.dp)
         )
     }
 }
 
 @Composable
 private fun PaperComposer(
-    title:String?,
-    draft:String,
-    onDraftChange:(String)->Unit,
-    onSend:()->Unit,
-    enabled:Boolean,
-    modifier:Modifier=Modifier
+    draft: String,
+    onDraftChange: (String) -> Unit,
+    onFold: () -> Unit,
+    enabled: Boolean,
+    compact: Boolean,
+    modifier: Modifier = Modifier
 ) {
     Column(modifier) {
-        Text(
-            title?.let { "ZETTEL FÜR „"+it+"“" } ?: "DEIN PAPIERZETTEL",
-            color=Ink.Muted,fontSize=10.sp,letterSpacing=1.2.sp,
-            modifier=Modifier.padding(start=9.dp,bottom=6.dp),
-            maxLines=1,overflow=TextOverflow.Ellipsis
-        )
-        PaperSheet(Modifier.fillMaxWidth().heightIn(min=90.dp)) {
+        if (!compact) {
+            Text(
+                "EIN WUNSCH AUF PAPIER",
+                color = Ink.Muted,
+                fontSize = 10.sp,
+                letterSpacing = 1.2.sp,
+                modifier = Modifier.padding(start = 9.dp, bottom = 6.dp)
+            )
+        }
+        PaperSheet(Modifier.fillMaxWidth().heightIn(min = if (compact) 81.dp else 95.dp)) {
             Row(
-                Modifier.fillMaxWidth().padding(start=17.dp,end=13.dp,top=14.dp,bottom=15.dp),
-                verticalAlignment=Alignment.Bottom
+                Modifier.fillMaxWidth().padding(start = 17.dp, end = 12.dp, top = 14.dp, bottom = 15.dp),
+                verticalAlignment = Alignment.Bottom
             ) {
                 BasicTextField(
-                    value=draft,
-                    onValueChange=onDraftChange,
-                    enabled=enabled,
-                    modifier=Modifier.weight(1f).heightIn(min=53.dp,max=142.dp),
-                    textStyle=TextStyle(
-                        fontFamily=FontFamily.Serif,
-                        color=Ink.InkBlack,fontSize=17.sp,lineHeight=23.sp
+                    value = draft,
+                    onValueChange = onDraftChange,
+                    enabled = enabled,
+                    modifier = Modifier.weight(1f).heightIn(min = 53.dp, max = if (compact) 78.dp else 134.dp),
+                    textStyle = TextStyle(
+                        fontFamily = FontFamily.Serif,
+                        color = Ink.InkBlack,
+                        fontSize = 17.sp,
+                        lineHeight = 23.sp
                     ),
-                    keyboardOptions=KeyboardOptions(imeAction=ImeAction.Send),
-                    keyboardActions=KeyboardActions(onSend={onSend()}),
-                    decorationBox={ inner ->
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                    keyboardActions = KeyboardActions(onDone = { onFold() }),
+                    decorationBox = { inner ->
                         Box {
-                            if(draft.isEmpty()) {
+                            if (draft.isEmpty()) {
                                 Text(
-                                    "Schreib einen Wunsch auf ...",
-                                    fontFamily=FontFamily.Serif,
-                                    color=Ink.BrassDark.copy(alpha=.85f),
-                                    fontSize=16.sp
+                                    "Schreib deinen Wunsch ...",
+                                    fontFamily = FontFamily.Serif,
+                                    color = Ink.BrassDark.copy(alpha = .85f),
+                                    fontSize = 16.sp
                                 )
                             }
                             inner()
@@ -319,41 +459,122 @@ private fun PaperComposer(
                 )
                 Spacer(Modifier.width(8.dp))
                 Box(
-                    Modifier.size(45.dp).clip(CircleShape)
-                        .background(if(enabled && NoteRules.canSubmit(draft)) Ink.Brass else Color(0xFFCCBA98))
-                        .clickable(enabled=enabled && NoteRules.canSubmit(draft),onClick=onSend),
-                    contentAlignment=Alignment.Center
+                    Modifier.size(48.dp).clip(CircleShape)
+                        .background(
+                            if (enabled && NoteRules.canSubmit(draft)) Ink.Brass
+                            else Color(0xFFCCBA98)
+                        )
+                        .clickable(enabled = enabled && NoteRules.canSubmit(draft), onClick = onFold)
+                        .semantics { contentDescription = "Zettel dreimal falten" },
+                    contentAlignment = Alignment.Center
                 ) {
-                    Text("➤",color=Ink.InkBlack,fontSize=23.sp)
+                    Text("↴", color = Ink.InkBlack, fontSize = 27.sp, fontWeight = FontWeight.Bold)
                 }
             }
+        }
+        if (!compact) {
+            Text(
+                "Dreimal falten, dann in deinen Wunscheimer ziehen.",
+                fontSize = 11.sp,
+                color = Ink.Muted,
+                modifier = Modifier.padding(start = 9.dp, top = 7.dp)
+            )
         }
     }
 }
 
 @Composable
-private fun FoldedPaperOverlay(message:String, progress:Float, modifier:Modifier=Modifier) {
-    val fold = min(progress,4f)
-    val fly = (progress - 4f).coerceIn(0f,1f)
-    Box(
-        modifier
-            .graphicsLayer {
-                scaleX = (1f - .17f * fold) * (1f - .55f * fly)
-                scaleY = (1f - .16f * fold) * (1f - .55f * fly)
-                rotationZ = 7f * fold + 45f * fly
-                translationY = -(70.dp.toPx()*fold/4f + 180.dp.toPx()*fly)
-                translationX = 36.dp.toPx() * fly
-                alpha = 1f - .95f*fly
-            }
-    ) {
-        PaperSheet(Modifier.width(215.dp).height(87.dp)) {
+private fun PaperDropTray(
+    message: String,
+    progress: Float,
+    ready: Boolean,
+    dragOffset: Offset,
+    onPaperBounds: (Rect) -> Unit,
+    onDragStart: (Offset) -> Unit,
+    onDrag: (Offset) -> Unit,
+    onDragEnd: () -> Unit,
+    onCancel: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Column(modifier, horizontalAlignment = Alignment.CenterHorizontally) {
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             Text(
-                text=message,
-                modifier=Modifier.padding(13.dp),
-                maxLines=3,overflow=TextOverflow.Ellipsis,
-                color=Ink.InkBlack,fontSize=15.sp,fontFamily=FontFamily.Serif
+                if (ready) "ZIEH DEINEN ZETTEL IN EINEN EIMER" else "DEIN ZETTEL FALTET SICH ...",
+                fontSize = 10.sp,
+                letterSpacing = 1.sp,
+                color = Ink.Brass,
+                modifier = Modifier.weight(1f)
             )
+            TextButton(onClick = onCancel, enabled = ready) {
+                Text("Zurück", color = Ink.Muted, fontSize = 12.sp)
+            }
         }
+        Box(Modifier.fillMaxWidth().height(107.dp), contentAlignment = Alignment.Center) {
+            Box(
+                Modifier.size(width = 174.dp, height = 86.dp)
+                    .onGloballyPositioned { onPaperBounds(it.boundsInRoot()) }
+                    .graphicsLayer {
+                        translationX = dragOffset.x
+                        translationY = dragOffset.y
+                    }
+                    .pointerInput(ready, message) {
+                        if (ready) {
+                            detectDragGestures(
+                                onDragStart = onDragStart,
+                                onDragEnd = onDragEnd,
+                                onDragCancel = onDragEnd,
+                                onDrag = { change, delta ->
+                                    change.consume()
+                                    onDrag(delta)
+                                }
+                            )
+                        }
+                    }
+                    .semantics {
+                        contentDescription =
+                            "Gefalteter Zettel. Ziehe ihn auf einen Eimer oder tippe den Zieleimer an."
+                    },
+                contentAlignment = Alignment.Center
+            ) {
+                val f1 = progress.coerceIn(0f, 1f)
+                val f2 = (progress - 1f).coerceIn(0f, 1f)
+                val f3 = (progress - 2f).coerceIn(0f, 1f)
+                PaperSheet(
+                    Modifier.fillMaxSize().graphicsLayer {
+                        scaleX = 1f - .29f * f1 - .25f * f2
+                        scaleY = 1f - .20f * f3
+                        rotationY = (sin((progress % 1f) * Math.PI).toFloat() * 18f)
+                        rotationZ = 2f * f1 - 4f * f2 + 8f * f3
+                        cameraDistance = 18f * density
+                    }
+                ) {
+                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        if (progress < 1f) {
+                            Text(
+                                message,
+                                fontSize = 12.sp,
+                                maxLines = 2,
+                                overflow = TextOverflow.Ellipsis,
+                                fontFamily = FontFamily.Serif,
+                                color = Ink.InkBlack,
+                                modifier = Modifier.padding(12.dp)
+                            )
+                        } else {
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Text("✉", fontSize = 26.sp, color = Ink.BrassDark)
+                                if (ready) Text("↓ halten & ziehen", fontSize = 9.sp, color = Ink.InkBlack)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        Text(
+            if (ready) "Daneben loslassen? Kein Problem – der Zettel bleibt hier." else "Eins · zwei · drei",
+            fontSize = 11.sp,
+            color = Ink.Muted,
+            textAlign = TextAlign.Center
+        )
     }
 }
 
@@ -421,7 +642,7 @@ private fun BucketContents(bucket:BucketEntity,notes:List<NoteEntity>,onNote:(No
         )
         Spacer(Modifier.height(14.dp))
         if(notes.isEmpty()) {
-            Text("Schreib unten einen Wunsch auf, falte ihn und wirf ihn hier hinein.",
+            Text("Schreib einen Wunsch, falte ihn dreimal und zieh ihn auf diesen Eimer.",
                 color=Ink.InkBlack,modifier=Modifier.padding(vertical=30.dp))
         } else {
             LazyColumn(

@@ -31,8 +31,10 @@ jobs:
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '9.6.0'
-      - name: Compile app and unit tests
-        run: gradle --no-daemon :app:assembleDebug :app:testDebugUnitTest :app:assembleRelease
+      - name: Compile debug and unit tests (isolated Room schema generation)
+        run: gradle --no-daemon :app:assembleDebug :app:testDebugUnitTest
+      - name: Compile release after debug (avoid concurrent KSP schema writes)
+        run: gradle --no-daemon :app:assembleRelease
       - name: Prepare offline signing tool
         shell: bash
         run: |

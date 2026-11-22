@@ -453,6 +453,8 @@ private fun BucketTile(
     count: Int,
     highlighted: Boolean,
     onBoundsChanged: (Rect) -> Unit,
+    onHold: () -> Unit,
+    onRelease: () -> Unit,
     onOpen: () -> Unit
 ) {
     Column(
@@ -465,7 +467,16 @@ private fun BucketTile(
                 if (highlighted) Ink.Brass else Color(0x355E452C),
                 RoundedCornerShape(12.dp)
             )
-            .clickable(onClick = onOpen)
+            .pointerInput(bucket.id) {
+                detectTapGestures(
+                    onTap = { onOpen() },
+                    onLongPress = { onHold() },
+                    onPress = {
+                        tryAwaitRelease()
+                        onRelease()
+                    }
+                )
+            }
             .padding(vertical = 6.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
@@ -486,6 +497,8 @@ private fun BucketTile(
 @Composable
 private fun PaperComposer(
     draft: String,
+    drawing: String?,
+    onEditDrawing: () -> Unit,
     onDraftChange: (String) -> Unit,
     onFold: () -> Unit,
     enabled: Boolean,
@@ -524,7 +537,8 @@ private fun PaperComposer(
                         Box {
                             if (draft.isEmpty()) {
                                 Text(
-                                    "Schreib deinen Wunsch ...",
+                                    if (drawing == null) "Schreib deinen Wunsch ..."
+                                    else "Text ergänzen (optional) …",
                                     fontFamily = FontFamily.Serif,
                                     color = Ink.BrassDark.copy(alpha = .85f),
                                     fontSize = 16.sp
@@ -534,14 +548,24 @@ private fun PaperComposer(
                         }
                     }
                 )
-                Spacer(Modifier.width(8.dp))
+                Spacer(Modifier.width(5.dp))
+                Box(
+                    Modifier.size(44.dp).clip(CircleShape)
+                        .background(if (drawing != null) Ink.BrassDark else Ink.PaperEdge)
+                        .clickable(enabled = enabled, onClick = onEditDrawing)
+                        .semantics { contentDescription = "Skizze auf dem Papier zeichnen oder bearbeiten" },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text("✎", color = Ink.InkBlack, fontSize = 25.sp)
+                }
+                Spacer(Modifier.width(5.dp))
                 Box(
                     Modifier.size(48.dp).clip(CircleShape)
                         .background(
-                            if (enabled && NoteRules.canSubmit(draft)) Ink.Brass
+                            if (enabled && NoteRules.canSubmit(draft, drawing)) Ink.Brass
                             else Color(0xFFCCBA98)
                         )
-                        .clickable(enabled = enabled && NoteRules.canSubmit(draft), onClick = onFold)
+                        .clickable(enabled = enabled && NoteRules.canSubmit(draft, drawing), onClick = onFold)
                         .semantics { contentDescription = "Zettel dreimal falten" },
                     contentAlignment = Alignment.Center
                 ) {
@@ -551,7 +575,8 @@ private fun PaperComposer(
         }
         if (!compact) {
             Text(
-                "Dreimal falten, dann in deinen Wunscheimer ziehen.",
+                if (drawing == null) "Dreimal falten, dann in deinen Wunscheimer ziehen."
+                else "✎ Skizze auf dem Papier · Dreimal falten und einwerfen.",
                 fontSize = 11.sp,
                 color = Ink.Muted,
                 modifier = Modifier.padding(start = 9.dp, top = 7.dp)
@@ -563,6 +588,7 @@ private fun PaperComposer(
 @Composable
 private fun PaperDropTray(
     message: String,
+    drawing: String?,
     progress: Float,
     ready: Boolean,
     dragOffset: Offset,
@@ -628,7 +654,7 @@ private fun PaperDropTray(
                 ) {
                     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         if (progress < 1f) {
-                            Text(
+                            if (message.isNotBlank()) Text(
                                 message,
                                 fontSize = 12.sp,
                                 maxLines = 2,
@@ -636,7 +662,7 @@ private fun PaperDropTray(
                                 fontFamily = FontFamily.Serif,
                                 color = Ink.InkBlack,
                                 modifier = Modifier.padding(12.dp)
-                            )
+                            ) else SketchPreview(drawing, Modifier.fillMaxSize().padding(12.dp))
                         } else {
                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                 Text("✉", fontSize = 26.sp, color = Ink.BrassDark)

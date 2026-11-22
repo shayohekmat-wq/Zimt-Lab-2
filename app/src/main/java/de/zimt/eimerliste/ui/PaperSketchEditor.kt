@@ -3,6 +3,7 @@ package de.zimt.eimerliste.ui
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
+import android.animation.ValueAnimator
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.background
@@ -18,8 +19,15 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.TransformOrigin
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Send
+import androidx.compose.material.icons.filled.Undo
+import androidx.compose.material.icons.filled.Redo
+import androidx.compose.material.icons.filled.TextFields
+import androidx.compose.material3.Icon
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.Modifier
@@ -147,14 +155,14 @@ fun PaperSketchEditor(
     var widthDp by remember { mutableFloatStateOf(3f) }
     var status by remember { mutableStateOf<String?>(null) }
     val inkLabel = if (widthDp < 6f) "Feiner Stift" else "Weicher Pinsel"
-    val paperZoom = remember { Animatable(0.12f) }
+    val paperZoom = remember { Animatable(0f) }
     val scope = rememberCoroutineScope()
     val haptics = LocalHapticFeedback.current
     var leaving by remember { mutableStateOf(false) }
 
     // The enlarged sheet emerges from the small paper composer.
     LaunchedEffect(Unit) {
-        paperZoom.animateTo(1f, tween(390, easing = FastOutSlowInEasing))
+        paperZoom.animateTo(1f, tween(460, easing = FastOutSlowInEasing))
         haptics.performHapticFeedback(HapticFeedbackType.SegmentTick)
     }
 
@@ -162,7 +170,7 @@ fun PaperSketchEditor(
         if (leaving) return
         leaving = true
         scope.launch {
-            paperZoom.animateTo(0.12f, tween(275, easing = FastOutSlowInEasing))
+            paperZoom.animateTo(0f, tween(330, easing = FastOutSlowInEasing))
             haptics.performHapticFeedback(HapticFeedbackType.GestureEnd)
             onFinished()
         }
@@ -175,14 +183,7 @@ fun PaperSketchEditor(
     ) {
         Column(
             Modifier.fillMaxWidth(.95f).fillMaxHeight(.88f)
-                .graphicsLayer {
-                    scaleX = 0.40f + 0.60f * paperZoom.value
-                    scaleY = 0.14f + 0.86f * paperZoom.value
-                    rotationX = 16f * (1f - paperZoom.value)
-                    alpha = 0.45f + 0.55f * paperZoom.value
-                    transformOrigin = TransformOrigin(0.5f, 0.96f)
-                    cameraDistance = 20f * density
-                }
+                .graphicsLayer { alpha = 1f }
                 .background(Ink.Walnut, RoundedCornerShape(18.dp))
                 .padding(14.dp)
         ) {
@@ -196,7 +197,10 @@ fun PaperSketchEditor(
                 color = Ink.Muted, fontSize = 12.sp,
                 modifier = Modifier.padding(bottom = 8.dp)
             )
-            PaperSheet(Modifier.fillMaxWidth().weight(1f)) {
+            PaperSheet(Modifier.fillMaxWidth().weight(1f).graphicsLayer {
+                transformOrigin = TransformOrigin(0.5f, 0f)
+                scaleY = if (ValueAnimator.areAnimatorsEnabled()) 0.02f + 0.98f * paperZoom.value else 1f
+            }) {
                 // Text and ink are parts of the SAME sheet, not separate modes.
                 // Draw over the entire sheet including its visible edges; no hidden 16dp margins.
                 if (text.isNotBlank()) {
@@ -210,7 +214,7 @@ fun PaperSketchEditor(
                         overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
                         modifier = Modifier.align(Alignment.TopStart)
                             .fillMaxWidth()
-                            .padding(start = 14.dp, end = 14.dp, top = 12.dp)
+                            .padding(start = 17.dp, end = 12.dp, top = 14.dp)
                     )
                 }
                 SketchCanvas(
@@ -230,7 +234,8 @@ fun PaperSketchEditor(
                         }
                     },
                     onActive = { active = it },
-                    modifier = Modifier.fillMaxSize()
+                    modifier = Modifier.fillMaxSize().padding(horizontal = 12.dp, vertical = 12.dp)
+                        .clip(RoundedCornerShape(2.dp))
                 )
             }
             Spacer(Modifier.height(7.dp))
@@ -261,7 +266,7 @@ fun PaperSketchEditor(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                TextButton(
+                IconButton(
                     onClick = {
                         if (strokes.isNotEmpty()) {
                             redo = redo + strokes.last()
@@ -269,8 +274,8 @@ fun PaperSketchEditor(
                         }
                     },
                     enabled = strokes.isNotEmpty()
-                ) { Text("↶ Zurück", color = Ink.Paper) }
-                TextButton(
+                ) { Icon(Icons.Default.Undo, contentDescription = "Rückgängig", tint = Ink.Paper) }
+                IconButton(
                     onClick = {
                         if (redo.isNotEmpty()) {
                             workingPayload = PaperDrawingCodec.encode(strokes + redo.last())
@@ -278,7 +283,7 @@ fun PaperSketchEditor(
                         }
                     },
                     enabled = redo.isNotEmpty()
-                ) { Text("↷ Vor", color = Ink.Paper) }
+                ) { Icon(Icons.Default.Redo, contentDescription = "Wiederholen", tint = Ink.Paper) }
             }
             if (status != null) {
                 Text(status.orEmpty(), fontSize = 12.sp, color = Ink.Brass)
@@ -287,14 +292,14 @@ fun PaperSketchEditor(
                 Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                TextButton(
+                IconButton(
                     onClick = { leaveAndKeepSketch { onTextEdit(workingPayload) } },
                     enabled = !leaving,
                     modifier = Modifier.semantics {
                         contentDescription = "Zur Textbearbeitung wechseln und die Skizze behalten"
                     }
                 ) {
-                    Text("▤  Text bearbeiten", color = Ink.Paper, fontSize = 14.sp)
+                    Icon(Icons.Default.TextFields, contentDescription = "Text bearbeiten", tint = Ink.Paper)
                 }
                 Spacer(Modifier.width(4.dp))
                 Button(
@@ -308,7 +313,7 @@ fun PaperSketchEditor(
                     },
                     enabled = !leaving,
                     colors = ButtonDefaults.buttonColors(containerColor = Ink.Brass, contentColor = Ink.InkBlack)
-                ) { Text("Übernehmen") }
+                ) { Icon(Icons.AutoMirrored.Filled.Send, contentDescription = "Skizze übernehmen", tint = Ink.InkBlack) }
             }
         }
     }

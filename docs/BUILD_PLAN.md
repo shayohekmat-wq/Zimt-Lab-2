@@ -206,3 +206,27 @@ Bestehende Paketkennung `de.zimt.eimerliste` und Room v1 unverändert; Release `
 - Android Developers: Compose graphicsLayer und Animations-Quick-Guide (Transformationen und Animationszustände).
 - Android Developers: DrawScope / Canvas für polygonale Faltungen.
 - Android Developers: HapticFeedbackType, u.a. Confirm, Reject, GestureThresholdActivate.
+
+
+---
+
+# Zyklus 22.11.2026 17:00 · 0.2.2 Qualitäts-Gate: Faltphasen & Updatekanal
+
+## Ist-Zustand
+- Letzter verifizierter GitHub-Stand vor diesem Zyklus: 0.2.2, versionCode 5; Debug-Paket besitzt jetzt `applicationIdSuffix = ".debug"` und kann unabhängig von der Original-App installiert werden.
+- GitHub-CI prüft Debug, Unit-Tests und unsigned Release; ein grüner CI-Lauf allein beweist **keine** Signaturgleichheit mit 0.1.0.
+- Private Original-Signierdateien liegen außerhalb des öffentlichen Repositories; keine Schlüssel oder Passwörter committen.
+
+## P0 – Abnahme und implementierter Test
+- Faltsequenz als drei monotone, auf 0..1 begrenzte Phasen über 301 Zeitpunkte prüfen, damit weder negative Faltwinkel noch rückwärts springende Teilfaltungen entstehen.
+- Ausreißer vor 0 und nach 3 müssen exakt die Start- bzw. Endpose ergeben.
+- Neue Unit-Tests in `FoldPoseTest.kt` sind ein Schutz gegen spätere Änderungen an der Papieranimation; keine Laufzeit- oder Datenbankänderung.
+
+## P1 – Nächste nutzerwirksame Verbesserung
+- Text und Skizze gleichzeitig in der Papier-Vorschau anzeigen; aktuelle exklusive `if/else if`-Darstellung priorisiert Text und blendet die Zeichnung aus, sobald Text vorhanden ist.
+- Für kombinierte Notizen getrennte Ebenen und stabile Textpositionen einführen, ohne das Payload-Format oder Room v1 zu ändern. Test auf alle drei Inhaltstypen.
+
+## Release- und Daten-Gates
+- Debug darf parallel installierbar sein (`de.zimt.eimerliste.debug`), Release bleibt `de.zimt.eimerliste`.
+- Nur ein signiertes APK mit Fingerprint des originalen 0.1.0-Zertifikats, höherem versionCode und geprüfter Paketkennung ist als Update freizugeben.
+- Vorhandene Eimer/Zettel/Skizzen bleiben erhalten; Realgerät-Update-/Restore-Test ist offen. Kein neuer Versionssprung nur für zusätzliche Tests.

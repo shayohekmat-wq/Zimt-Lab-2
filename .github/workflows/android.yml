@@ -50,7 +50,7 @@ jobs:
         if: success()
         uses: actions/upload-artifact@v4
         with:
-          name: eimerliste-v0.1-UNSIGNED-for-private-signing
+          name: eimerliste-UNSIGNED-release-for-private-signing
           path: app/build/outputs/apk/release/*unsigned.apk
           if-no-files-found: error
           retention-days: 14

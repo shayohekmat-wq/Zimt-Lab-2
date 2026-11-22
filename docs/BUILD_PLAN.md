@@ -1,3 +1,12 @@
+## 23. November · Zeichenpapier UX-Hotfix (priorisiert)
+1. P0: Keine Dialog-Pop-Skalierung: Blatt von oben entfalten; Controls erst nach Papierbewegung. Systemweit reduzierte Animationen respektieren.
+2. P0: Zeichenebene mit Sicherheitsabstand innerhalb des sichtbaren Papierbereichs; gespeicherte Ansicht mit identischen Koordinaten für Text und Skizze.
+3. P1: Rückgängig/Wiederholen als TalkBack-beschriftete Icons, Textwechsel mit Textsymbol, Bestätigen als Senden-Symbol.
+4. P1: Aufklapp-/Zuklapp-Zustände, Rotation, IME/Insets und sehr lange Texte auf echten Geräten prüfen; Pixelvergleich von Editier- und Leseansicht.
+5. P1: Bestehende Room-Daten und updatefähige Signatur beibehalten; APK erst nach erfolgreichem CI, Fingerprint- und Versionsprüfung veröffentlichen.
+
+**Provenienz:** Sämtliche UI-Elemente sind Compose-gezeichnet; Material Icons aus der AndroidX-Compose-Abhängigkeit. Keine fremden Bild- oder Audioassets.
+
 # Eimer-Liste · optimierter Build-Plan
 
 **Stand:** 22. November 2026 · **Projekt:** Zimt-Lab-2 · **Zielplattform:** Android · **später:** ZIMT-Modul.

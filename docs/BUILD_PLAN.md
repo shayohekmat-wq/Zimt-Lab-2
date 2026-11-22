@@ -230,3 +230,23 @@ Bestehende Paketkennung `de.zimt.eimerliste` und Room v1 unverändert; Release `
 - Debug darf parallel installierbar sein (`de.zimt.eimerliste.debug`), Release bleibt `de.zimt.eimerliste`.
 - Nur ein signiertes APK mit Fingerprint des originalen 0.1.0-Zertifikats, höherem versionCode und geprüfter Paketkennung ist als Update freizugeben.
 - Vorhandene Eimer/Zettel/Skizzen bleiben erhalten; Realgerät-Update-/Restore-Test ist offen. Kein neuer Versionssprung nur für zusätzliche Tests.
+
+
+---
+
+# Zyklus 22.11.2026 20:04 · Eimer-Erstellung bei Rotation stabil halten
+
+## Befund
+Im Dialog `CreateBucketDialog` wird der Eimername mit `rememberSaveable` gehalten, die Materialwahl aber nur mit `remember`. Dreht man das Handy während der Erstellung, bleibt der Name erhalten, die Materialwahl springt auf Zink zurück. Das ist ein stiller, frustrierender Verlust einer bewussten Nutzerauswahl.
+
+## P0 · Risikoarmer Fix
+- Materialwahl ebenfalls mit `rememberSaveable` speichern. `BucketMaterial` ist ein Enum; die bestehende UI und Materialliste bleiben unverändert.
+- Keine Änderung an `applicationId`, Datenbank, gespeicherten Zetteln oder der charmingX4-Gestaltung.
+
+## P1 · Abnahme
+- Eimer erstellen, z. B. Messing auswählen, Namen eingeben, Gerät drehen: Name und Messing müssen erhalten bleiben.
+- Dialog abbrechen und neu öffnen: Default Zink, kein ungewolltes Übernehmen einer alten Auswahl.
+- CI: Debug-Compile, Unit-Tests und unsigned Release-Compile. Realgerät-Rotation bleibt bis zum Gerätetest offen.
+
+## Release-Gate
+Dies ist ein Quellcode-Fix ohne eigenen Versionssprung. Eine neue updatefähige APK erst nach grünem CI und Signatur-/Paket-/Versionsvergleich mit 0.1.0 freigeben; vorhandene 0.2.2 APK nicht als neuen Build ausgeben.

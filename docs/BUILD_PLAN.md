@@ -174,3 +174,35 @@ Main HEAD vor dem Zyklus: 86c58bb (Fehlwurf-Meldung); App weiterhin 0.2.0 / vers
 
 ## Release-Gate
 Kein Versionssprung und keine neue Update-APK allein wegen eines Code-Commits. Release erst nach nachgewiesenem CI-Erfolg, Vergleich des Signaturzertifikats mit 0.1.0 und Test auf erhaltene Bestandsdaten. Debug- und unsigned-APK nicht als Update verteilen.
+
+
+---
+
+# Motion-Update · 0.2.2 – Papier, Eimer & Haptik (22.11.2026)
+
+**Auslöser:** Nutzerfeedback nach 0.2.1: Übergang Text↔Skizze soll wie dasselbe physische Blatt wirken; bisherige „Faltung“ skaliert den gesamten Zettel und sieht nicht wie Papierfaltung aus. Eimer fühlen sich beim Einwerfen und Schütteln zu statisch an.
+
+## Recherche und Motion-Entscheidung
+Jetpack Compose unterstützt schnelle transformierte Layer via `graphicsLayer`; mit `Canvas`/Pfaden lassen sich gefaltete Flächen, Falzkanten und Schattierung selbst zeichnen. Statt Bildschirmfotos und Fremd-Animationsassets verwendet 0.2.2 **eine eigene, prozedurale dreistufige 2,5D-Papierfaltung**. Das ist keine physikalisch korrekte Stoff-/Papier-Simulation, aber eine klar unterscheidbare Flächenfaltung mit sichtbaren Knicken, Tiefenlicht und anschließend greifbarem Paket.
+
+## P0 – Interaktionsregeln
+1. Textfeld → Skizzeneditor: Papier wächst aus seiner kleinen Ausgangsform, schwenkt leicht auf und legt sich ruhig hin. Beim Wechsel zurück läuft dieselbe Skalierung rückwärts, **erst danach** wird die Texteingabe fokussiert. Keine Zeichnung wird beim Übergang gelöscht.
+2. Zettel falten: **genau drei Schritte** (rechte Hälfte umlegen, untere Hälfte nach oben klappen, Ecke einschlagen) als getrennte Projektion/Schattierung, nicht bloß Gesamtskalierung und Rotation.
+3. Eimer anvisieren: eindeutiger goldener Fokuszustand, kurzer Haptikimpuls **nur beim Wechsel** des Ziels. Kein ständiges Vibrieren beim Drag.
+4. Erfolgreicher Einwurf: erst Datenbank-Commit bestätigen, dann zartes Eimerwippen (kurzer Impuls mit Rückfederung), diskrete Systemhaptik. Ein fehlgeschlagener Write darf keine Erfolgsgeste zeigen.
+5. Eimer halten & schütteln: genau der gehaltene Eimer ist deutlich markiert; er rüttelt leicht, bei Treffer wird eine Papier-„Auswurf“-Bewegung abgespielt und erst danach der Zufallszettel angezeigt. Sensor bleibt während eines echten Holds aktiv, kein Polling im Hintergrund.
+
+## P1 – Fehlerfälle und Accessibility
+- Bei ausgeschalteten Systemanimationen möglichst direkte Zustandswechsel; keine Zeitverzögerung, wenn Bewegungen deaktiviert sind.
+- Verletze nicht den Raum des Drag-Ziels: Render-Animation darf die tatsächlichen Drop-Hitboxes nicht verschieben.
+- Bei fehlendem Eimer, leerem Eimer, abgebrochenem Drag, DB-Fehler oder Prozess-Neustart gehen keine Entwürfe verloren.
+- Haptik über Android-System-API, die Geräteeinstellungen respektiert; keine Vibrations-Berechtigung oder Dauer-Vibration.
+- Zeichnungs-/Textmode-Kontrollen müssen beschriftet sein und mit TalkBack erreichbar bleiben.
+
+## Release-Gates
+Bestehende Paketkennung `de.zimt.eimerliste` und Room v1 unverändert; Release `0.2.2` / monoton steigender `versionCode`; grüner Debug- und Release-Build sowie Unit-Tests. Erst nach Prüfung der ursprünglichen Release-Signatur und der APK-Daten veröffentlichen. Echten UI-/Haptiktest am Nutzertelefon nicht behaupten.
+
+## Forschung
+- Android Developers: Compose graphicsLayer und Animations-Quick-Guide (Transformationen und Animationszustände).
+- Android Developers: DrawScope / Canvas für polygonale Faltungen.
+- Android Developers: HapticFeedbackType, u.a. Confirm, Reject, GestureThresholdActivate.

@@ -13,6 +13,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -128,9 +129,9 @@ fun PaperSketchEditor(
     onDismiss: () -> Unit,
     onApply: (String?) -> Unit
 ) {
-    var strokes by remember(initialPayload) {
-        mutableStateOf(PaperDrawingCodec.decode(initialPayload))
-    }
+    // Persist the in-progress sketch across activity recreation, e.g. rotation.
+    var workingPayload by rememberSaveable(initialPayload) { mutableStateOf(initialPayload) }
+    val strokes = remember(workingPayload) { PaperDrawingCodec.decode(workingPayload) }
     var redo by remember(initialPayload) { mutableStateOf(emptyList<InkStroke>()) }
     var active by remember { mutableStateOf<InkStroke?>(null) }
     var color by remember { mutableIntStateOf(sketchColors[0]) }
@@ -162,8 +163,9 @@ fun PaperSketchEditor(
                     widthDp = widthDp,
                     onStroke = { stroke ->
                         val next = strokes + stroke
-                        if (PaperDrawingCodec.encode(next) != null) {
-                            strokes = next
+                        val encoded = PaperDrawingCodec.encode(next)
+                        if (encoded != null) {
+                            workingPayload = encoded
                             redo = emptyList()
                             status = null
                         } else {
@@ -206,7 +208,7 @@ fun PaperSketchEditor(
                     onClick = {
                         if (strokes.isNotEmpty()) {
                             redo = redo + strokes.last()
-                            strokes = strokes.dropLast(1)
+                            workingPayload = PaperDrawingCodec.encode(strokes.dropLast(1))
                         }
                     },
                     enabled = strokes.isNotEmpty()
@@ -214,21 +216,12 @@ fun PaperSketchEditor(
                 TextButton(
                     onClick = {
                         if (redo.isNotEmpty()) {
-                            strokes = strokes + redo.last()
+                            workingPayload = PaperDrawingCodec.encode(strokes + redo.last())
                             redo = redo.dropLast(1)
                         }
                     },
                     enabled = redo.isNotEmpty()
                 ) { Text("↷ Vor", color = Ink.Paper) }
-                TextButton(
-                    onClick = {
-                        if (strokes.isNotEmpty()) {
-                            redo = redo + strokes.last()
-                            strokes = strokes.dropLast(1)
-                        }
-                    },
-                    enabled = strokes.isNotEmpty()
-                ) { Text("Radieren ↶", color = Ink.Muted, fontSize = 11.sp) }
             }
             if (status != null) {
                 Text(status.orEmpty(), fontSize = 12.sp, color = Ink.Brass)

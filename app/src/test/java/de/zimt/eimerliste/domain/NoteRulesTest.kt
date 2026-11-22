@@ -30,7 +30,7 @@ class NoteRulesTest {
     }
 
     @Test fun embeddedParagraphsRemainPartOfTheNote() {
-        val text = "Erster Absatz\\nZweiter Absatz"
+        val text = "Erster Absatz\nZweiter Absatz"
         assertTrue(NoteRules.canSubmit(text))
         assertEquals(text, NoteRules.normalize(text))
     }

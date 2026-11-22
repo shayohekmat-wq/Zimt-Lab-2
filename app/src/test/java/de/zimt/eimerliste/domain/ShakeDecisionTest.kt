@@ -22,8 +22,8 @@ class ShakeDecisionTest {
         assertFalse(shake.observePeak(15f, 5000, 10f))
         assertFalse(shake.observePeak(15f, 4000, 10f))
         assertFalse(shake.observePeak(15f, 5700, 10f))
-        assertFalse(shake.observePeak(15f, 6000, 10f))
-        assertTrue(shake.observePeak(15f, 6300, 10f))
+        assertTrue(shake.observePeak(15f, 6000, 10f))
+        assertFalse(shake.observePeak(15f, 6300, 10f))
     }
 
     @Test fun invalidSensorSamplesNeverTrigger() {

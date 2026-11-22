@@ -930,26 +930,34 @@ private fun BucketContents(
 @Composable
 private fun DialogPaper(note:NoteEntity,onDismiss:()->Unit) {
     AlertDialog(
-        onDismissRequest=onDismiss,
-        title={Text("Dein Wunsch",fontFamily=FontFamily.Serif,color=Ink.InkBlack)},
-        text={
-            PaperSheet(Modifier.fillMaxWidth().heightIn(min=180.dp)) {
-                Column(Modifier.fillMaxWidth().padding(20.dp)) {
-                    if (note.text.isNotBlank()) {
-                        Text(
-                            note.text,
-                            color=Ink.InkBlack,fontFamily=FontFamily.Serif,
-                            fontSize=19.sp,lineHeight=26.sp
-                        )
-                    }
-                    if (note.drawingPayload != null) {
-                        Spacer(Modifier.height(9.dp))
-                        SketchPreview(note.drawingPayload, Modifier.fillMaxWidth().height(170.dp))
-                    }
+        onDismissRequest = onDismiss,
+        title = { Text("Dein Wunsch", fontFamily = FontFamily.Serif, color = Ink.InkBlack) },
+        text = {
+            // Reuse the same normalized ink plane as the sketch editor:
+            // the text and drawing remain layered, not stacked in separate boxes.
+            PaperSheet(Modifier.fillMaxWidth().height(360.dp)) {
+                if (note.text.isNotBlank()) {
+                    Text(
+                        note.text,
+                        color = Ink.InkBlack,
+                        fontFamily = FontFamily.Serif,
+                        fontSize = 17.sp,
+                        lineHeight = 23.sp,
+                        modifier = Modifier.fillMaxWidth()
+                            .padding(start = 17.dp, end = 12.dp, top = 14.dp)
+                    )
+                }
+                if (note.drawingPayload != null) {
+                    SketchPreview(
+                        note.drawingPayload,
+                        Modifier.fillMaxSize().padding(horizontal = 12.dp, vertical = 12.dp)
+                    )
                 }
             }
         },
-        confirmButton={TextButton(onClick=onDismiss){Text("Wieder falten",color=Ink.BrassDark)}},
-        containerColor=Ink.Paper
+        confirmButton = {
+            TextButton(onClick = onDismiss) { Text("Wieder falten", color = Ink.BrassDark) }
+        },
+        containerColor = Ink.Paper
     )
 }

@@ -102,3 +102,26 @@ Ein einziger Papierzettel trägt Text, Skizze oder beides. Er kann jederzeit vor
 
 ## Nächster 0.3-Zyklus: Design/Erlebnis/Robustheit
 Priorisierung nach 0.2-Build und Fehlerprotokoll: gefaltete Notizen im Eimer differenzieren, Zettel-Entfalten, sicherer Undo für Aktionen, Accessibility- und Material-Politur, optimierte Renderpfade, langfristiger Export/Import und echtes Wiederherstellungsszenario. Jede Änderung mit User-Story, Fehleranalyse, Test und Update-Prüfung.
+
+
+---
+
+# Zyklus 22.11.2026 08:00 · 0.3 Qualitätsplan
+
+## P0 · Entwürfe bei Rotation und Unterbrechung bewahren
+User-Story: Beim Drehen des Handys oder App-Wechsel bleiben Text, Skizze und Undo-Verlauf erhalten.
+Umsetzung: Vorhandene saveable-state-Pfade auditieren; Entwürfe vor destruktiver Navigation schützen; keine Room-Schema-Änderung.
+Abnahme: Text-only, Sketch-only und kombinierte Notizen überstehen Rotation und Hintergrundwechsel. Abbrechen verändert gespeicherte Notizen nicht.
+
+## P1 · Fehlwurf verständlich und barrierefrei behandeln
+User-Story: Nach einem verfehlten Eimer kann derselbe Zettel erneut geworfen werden.
+Umsetzung: Zugängliche Statusmeldung, Fokus- und Entwurfserhalt bei Fehler; Inhalt erst nach erfolgreichem Datenbank-Write leeren.
+Abnahme: Fehlwurf und simulierter Write-Fehler erhalten Zeichnung/Text; Erfolg legt genau einen Zettel ab.
+
+## P2 · charmingX4, ohne Material- oder Performance-Regressionsrisiko
+User-Story: Eimer wirken handgemacht und bleiben bei großer Schrift gut bedienbar.
+Umsetzung: Nur bestehende prozedurale Grafiken; 48-dp-Touchflächen, Kontrast und Label bei 200 % Schrift prüfen; reduzierte Animation respektieren.
+Abnahme: Kein Text-Clipping, kein dauerhafter Render-Loop im Ruhezustand, keine unlizenzierte Grafik.
+
+## Release-Gate
+Aktueller Quellstand: 0.2.0, versionCode 3. Keine erneute Implementierung von Skizzen/Schütteln. Vor neuer Versionsnummer: Debug-Build, Unit-Tests, Release-Build, Signatur-Fingerprint gegen 0.1.0 und verlustfreier Update-Test. Ohne Nachweis keine Update-APK. Paketkennung de.zimt.eimerliste und Room-Schema v1 unverändert. Realgerätetest ausdrücklich offen.

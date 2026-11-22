@@ -47,7 +47,11 @@ private fun tornPath(w: Float, h: Float): Path = Path().apply {
 fun PaperSheet(modifier: Modifier = Modifier, content: @Composable BoxScope.() -> Unit) {
     Box(modifier = modifier.drawWithContent {
         // Same torn outline for ink, text and background; no side inset is needed.
-        clipPath(tornPath(size.width, size.height)) { drawContent() }
+        val canvas = drawContext.canvas
+        canvas.save()
+        canvas.clipPath(tornPath(size.width, size.height))
+        drawContent()
+        canvas.restore()
     }) {
         Canvas(Modifier.matchParentSize()) {
             val paper = tornPath(size.width, size.height)

@@ -289,9 +289,14 @@ fun EimerApp(vm: EimerViewModel = viewModel()) {
                                 hoveredBucket = hit
                                 deliver(hit)
                             } else {
-                                // Missed drops never consume a note.
+                                // Missed drops never consume a note; explain how to retry.
                                 hoveredBucket = null
                                 dragOffset = Offset.Zero
+                                scope.launch {
+                                    snackbar.showSnackbar(
+                                        "Keinen Eimer getroffen. Dein Zettel bleibt erhalten – ziehe ihn erneut oder tippe auf einen Eimer."
+                                    )
+                                }
                             }
                         },
                         onDragCancel = {

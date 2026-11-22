@@ -1,0 +1,19 @@
+# IDE / build
+.gradle/
+.idea/
+**/build/
+local.properties
+*.iml
+.DS_Store
+# Credentials: NEVER check in signing material
+*.jks
+*.keystore
+*.p12
+google-services.json
+.env
+.env.*
+# User-generated data / dumps
+*.db
+*.sqlite
+*.sqlite3
+*.zip

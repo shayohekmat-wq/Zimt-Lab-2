@@ -154,7 +154,6 @@ fun PaperSketchEditor(
     var color by remember { mutableIntStateOf(sketchColors[0]) }
     var widthDp by remember { mutableFloatStateOf(3f) }
     var status by remember { mutableStateOf<String?>(null) }
-    val inkLabel = if (widthDp < 6f) "Feiner Stift" else "Weicher Pinsel"
     val paperZoom = remember { Animatable(0f) }
     val scope = rememberCoroutineScope()
     val haptics = LocalHapticFeedback.current
@@ -234,11 +233,18 @@ fun PaperSketchEditor(
                         }
                     },
                     onActive = { active = it },
-                    modifier = Modifier.fillMaxSize().padding(horizontal = 12.dp, vertical = 12.dp)
-                        .clip(RoundedCornerShape(2.dp))
+                    modifier = Modifier.fillMaxSize()
                 )
             }
-            Spacer(Modifier.height(7.dp))
+            Row(Modifier.fillMaxWidth().padding(top = 3.dp), verticalAlignment = Alignment.CenterVertically) {
+                IconButton(
+                    onClick = { leaveAndKeepSketch { onTextEdit(workingPayload) } },
+                    enabled = !leaving,
+                    modifier = Modifier.background(Ink.BrassDark.copy(alpha = .28f), CircleShape)
+                        .semantics { contentDescription = "Zur Textbearbeitung wechseln und Skizze behalten" }
+                ) { Icon(Icons.Default.TextFields, contentDescription = null, tint = Ink.Brass) }
+            }
+            Spacer(Modifier.height(4.dp))
             Row(
                 Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
                 verticalAlignment = Alignment.CenterVertically,
@@ -257,8 +263,20 @@ fun PaperSketchEditor(
                             .clickable { color = paint }
                     )
                 }
-                TextButton(onClick = { widthDp = if (widthDp == 3f) 9f else 3f }) {
-                    Text(inkLabel, color = Ink.Brass, fontSize = 12.sp)
+                Spacer(Modifier.width(6.dp))
+                listOf(3f, 9f).forEach { brushWidth ->
+                    val selected = widthDp == brushWidth
+                    Box(
+                        modifier = Modifier.size(38.dp)
+                            .border(if (selected) 2.dp else 1.dp,
+                                if (selected) Ink.Brass else Ink.Muted, CircleShape)
+                            .semantics { contentDescription = if (brushWidth < 6f) "Feiner Stift" else "Weicher Pinsel" }
+                            .clickable { widthDp = brushWidth },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Box(Modifier.size(if (brushWidth < 6f) 5.dp else 15.dp)
+                            .background(Ink.Paper, CircleShape))
+                    }
                 }
             }
             Row(
@@ -292,15 +310,6 @@ fun PaperSketchEditor(
                 Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                IconButton(
-                    onClick = { leaveAndKeepSketch { onTextEdit(workingPayload) } },
-                    enabled = !leaving,
-                    modifier = Modifier.semantics {
-                        contentDescription = "Zur Textbearbeitung wechseln und die Skizze behalten"
-                    }
-                ) {
-                    Icon(Icons.Default.TextFields, contentDescription = "Text bearbeiten", tint = Ink.Paper)
-                }
                 Spacer(Modifier.width(4.dp))
                 Button(
                     onClick = {

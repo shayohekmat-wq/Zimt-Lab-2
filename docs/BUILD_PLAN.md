@@ -1,3 +1,8 @@
+## 23. November – Rückweg Zeichenpapier → Textfeld (P0)
+- Kein Kollaps an der oberen Papierkante. Beim Wechsel zur Texteingabe soll das Blatt auf ungefähr die **reale Höhe des unteren Textfelds** verkleinern und gleichzeitig **nach unten** an dessen Bildschirmposition wandern.
+- Breite beibehalten, statt zu einer winzigen Fläche zu schrumpfen. Werkzeuge sanft ausblenden, anschließend Textfeld mit vorhandenem Text/Skizze wieder zeigen; Fokus erst nach Transition.
+- Bildschirmhöhen, IME und reduzierte Animationen berücksichtigen. Kein Datenverlust, keine neue Datenbankversion. Regressionsprüfung auf realem Gerät.
+
 ## 23. November – Vollflächiges Zeichenpapier (P0)
 - P0: Zeichenkoordinaten für Editor und gespeicherte Vorschau auf **gesamte PaperSheet-Fläche** normalisieren; keine Insets auf der Zeichen-Canvas. Zacken und Seiten über denselben tatsächlichen Papierpfad maskieren, sodass Striche bis an die sichtbare Kante reichen, aber nie auf den Holzgrund auslaufen.
 - P0: PaperSheet clippt **alle Inhalte** mit dem vorhandenen tornPath, einschließlich Live-Strichen, Text und gespeicherter Ansicht. Keine destruktive Migration: bestehende normalisierte Skizzen weiterhin dekodieren.

@@ -42,3 +42,19 @@ Eine Integration in die bestehende ZIMT-Paketkennung erfordert ein einmaliges, g
 - Der signierte Installer `Eimer-Liste-v0.1.0.apk` ist der Beginn der Update-Kette; Debug-APKs dürfen **nicht** über diesen Installer installiert werden.
 - Installation der nächsten Version: gleiche `applicationId` und derselbe Keystore, höherer `versionCode`.
 - CI stellt bewusst **keinen** Signaturschlüssel bereit und veröffentlicht kein signiertes APK; dies verhindert Schlüsselabfluss über öffentliche Artefakte.
+
+
+## Automatische signierte Drei-Stunden-Builds (ab 0.2)
+
+Die CI erzeugt auf jedem Commit eine unsignierte Release-APK und die Debug-Tests. Wenn (und **nur wenn**) folgende vier verschlüsselten GitHub-Actions-Repository-Secrets einmalig vom Repository-Eigentümer hinterlegt werden, signiert CI zusätzlich eine herunterladbare Update-APK:
+
+1. `EIMER_RELEASE_KEYSTORE_B64`: Base64-Kodierung der bestehenden `Eimer-Liste-Update-Schluessel.p12` **ohne Zeilenumbrüche**.
+2. `EIMER_RELEASE_STORE_PASSWORD`: Passwort dieser bestehenden .p12.
+3. `EIMER_RELEASE_KEY_ALIAS`: Alias des enthaltenen PrivateKeyEntry.
+4. `EIMER_RELEASE_KEY_PASSWORD`: Schlüsselpasswort (kann gleich dem Store-Passwort sein).
+
+**Keines dieser Geheimnisse in Chatnachrichten, Commits, Issues, Actions-Logs oder öffentlichen Dateien posten.** Sie gehören ausschließlich in GitHub → Repository → Settings → Secrets and variables → Actions → New repository secret. API-Zugriff auf diese Secret-Einstellung ist in diesem Projektanschluss momentan nicht verfügbar; eine Einrichtung durch den Eigentümer ist nötig.
+
+GitHub Actions verifiziert das resultierende APK anhand des festen Zertifikats-Fingerprints `40e6b73383a29f9ca792595b369329e2ab8f9165f49eec69b4eb57a8ffe26fe1` und der APK-v2/v3-Signaturen. Bei falschem Schlüssel schlägt der Build fehl, **keine** scheinbar updatefähige APK wird veröffentlicht.
+
+Die ChatGPT-Automation läuft alle drei Stunden und überwacht den neuen Build. Sie liefert eine neue APK nur dann als direkt aktualisierbare Datei aus, wenn Build, Signaturprüfung und verfügbarer Download nachweisbar sind. Ohne Secrets kann sie weiterhin dokumentierte Build-Pläne, Quellcode und unsignierte Testpakete erzeugen, aber nicht zuverlässig einen updatefähigen Release über verschiedene Ausführungsumgebungen hinweg signieren.

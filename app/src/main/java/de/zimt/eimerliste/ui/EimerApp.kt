@@ -944,13 +944,13 @@ private fun DialogPaper(note:NoteEntity,onDismiss:()->Unit) {
                         fontSize = 17.sp,
                         lineHeight = 23.sp,
                         modifier = Modifier.fillMaxWidth()
-                            .padding(start = 17.dp, end = 12.dp, top = 14.dp)
+                            .padding(start = 17.dp, end = 12.dp, top = 21.dp)
                     )
                 }
                 if (note.drawingPayload != null) {
                     SketchPreview(
                         note.drawingPayload,
-                        Modifier.fillMaxSize().padding(horizontal = 12.dp, vertical = 12.dp)
+                        Modifier.fillMaxSize()
                     )
                 }
             }

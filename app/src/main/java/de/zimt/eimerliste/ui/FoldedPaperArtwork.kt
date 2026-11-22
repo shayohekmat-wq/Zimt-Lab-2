@@ -39,10 +39,11 @@ data class FoldPose(val right: Float, val bottom: Float, val corner: Float) {
     }
 }
 
-private fun polygon(vararg points: Offset): Path = Path().apply {
-    points.forEachIndexed { i, p ->
-        if (i == 0) moveTo(p.x, p.y) else lineTo(p.x, p.y)
-    }
+private fun polygon(a: Offset, b: Offset, c: Offset, d: Offset? = null): Path = Path().apply {
+    moveTo(a.x, a.y)
+    lineTo(b.x, b.y)
+    lineTo(c.x, c.y)
+    if (d != null) lineTo(d.x, d.y)
     close()
 }
 

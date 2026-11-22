@@ -10,6 +10,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -44,7 +45,10 @@ private fun tornPath(w: Float, h: Float): Path = Path().apply {
 
 @Composable
 fun PaperSheet(modifier: Modifier = Modifier, content: @Composable BoxScope.() -> Unit) {
-    Box(modifier = modifier) {
+    Box(modifier = modifier.drawWithContent {
+        // Same torn outline for ink, text and background; no side inset is needed.
+        clipPath(tornPath(size.width, size.height)) { drawContent() }
+    }) {
         Canvas(Modifier.matchParentSize()) {
             val paper = tornPath(size.width, size.height)
             drawPath(paper, color = Color(0x44000000))

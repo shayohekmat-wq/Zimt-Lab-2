@@ -34,3 +34,11 @@ Solange diese Punkte fehlen, liefern CI-Builds lediglich **temporäre Test-APKs*
 
 ## ZIMT-Übernahme
 Eine Integration in die bestehende ZIMT-Paketkennung erfordert ein einmaliges, getestetes Export-/Importverfahren oder serverseitige Kontomigration. Android führt lokale Daten verschiedener App-IDs nicht automatisch zusammen.
+
+## 0.1 Release-Pipeline (erstes produktives APK)
+- CI baut eine **unsignierte Release-APK** und testet zusätzlich den Debug-Build.
+- Die App wird **außerhalb** der öffentlichen CI mit einem dauerhaften privaten Keystore signiert.
+- Der Keystore muss sicher beim Besitzer verbleiben. Jeder spätere Installer muss mit genau diesem Schlüssel signiert werden, sonst verweigert Android das Update.
+- Der signierte Installer `Eimer-Liste-v0.1.0.apk` ist der Beginn der Update-Kette; Debug-APKs dürfen **nicht** über diesen Installer installiert werden.
+- Installation der nächsten Version: gleiche `applicationId` und derselbe Keystore, höherer `versionCode`.
+- CI stellt bewusst **keinen** Signaturschlüssel bereit und veröffentlicht kein signiertes APK; dies verhindert Schlüsselabfluss über öffentliche Artefakte.

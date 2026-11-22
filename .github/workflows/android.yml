@@ -1,4 +1,4 @@
-name: Android CI (development only)
+name: Android 0.1 build and tests
 
 on:
   push:
@@ -9,7 +9,7 @@ permissions:
   contents: read
 
 jobs:
-  debug-build:
+  build:
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:
@@ -20,20 +20,42 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
-      - name: Android API 37 (runner SDK)
+      - name: Android SDK
         shell: bash
         run: |
           SDKMANAGER=$(find "$ANDROID_HOME/cmdline-tools" -type f -name sdkmanager | head -n 1)
           test -n "$SDKMANAGER"
           yes | "$SDKMANAGER" --licenses >/dev/null || true
           "$SDKMANAGER" "platforms;android-37.0" "build-tools;37.0.0"
-      - name: Gradle 9.6 (AGP 9.5)
+      - name: Gradle 9.6
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '9.6.0'
-      - name: Compile and test
-        run: gradle --no-daemon :app:assembleDebug :app:testDebugUnitTest
-      - name: Upload ephemeral debug build
+      - name: Compile app and unit tests
+        run: gradle --no-daemon :app:assembleDebug :app:testDebugUnitTest :app:assembleRelease
+      - name: Prepare offline signing tool
+        shell: bash
+        run: |
+          mkdir -p signing-tool
+          cp "$ANDROID_HOME/build-tools/37.0.0/lib/apksigner.jar" signing-tool/apksigner.jar
+          test -s signing-tool/apksigner.jar
+      - name: Upload unsigned release APK
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: eimerliste-v0.1-UNSIGNED-for-private-signing
+          path: app/build/outputs/apk/release/*unsigned.apk
+          if-no-files-found: error
+          retention-days: 14
+      - name: Upload offline signing tool
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: apksigner-for-private-release
+          path: signing-tool/apksigner.jar
+          if-no-files-found: error
+          retention-days: 14
+      - name: Upload temporary debug build
         if: success()
         uses: actions/upload-artifact@v4
         with:

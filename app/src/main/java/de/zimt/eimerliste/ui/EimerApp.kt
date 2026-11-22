@@ -1,6 +1,9 @@
 package de.zimt.eimerliste.ui
 
+import android.animation.ValueAnimator
 import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.*
@@ -27,6 +30,7 @@ import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.boundsInRoot
@@ -59,6 +63,7 @@ import de.zimt.eimerliste.data.NoteEntity
 import de.zimt.eimerliste.domain.BucketMaterial
 import de.zimt.eimerliste.domain.NoteRules
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.delay
 import kotlin.math.min
 import kotlin.math.sin
 
@@ -90,6 +95,8 @@ fun EimerApp(vm: EimerViewModel = viewModel()) {
         var paperBounds by remember { mutableStateOf<Rect?>(null) }
         val bucketBounds = remember { mutableStateMapOf<String, Rect>() }
         var hoveredBucket by remember { mutableStateOf<String?>(null) }
+        var ejectingBucketId by remember { mutableStateOf<String?>(null) }
+        val bucketImpactEvents = remember { mutableStateMapOf<String, Int>() }
 
         val scope = rememberCoroutineScope()
         val snackbar = remember { SnackbarHostState() }
@@ -111,8 +118,9 @@ fun EimerApp(vm: EimerViewModel = viewModel()) {
                 for (step in 1..3) {
                     fold.animateTo(
                         step.toFloat(),
-                        animationSpec = tween(durationMillis = 260, easing = FastOutSlowInEasing)
+                        animationSpec = tween(durationMillis = 290, easing = FastOutSlowInEasing)
                     )
+                    haptics.performHapticFeedback(HapticFeedbackType.SegmentTick)
                 }
                 paperReady = true
             }
@@ -135,7 +143,9 @@ fun EimerApp(vm: EimerViewModel = viewModel()) {
                 scope.launch {
                     try {
                         vm.addNote(targetId, textToSave, drawing)
-                        haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                        // A bucket reacts only to confirmed persistence, never an optimistic drop.
+                        bucketImpactEvents[targetId] = (bucketImpactEvents[targetId] ?: 0) + 1
+                        haptics.performHapticFeedback(HapticFeedbackType.Confirm)
                         draft = ""
                         drawing = null
                         pendingPaper = null
@@ -145,6 +155,7 @@ fun EimerApp(vm: EimerViewModel = viewModel()) {
                     } catch (_: Exception) {
                         dragOffset = Offset.Zero
                         hoveredBucket = null
+                        haptics.performHapticFeedback(HapticFeedbackType.Reject)
                         snackbar.showSnackbar("Nicht gespeichert. Dein gefalteter Zettel bleibt erhalten.")
                     } finally {
                         saving = false
@@ -160,13 +171,19 @@ fun EimerApp(vm: EimerViewModel = viewModel()) {
                     try {
                         val note = vm.randomNote(bucketId)
                         if (note == null) {
+                            haptics.performHapticFeedback(HapticFeedbackType.Reject)
                             snackbar.showSnackbar("Dieser Eimer ist noch leer.")
                         } else {
-                            haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                            ejectingBucketId = bucketId
+                            haptics.performHapticFeedback(HapticFeedbackType.GestureThresholdActivate)
+                            if (ValueAnimator.areAnimatorsEnabled()) delay(510L)
+                            ejectingBucketId = null
+                            haptics.performHapticFeedback(HapticFeedbackType.Confirm)
                             openBucket = null
                             openNote = note
                         }
                     } catch (_: Exception) {
+                        ejectingBucketId = null
                         snackbar.showSnackbar("Zufallszettel konnte nicht geöffnet werden.")
                     }
                 }
@@ -224,7 +241,11 @@ fun EimerApp(vm: EimerViewModel = viewModel()) {
                             BucketTile(
                                 bucket = bucket,
                                 count = countsByBucket[bucket.id] ?: 0,
-                                highlighted = hoveredBucket == bucket.id,
+                                highlighted = hoveredBucket == bucket.id ||
+                                    heldBucketId == bucket.id || ejectingBucketId == bucket.id,
+                                isHeld = heldBucketId == bucket.id,
+                                isEjecting = ejectingBucketId == bucket.id,
+                                impactToken = bucketImpactEvents[bucket.id] ?: 0,
                                 onBoundsChanged = { rect -> bucketBounds[bucket.id] = rect },
                                 onHold = {
                                     if (pendingPaper == null) {
@@ -284,9 +305,13 @@ fun EimerApp(vm: EimerViewModel = viewModel()) {
                         onDrag = { delta ->
                             dragOffset += delta
                             val pointer = pointerStart + dragOffset
-                            hoveredBucket = bucketBounds.entries.firstOrNull { (_, rect) ->
+                            val newlyHovered = bucketBounds.entries.firstOrNull { (_, rect) ->
                                 rect.contains(pointer)
                             }?.key
+                            if (newlyHovered != hoveredBucket && newlyHovered != null) {
+                                haptics.performHapticFeedback(HapticFeedbackType.GestureThresholdActivate)
+                            }
+                            hoveredBucket = newlyHovered
                         },
                         onDragEnd = {
                             val pointer = pointerStart + dragOffset
@@ -301,6 +326,7 @@ fun EimerApp(vm: EimerViewModel = viewModel()) {
                                 // Missed drops never consume a note; explain how to retry.
                                 hoveredBucket = null
                                 dragOffset = Offset.Zero
+                                haptics.performHapticFeedback(HapticFeedbackType.Reject)
                                 scope.launch {
                                     snackbar.showSnackbar(
                                         "Keinen Eimer getroffen. Dein Zettel bleibt erhalten – ziehe ihn erneut oder tippe auf einen Eimer."
@@ -684,37 +710,12 @@ private fun PaperDropTray(
                     },
                 contentAlignment = Alignment.Center
             ) {
-                val f1 = progress.coerceIn(0f, 1f)
-                val f2 = (progress - 1f).coerceIn(0f, 1f)
-                val f3 = (progress - 2f).coerceIn(0f, 1f)
-                PaperSheet(
-                    Modifier.fillMaxSize().graphicsLayer {
-                        scaleX = 1f - .29f * f1 - .25f * f2
-                        scaleY = 1f - .20f * f3
-                        rotationY = (sin((progress % 1f) * Math.PI).toFloat() * 18f)
-                        rotationZ = 2f * f1 - 4f * f2 + 8f * f3
-                        cameraDistance = 18f * density
-                    }
-                ) {
-                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        if (progress < 1f) {
-                            if (message.isNotBlank()) Text(
-                                message,
-                                fontSize = 12.sp,
-                                maxLines = 2,
-                                overflow = TextOverflow.Ellipsis,
-                                fontFamily = FontFamily.Serif,
-                                color = Ink.InkBlack,
-                                modifier = Modifier.padding(12.dp)
-                            ) else SketchPreview(drawing, Modifier.fillMaxSize().padding(12.dp))
-                        } else {
-                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                Text("✉", fontSize = 26.sp, color = Ink.BrassDark)
-                                if (ready) Text("↓ halten & ziehen", fontSize = 9.sp, color = Ink.InkBlack)
-                            }
-                        }
-                    }
-                }
+                FoldedPaperArtwork(
+                    progress = progress,
+                    message = message,
+                    drawing = drawing,
+                    modifier = Modifier.fillMaxSize()
+                )
             }
         }
         Text(

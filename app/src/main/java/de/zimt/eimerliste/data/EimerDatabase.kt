@@ -1,0 +1,94 @@
+package de.zimt.eimerliste.data
+
+import android.content.Context
+import androidx.room.Dao
+import androidx.room.Database
+import androidx.room.Entity
+import androidx.room.ForeignKey
+import androidx.room.Index
+import androidx.room.Insert
+import androidx.room.PrimaryKey
+import androidx.room.Query
+import androidx.room.Room
+import androidx.room.RoomDatabase
+import kotlinx.coroutines.flow.Flow
+
+/**
+ * V1 schema. Never introduce a destructive fallback. Published schema updates require
+ * explicit migrations and a tested upgrade path.
+ */
+@Entity(tableName = "buckets")
+data class BucketEntity(
+    @PrimaryKey val id: String,
+    val name: String,
+    val material: String,
+    val createdAt: Long,
+    val updatedAt: Long,
+    val ownerId: String = "local",
+    val deletedAt: Long? = null
+)
+
+@Entity(
+    tableName = "notes",
+    foreignKeys = [
+        ForeignKey(
+            entity = BucketEntity::class,
+            parentColumns = ["id"],
+            childColumns = ["bucketId"],
+            onDelete = ForeignKey.NO_ACTION
+        )
+    ],
+    indices = [Index("bucketId")]
+)
+data class NoteEntity(
+    @PrimaryKey val id: String,
+    val bucketId: String,
+    val text: String,
+    val authorId: String = "local",
+    val drawingPayloadVersion: Int? = null,
+    val drawingPayload: String? = null,
+    val createdAt: Long,
+    val updatedAt: Long,
+    val deletedAt: Long? = null
+)
+
+data class BucketCount(val bucketId: String, val noteCount: Int)
+
+@Dao
+interface EimerDao {
+    @Query("SELECT * FROM buckets WHERE deletedAt IS NULL ORDER BY createdAt ASC")
+    fun observeBuckets(): Flow<List<BucketEntity>>
+
+    @Query("SELECT * FROM notes WHERE bucketId = :bucketId AND deletedAt IS NULL ORDER BY createdAt DESC")
+    fun observeNotes(bucketId: String): Flow<List<NoteEntity>>
+
+    @Query("SELECT bucketId, COUNT(*) AS noteCount FROM notes WHERE deletedAt IS NULL GROUP BY bucketId")
+    fun observeCounts(): Flow<List<BucketCount>>
+
+    @Insert
+    suspend fun addBucket(bucket: BucketEntity)
+
+    @Insert
+    suspend fun addNote(note: NoteEntity)
+
+    @Query("UPDATE buckets SET name = :name, updatedAt = :updatedAt WHERE id = :id AND deletedAt IS NULL")
+    suspend fun renameBucket(id: String, name: String, updatedAt: Long): Int
+}
+
+@Database(entities = [BucketEntity::class, NoteEntity::class], version = 1, exportSchema = true)
+abstract class EimerDatabase : RoomDatabase() {
+    abstract fun dao(): EimerDao
+
+    companion object {
+        @Volatile private var instance: EimerDatabase? = null
+
+        fun get(context: Context): EimerDatabase =
+            instance ?: synchronized(this) {
+                instance ?: Room.databaseBuilder(
+                    context.applicationContext,
+                    EimerDatabase::class.java,
+                    "eimerliste.db"
+                ).build().also { instance = it }
+            }
+    }
+}

@@ -46,7 +46,7 @@ fun PaperSheet(modifier: Modifier = Modifier, content: @Composable BoxScope.() -
     Box(modifier = modifier) {
         Canvas(Modifier.matchParentSize()) {
             val paper = tornPath(size.width, size.height)
-            drawPath(paper, color = Color(0x44000000), topLeft = Offset(0f, 0f))
+            drawPath(paper, color = Color(0x44000000))
             drawPath(
                 paper,
                 brush = Brush.verticalGradient(

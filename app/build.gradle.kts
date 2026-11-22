@@ -17,6 +17,14 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    buildTypes {
+        getByName("debug") {
+            // Install alongside the original app without touching its database.
+            applicationIdSuffix = ".debug"
+            versionNameSuffix = "-test"
+        }
+    }
+
     buildFeatures {
         compose = true
     }

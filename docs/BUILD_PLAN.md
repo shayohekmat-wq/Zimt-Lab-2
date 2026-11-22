@@ -250,3 +250,19 @@ Im Dialog `CreateBucketDialog` wird der Eimername mit `rememberSaveable` gehalte
 
 ## Release-Gate
 Dies ist ein Quellcode-Fix ohne eigenen Versionssprung. Eine neue updatefähige APK erst nach grünem CI und Signatur-/Paket-/Versionsvergleich mit 0.1.0 freigeben; vorhandene 0.2.2 APK nicht als neuen Build ausgeben.
+
+
+---
+
+# Zyklus 22.11.2026 23:00 · 0.3 Robustheit: Schüttelsensor-Zeitstempel
+
+## Befund
+`ShakeDecision` nimmt monotone Zeitstempel an. Nach einem Zeitbasiswechsel bzw. rückwärts laufenden Sensorzeitstempel können alte Peaks mit neuen Peaks kombiniert werden und eine ungewollte Ziehung auslösen. Außerdem können ungültige Sensormessungen die Erkennung beeinflussen.
+
+## P0 · Kleine Korrektur
+- Rückwärts laufende Zeitstempel verwerfen und Peak-Sequenz zurücksetzen, ohne eine Ziehung auszulösen.
+- Nicht-endliche Magnituden und Schwellwerte ignorieren.
+- Unit-Tests für rückwärts laufende Zeit und NaN/Infinity; bestehende Hysterese und 1600-ms-Sperre beibehalten.
+
+## Release-Gate
+Paketkennung `de.zimt.eimerliste`, Room-Schema und bestehende Nutzerdaten unangetastet. Debug-Tests und Release-Build über GitHub Actions; Update-APK erst nach Signaturvergleich mit 0.1.0, höherem versionCode und sicherem Download. Kein neuer Signierschlüssel.

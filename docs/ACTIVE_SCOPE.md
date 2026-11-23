@@ -1,0 +1,26 @@
+# ACTIVE SCOPE — ZIMT Lab 2
+
+**Authority:** latest explicit user request > this active scope > historical `docs/BUILD_PLAN.md` §§1–16. Do not expand the bucket catalog without a new explicit user instruction.
+
+## Product
+Independently installable Eimer-Liste with persistent notes/drawings, charming tactile animation and eventual ZIMT integration.
+
+## Design lab: exactly three user-original paired PNG buckets
+- `user-wicker-01`: `flechtkorb_hinten.png` / `flechtkorb_vorne.png`
+- `user-wood-01`: `holzkuebel_hinten.png` / `holzkuebel_vorne.png`
+- `user-zinc-01`: `bucket_zinc_user_rear.png` / `bucket_zinc_user_front.png`
+Keep original assets unchanged; REAR → PAPER → FRONT with identical geometry; retain legacy IDs/data without surfacing historical catalog experiments.
+
+## Active note gesture feature
+- Tap opens note. 700ms stationary lift; drag to another bucket preserves ID, text and drawing; no target means no data change.
+- 1500ms stationary warning; 2000ms ignition with beautiful burn animation and reversible soft-delete/Undo.
+- Scroll, multitouch, cancellation, rotation/background, rapid input and accessibility alternatives must not cause accidental data loss.
+- Animation and haptic polish welcome. No global freeze on unrelated feature development.
+
+## Immediate engineering priorities
+1. Replace duplicated gesture-phase booleans in Compose with a single authoritative state machine and explicit commit semantics; integrate pointer/lifecycle tests.
+2. Obtain exact-HEAD CI evidence and fix failures; verify Room move/burn/Undo and upgrade integrity.
+3. Continue visual refinement and Moto G6 / Nothing Phone 3a testing as independent work.
+4. No release claim without original certificate, higher versionCode and real update-data verification.
+
+See `docs/DEVELOPMENT_DOCTRINE.md`, `docs/ARCHITECTURE.md`, `docs/DEVELOPMENT_STATUS.md` and `docs/RELEASE_AND_DATA.md`. Historical `docs/BUILD_PLAN.md` is retained for provenance; its old expansion sections are not active instructions.

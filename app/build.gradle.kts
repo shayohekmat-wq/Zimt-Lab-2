@@ -55,3 +55,37 @@ dependencies {
     debugImplementation("androidx.compose.ui:ui-tooling")
     testImplementation("junit:junit:4.13.2")
 }
+
+ 
+// Scope-freeze guard: fail builds if any of the six original user PNG layers go missing.
+// This validates source assets without altering their bytes or introducing new designs.
+val verifyOriginalBucketPngs = tasks.register("verifyOriginalBucketPngs") {
+    val assets = listOf(
+        "flechtkorb_hinten.png", "flechtkorb_vorne.png",
+        "holzkuebel_hinten.png", "holzkuebel_vorne.png",
+        "bucket_zinc_user_rear.png", "bucket_zinc_user_front.png"
+    )
+    val assetDir = layout.projectDirectory.dir("src/main/res/drawable-nodpi")
+    inputs.files(assets.map { assetDir.file(it) })
+    doLast {
+        val pngSignature = byteArrayOf(137.toByte(), 80, 78, 71, 13, 10, 26, 10)
+        assets.forEach { name ->
+            val file = assetDir.file(name).asFile
+            check(file.isFile) { "Required original bucket layer missing: $name" }
+            check(file.length() >= 24) { "Invalid or truncated PNG: $name" }
+            val header = file.inputStream().use { it.readNBytes(24) }
+            check(header.copyOfRange(0, 8).contentEquals(pngSignature)) {
+                "Not a PNG file: $name"
+            }
+            check(String(header, 12, 4, Charsets.US_ASCII) == "IHDR") {
+                "Missing PNG IHDR: $name"
+            }
+            val width = java.nio.ByteBuffer.wrap(header, 16, 4).int
+            val height = java.nio.ByteBuffer.wrap(header, 20, 4).int
+            check(width > 0 && height > 0) { "Invalid PNG dimensions: $name" }
+        }
+    }
+}
+tasks.matching { it.name == "preBuild" }.configureEach {
+    dependsOn(verifyOriginalBucketPngs)
+}

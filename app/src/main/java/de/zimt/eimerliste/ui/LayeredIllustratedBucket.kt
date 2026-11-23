@@ -1,6 +1,7 @@
 package de.zimt.eimerliste.ui
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -49,13 +50,14 @@ fun LayeredIllustratedBucket(
 ) {
     val t = paperProgress.coerceIn(0f, 1f)
     BoxWithConstraints(modifier, contentAlignment = Alignment.Center) {
+        val vesselHeight = maxHeight
         Image(painterResource(asset.rear), contentDescription = null,
             modifier = Modifier.fillMaxSize())
         // Paper starts above the rim and descends behind the opaque front.
         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
             Box(
                 Modifier.fillMaxWidth(.18f).fillMaxHeight(.15f)
-                    .offset(y = maxHeight * (.16f + .35f * t))
+                    .offset(y = vesselHeight * (.16f + .35f * t))
                     .graphicsLayer {
                         rotationZ = -9f + 15f * t
                         alpha = 1f - .20f * t
@@ -75,6 +77,6 @@ fun LayeredIllustratedBucket(
         Text(title, color = Color(0xFFFFE3AB), fontSize = 10.sp,
             fontWeight = FontWeight.Bold, textAlign = TextAlign.Center, maxLines = 2,
             modifier = Modifier.align(Alignment.Center).fillMaxWidth(.28f)
-                .offset(y = maxHeight * .22f))
+                .offset(y = vesselHeight * .22f))
     }
 }

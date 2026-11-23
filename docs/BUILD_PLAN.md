@@ -187,3 +187,19 @@ Wir wollen **viele außergewöhnlich schöne, wirklich unterschiedliche und voll
 **50-%-Gate noch NICHT erfüllt:** Insbesondere die zwingenden hochwertigen freigestellten Premiumassets und belegte lizenzierte menschliche Digitalgrafiken fehlen. Die neue Galerie ist funktional, aber die Qualität der Bildinhalte reicht noch nicht zur visuellen Freigabe. Den 50-%-Meilenstein nicht als abgeschlossen melden, solange die Bedingungen aus Abschnitt 11 nicht erfüllt sind.
 
 **Unmittelbare Fortsetzung (Priorität vor weiteren Kleinänderungen):** Mehrere tatsächlich unterschiedliche, hochwertig ausgearbeitete freigestellte Back-/Front-Grafikassets in App integrieren, korrekte Öffnung/Okklusion in Galerie und Hauptgitter verbinden; geprüfte menschliche digitale Grafikassets und eigenständige KI-/Originalmotive ergänzen; visuelle Abnahme und Signaturprüfung durchführen. Erst dann Punkte belegen und ggf. 50 % oder mehr freigeben.
+
+## 13. Längerer Entwicklungszyklus: vier lokal eingebundene Split-Layer-Illustrationen + echte Integration
+
+**Ausdrücklicher Nutzerauftrag:** Nicht nach wenigen Minuten abbrechen, sondern die große Neugestaltung ernsthaft bis zum 50-%-Qualitätsziel vorantreiben. 50 % nicht allein durch Commit-Zahl, Textänderungen oder generische Farbvarianten behaupten.
+
+**Tatsächlich implementiert:**
+- [x] Acht neue lokale transparente Android-Vector-Drawable-Dateien (je eine separate REAR- und FRONT-Grafik) für vier benannte Originalentwürfe: Astralgefäß, Kupferkessel, Porzellankrug, Waldkorb. Kein externer Bildabruf erforderlich. **Einschränkung:** gemeinsame Grundsilhouette, unterschiedliche Materialfarben/Details; noch keine vier unabhängigen Premium-Silhouetten, keine fotografisch hochwertige Textur.
+- [x] `LayeredIllustratedBucket.kt`: eigenständiger wiederverwendbarer REAR → PAPER → FRONT → LABEL-Renderer, responsiver Papierpfad, ZIMT-unabhängige Composable-Schnittstelle.
+- [x] `BucketArtworkCatalog.kt`: stabile, persistierbare IDs für die neuen lokal gebündelten Entwürfe.
+- [x] `EimerApp.kt`: tatsächliches Hauptgitter rendert die neuen Designs; Einwurf-/Auswurf-Animation läuft durch die getrennten Lagen statt als falsches Overlay.
+- [x] `DesignLab.kt`: die vier neuen Motive in der bereits entwickelten Galerie mit Live-Vorschau, Auswahl, Zieleimer und Übernahme integriert. Alte Eimer-/Zettel-Daten und Legacy-Designs bleiben unangetastet.
+- [ ] Aktuelle CI, Geräteprüfung, echte Screenshot-Abnahme, individuelle hochwertige Silhouetten, menschliche lizenzierte Digitalassets und KI-Grafiken sowie originalsignierte APK noch nicht bestätigt.
+
+**Wahrheitsgemäße 50-%-Bewertung:** Eine neue Galerie und funktionaler Layer-Renderer sind substantiell; die Grafikqualität erfüllt aber noch **nicht** das verbindliche Premium-Asset-Gate aus Abschnitt 11. Die vier Entwürfe dürfen wegen gemeinsamer Silhouette **nicht** als vier eigenständige Premiumdesigns gezählt werden. Somit 50 % noch **nicht nachgewiesen**. Es wäre unredlich, den Build als fertige Hälfte zu deklarieren.
+
+**Nächste zwingende Schritte:** Unterschiedliche Silhouetten und tatsächlich hochwertige individuelle Grafikassets; verifizierte digitale Designer-Assets samt Lizenzen; KI-Unikate; visuelle Gerätetests; reale Android-CI- und Signaturprüfung. Den erreichten Prozentwert erst nach überprüfbarer Qualitätsabnahme freigeben.

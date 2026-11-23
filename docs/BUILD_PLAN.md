@@ -4,6 +4,34 @@
 ## Entscheidung des Nutzers: keine festen acht Stilrichtungen
 Die ursprünglich festgelegten Familien Comic, 3D, Pixel Art, Aquarell, Low Poly, Knetoptik, Kupferstich und CharmingX4 sind **nur Inspirationsquellen, keine Abnahmebedingung**. Die bisherige Forderung „8 × 6“ ist aufgehoben. Keine künstliche Zahl oder Stilquote erzwingen. **Entscheidend ist eine vielfältige, kohärent kuratierte Auswahl wirklich neu entworfener, hochwertiger und technisch funktionierender Eimer.** Jeder Eimer benötigt eine erkennbare eigene Silhouette, Konstruktion, Materialidee und gestalterische Identität; Umfärbungen und marginale Variationen zählen nicht als neue Designs. Die früheren Ziele 48/24/12/84 sind Planungsgrößen, keine Liefergarantie oder Qualitätsmetrik.
 
+## Konkreter nächster Entwicklungszyklus · ausführbarer Arbeitsauftrag
+**Priorität: Redesign implementieren, nicht nur dokumentieren.** Die vorhandene 0.3.3-dev4-Codebasis enthält noch prozedurale Entwürfe und keine freigegebene hochwertige Asset-Sammlung. Neue Versionsnummern sind keine Qualitätsbeweise. Diese Liste wird pro überprüftem Arbeitsergebnis aktualisiert.
+
+### Arbeitspaket 1 – Renderer und Datenmodell (P0)
+- [ ] `BucketArtworkSpec` oder äquivalente stabile Schnittstelle definieren: `designId`, Asset-Herkunft, Rückebene, Öffnungsmaske/Anker, Vorderwand, Etikettposition, Variantenmetadaten und Fallback.
+- [ ] Im Bucket-Tile tatsächlich in dieser Reihenfolge rendern: Hintergrund/Rückwand → Zettel mit Clip-Maske → Vorderwand/Rand → Name/Interaktionszustand. Einwurf- und Auswurfanimation dürfen nicht durch eine unbedingte Vordergrund-Zeichenreihenfolge fehlerhaft werden.
+- [ ] Ein bestehendes gespeichertes `lab-...`-Design muss bei fehlendem/neuem Asset sicher auf die alte Darstellung zurückfallen, ohne Daten oder Designzuordnung zu löschen.
+- [ ] Mindestens automatisierte Tests für Geometrie/Anker, ID-Stabilität, Fallback und Layer-Logik; ein visueller Nachweis mit einem Zettel vor, während und nach dem Einwurf.
+
+### Arbeitspaket 2 – ein echtes Referenzdesign (P0)
+- [ ] Mindestens ein **vollständig neu entworfenes** Eimerobjekt als verwendbares, lokal gebündeltes Asset erzeugen (keine bloße Canvas-Umfärbung).
+- [ ] Silhouette, konstruktive Plausibilität, Material, Licht, Etikett und Öffnung separat prüfen; Render-Assets und Metadaten in der App integrieren.
+- [ ] Einwurf, Entnahme, leichte Eimerreaktion, schmale Displaybreite und große Schrift prüfen. Dokumentierte Designerbewertung mit konkreten Schwächen und Iteration.
+- [ ] Erst nach diesem Gate weitere Eimer in bewusst unterschiedlichen Formen/Materialien entwickeln; keine starre Acht-Stile-Quote.
+
+### Arbeitspaket 3 – nutzbares Designlabor (P1, nach erstem Referenzdesign)
+- [ ] Galerie mit wenigen wirklich verfügbaren Designs statt 48 unfertigen Kacheln; experimentelle Motive getrennt und ausdrücklich als unfertig markiert.
+- [ ] Auswahl → große Live-Vorschau mit echtem Eimernamen → eindeutiger Ziel-Eimer → Übernehmen/Abbrechen; aktuelles Design klar sichtbar, Rücksetzen möglich.
+- [ ] Herkunftsgruppen „Von Menschen gestaltet“ und „Bildgeneriert“ erst mit **tatsächlich geprüften und integrierten** Einzelobjekten befüllen. Keine leeren Rubriken als angeblich fertige Features verkaufen.
+
+### Arbeitspaket 4 – Vielfalt, Sicherheit, Freigabe (P1)
+- [ ] Weitere Designs nur bei nachweisbar eigenständiger Form/Konstruktion; Herkunft und kommerzielle Nutzbarkeit pro Asset in `docs/ASSETS_AND_LICENSES.md` dokumentieren.
+- [ ] APK-Größe, Speicherdruck, Framerate, TalkBack, reduzierte Animationen und ältere Android-Geräte berücksichtigen.
+- [ ] Datenhaltbarkeit, unveränderte Paket-ID, aufsteigender Versionscode, ursprünglicher Signaturfingerprint und reale Update-Installation prüfen.
+
+### Verbindliches Fortschrittsprotokoll
+Jeder Entwicklungszyklus soll angeben: **Commit/Dateien**, **welches sichtbare und funktionierende Ergebnis hinzugekommen ist**, **welche Tests tatsächlich bestanden sind**, **welche Geräteprüfung noch fehlt**, **ob eine originalsignierte UPDATE-APK vorliegt** und **was das nächste größte Qualitätsrisiko ist**. Ein CI-Erfolg ohne signierte APK ist ausdrücklich als solcher zu kennzeichnen.
+
 ## P0 · Qualitätssprung statt kosmetischer Patches
 1. **Design- und Asset-Pipeline neu aufbauen.** Bestehende primitive Compose-Canvas-Prototypen sind als Experimente gekennzeichnet und dürfen nicht als fertige Galerie erscheinen. Für die endgültigen Designs echte Originalillustrationen, transparente gerenderte Einzelobjekte, sorgfältig gestaltete Vektoren oder andere geeignete Techniken einsetzen; keine Textplatzhalter oder Contact-Sheet-Ausschnitte.
 2. **Ein herausragendes Referenzobjekt tatsächlich integrieren.** Ein Eimer mit überzeugender Silhouette, eigenständigem Material, glaubwürdigen Details, Schatten und lesbarem Etikett; auf dem Zieltelefon prüfen. Erst danach weitere Varianten produzieren. Design-Review mit klaren Kriterien, kein automatisches „10/10“.

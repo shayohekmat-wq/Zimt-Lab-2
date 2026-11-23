@@ -96,7 +96,7 @@ object BucketDesignPreferences {
     fun get(context: Context, bucketId: String): String? =
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getString(bucketId, null)
     fun set(context: Context, bucketId: String, designId: String) {
-        require(findLabDesign(designId) != null)
+        require(BucketArtworkCatalog.isKnownDesignId(designId))
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
             .putString(bucketId, designId).apply()
     }
@@ -301,7 +301,7 @@ fun DesignLab(
         Spacer(Modifier.height(12.dp))
         Text("VON MENSCHEN GESTALTET", color = Ink.Brass, fontSize = 12.sp,
             fontWeight = FontWeight.Bold)
-        Text("Handgezeichnete, modellierte und fotografierte Einzelstücke. Die geprüfte Sammlung entsteht gerade.",
+        Text("Digitale PNG-, SVG-, Sprite- und 3D-Grafiken von Designern. Die geprüfte Sammlung entsteht gerade.",
             color = Ink.Paper, fontSize = 12.sp)
         Spacer(Modifier.height(10.dp))
         Text("BILDGENERIERTE UNIKATE", color = Ink.Brass, fontSize = 12.sp,

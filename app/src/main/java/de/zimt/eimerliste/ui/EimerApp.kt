@@ -201,7 +201,7 @@ fun EimerApp(vm: EimerViewModel = viewModel()) {
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            "Ein Gedanke auf Papier",
+                            "Eimer-Liste",
                             fontFamily = FontFamily.Serif,
                             color = Ink.Paper,
                             fontSize = 19.sp,
@@ -426,7 +426,7 @@ fun EimerApp(vm: EimerViewModel = viewModel()) {
 private fun Header(onAdd: () -> Unit, bucketCount: Int) {
     Column(Modifier.fillMaxWidth().padding(start = 22.dp, end = 20.dp, top = 24.dp, bottom = 9.dp)) {
         Text(
-            "UNSERE KLEINEN GROSSEN PLÄNE",
+            "",
             letterSpacing = 1.55.sp,
             fontSize = 9.sp,
             color = Ink.Brass,
@@ -444,7 +444,7 @@ private fun Header(onAdd: () -> Unit, bucketCount: Int) {
                 )
                 Spacer(Modifier.height(4.dp))
                 Text(
-                    "Wünsche sammeln, Momente erleben.",
+                    "",
                     fontSize = 12.sp,
                     color = Ink.Muted,
                     lineHeight = 16.sp
@@ -478,7 +478,7 @@ private fun EmptyStage(modifier: Modifier, onCreate: () -> Unit) {
         )
         Spacer(Modifier.height(8.dp))
         Text(
-            "Jeder Wunsch beginnt mit einem Zettel.",
+            "Noch keine Eimer.",
             fontFamily = FontFamily.Serif,
             fontSize = 21.sp,
             color = Ink.Paper,
@@ -655,7 +655,7 @@ private fun PaperComposer(
     Column(modifier) {
         if (!compact) {
             Text(
-                "EIN WUNSCH AUF PAPIER",
+                "",
                 color = Ink.Muted,
                 fontSize = 10.sp,
                 letterSpacing = 1.2.sp,
@@ -689,8 +689,8 @@ private fun PaperComposer(
                         Box {
                             if (draft.isEmpty()) {
                                 Text(
-                                    if (drawing == null) "Schreib deinen Wunsch ..."
-                                    else "Text ergänzen (optional) …",
+                                    if (drawing == null) "Schreiben …"
+                                    else "Text hinzufügen …",
                                     fontFamily = FontFamily.Serif,
                                     color = Ink.BrassDark.copy(alpha = .85f),
                                     fontSize = 16.sp
@@ -727,8 +727,8 @@ private fun PaperComposer(
         }
         if (!compact) {
             Text(
-                if (drawing == null) "Dreimal falten, dann in deinen Wunscheimer ziehen."
-                else "✎ Skizze auf dem Papier · Dreimal falten und einwerfen.",
+                if (drawing == null) ""
+                else "",
                 fontSize = 11.sp,
                 color = Ink.Muted,
                 modifier = Modifier.padding(start = 9.dp, top = 7.dp)
@@ -883,7 +883,7 @@ private fun BucketContents(
         ) { Text("✦ Zufallszettel ziehen", color = Ink.BrassDark) }
         Spacer(Modifier.height(7.dp))
         if(notes.isEmpty()) {
-            Text("Schreib einen Wunsch, falte ihn dreimal und zieh ihn auf diesen Eimer.",
+            Text("",
                 color=Ink.InkBlack,modifier=Modifier.padding(vertical=30.dp))
         } else {
             LazyColumn(

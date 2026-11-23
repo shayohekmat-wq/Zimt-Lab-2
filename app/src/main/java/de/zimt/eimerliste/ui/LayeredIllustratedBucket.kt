@@ -76,21 +76,12 @@ fun LayeredIllustratedBucket(
     }
     BoxWithConstraints(modifier, contentAlignment = Alignment.Center) {
         val vesselHeight = maxHeight
-        // Front and rear share the original Fit viewport; only the explicitly requested
-        // wood/zinc rear vertical alignment adjustment is applied below.
-        // Start from the original, unscaled, pixel-aligned PNG viewport.
-        // User-requested correction: move ONLY the interior/rear artwork UP.
-        // No scaling, no horizontal shift, no changes to the front or wicker.
-        val rearLift = when (asset.id) {
-            "user-wood-01" -> .075f  // clearly visible lift: 7.5% of shared viewport height
-            "user-zinc-01" -> .14f   // clearly visible lift: 14%
-            else -> 0f
-        }
+        // Both original PNG layers use precisely the same Fit viewport.
+        // Do not translate or scale either layer independently: doing so changes
+        // the opening geometry and breaks the authored front/rear alignment.
         Image(painterResource(asset.rear), contentDescription = null,
             contentScale = androidx.compose.ui.layout.ContentScale.Fit,
-            modifier = Modifier.fillMaxSize().graphicsLayer {
-                translationY = -size.height * rearLift
-            })
+            modifier = Modifier.fillMaxSize())
         // Paper starts above the rim and descends behind the opaque front.
         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
             Box(

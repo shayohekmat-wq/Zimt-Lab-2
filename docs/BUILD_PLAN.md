@@ -263,3 +263,30 @@ Wir wollen **viele außergewöhnlich schöne, wirklich unterschiedliche und voll
 - Dieser erfolgreiche Build verwendet noch `versionCode=17` / `0.3.3-dev4` und ist deshalb **kein zuverlässig aufsteigendes Update** gegenüber einer bereits installierten dev4. Deshalb expliziter Versionsbump auf `versionCode=18` / `0.3.3-dev5` im Commit `5bc31d20`. Android-CI-Run `45103246675` gestartet, bei Eintrag noch ausstehend. Erst nach CI-Erfolg und Signaturkontrolle diese Version als Update ausliefern.
 - **Qualitätsstatus:** 5 echte, von Kenney gestaltete digitale 3D-Asset-Vorschaubilder eingebaut; keine Premiumfreigabe, keine getrennten Vorder-/Rückseiten, keine perfekte Papier-Okklusion, keine Android-Geräte-Screenshots. Originale XML-Designs nur im Archiv. Keine falsche 100%-Aussage.
 - **Nächste große Arbeit:** Aus originalen Künstler-3D-Modellen statt kleinen Thumbnails zwei präzise, freigestellte, hochauflösende Render-Passes für echte Papierverdeckung erzeugen. Auswahl, Persistenz und Datenerhalt am Gerät verifizieren. Anschließend mehrere hochwertige andere Künstler-Asset-Kategorien.
+
+## 17. VERBINDLICHER DESIGNLAB-SCOPE-FREEZE — drei Nutzer-PNG-Eimer (23.11.2026)
+
+**HÖCHSTE PRIORITÄT, ÜBERSCHREIBT ALLE ÄLTEREN DESIGNLAB-PLÄNE IN DEN ABSCHNITTEN 11–16.** Der Nutzer hat sechs eigene freigestellte PNGs in das Repository hochgeladen. **Ab sofort KEINE weitere Recherche nach Künstlerassets, keine weiteren Stilrichtungen, keine Designlabor-Expansion, keine XML-Vektor-Experimente, keine Kenney-Galerie als Hauptfokus, keine Materialstudien, keine zusätzlichen Eimer.** Alte Vorschläge dazu sind ausdrücklich **gestrichen**, nicht nur vertagt. Die bisherigen Dateien und Design-IDs aus Kompatibilitätsgründen nicht destruktiv löschen; alte Einträge können in Legacy-Daten weiter bestehen, aber das aktive Designlabor zeigt nur die folgenden drei Designs.
+
+### Exakt erlaubte drei Designs und originale GitHub-Assets
+
+Alle sechs Dateien wurden am 23.11.2026 in `app/src/main/res/drawable-nodpi/` auf `main` verifiziert. PNGs **unverändert** verwenden, keine SVG-/VectorDrawable-Neuzeichnungen, kein Downsampling der Quelldateien, keine künstlichen Ersatzgrafiken.
+
+| Design | stabile Design-ID | REAR / Innenraum (hinter dem Zettel) | FRONT / Vorderwand (vor dem Zettel) |
+|---|---|---|---|
+| Flechtkorb | `user-wicker-01` | `flechtkorb_hinten.png` | `flechtkorb_vorne.png` |
+| Holzkübel | `user-wood-01` | `holzkuebel_hinten.png` | `holzkuebel_vorne.png` |
+| Zinkeimer | `user-zinc-01` | `bucket_zinc_user_rear.png` | `bucket_zinc_user_front.png` |
+
+### Pflichtumfang NÄCHSTER Build — ohne Nebenprojekte
+
+- [ ] Drei reale PNG-Paare im Compose-Renderer mit je **einer gemeinsamen Canvas-Geometrie** rendern: identische Bildgröße, Position, Skalierung und ContentScale für REAR und FRONT; keine separate Größenanpassung, auch nicht bei abweichenden Alphabounds.
+- [ ] Render-Reihenfolge strikt **REAR → animierter Papierzettel → FRONT**. Papier muss beim Einwerfen sichtbar in die Öffnung sinken und allmählich hinter der Vorderwand verschwinden; beim Herausschütteln umgekehrte Tiefen- und Bewegungsfolge. Bei nicht exakt deckungsgleichen PNGs sichtbare Naht/Alpha-Artefakte prüfen, nicht durch willkürliches Reframing kaschieren.
+- [ ] Echte Papieranimation in Designlabor-Vorschau und im tatsächlichen Eimer-Gitter, nicht nur statische Karten. Zettelposition/-größe sinnvoll an Öffnung und Vorderwand angepasst; Einwurf mit dezenter Eimerbewegung und Haptik, Herausschütteln mit kurzer Rüttelanimation, ohne vorhandene Funktionen zu beschädigen.
+- [ ] Designlabor zeigt **ausschließlich diese drei Designs** als Hauptauswahl. Alle vorherigen Erweiterungskategorien, Kenney-Grafiken, XML-Vektoren, Materialstudien, experimentelle Galerien und Stilvarianten aus aktiver UI entfernen/ausblenden. Kein neues Designlabor-Feature außerhalb der drei Eimer.
+- [ ] Auswahl eines konkreten bestehenden Eimers und Anwendung des Designs; persistente Zuordnung nach App-Neustart, kompatible stabile IDs; bestehende Nutzer-Zettel, Texte, Skizzen, Bucket-IDs, Undo/Redo und Datenbanken vollständig erhalten.
+- [ ] Bildqualität/Transparenz und mobile Darstellung visuell prüfen, Performance und Speicherbedarf bei 2048px-Assets beachten, ohne die gespeicherten Originaldateien zu verändern.
+- [ ] Automatisierte Tests für Katalog, drei Designs, Ebenen-Reihenfolge soweit testbar, Persistenz und Migration; Android-CI erfolgreich; VersionCode erhöhen; signierte Update-APK mit **bisherigem** Keystore/Zertifikat verifizieren, kein Schlüssel in GitHub. Gerätetest und Screenshots, wenn verfügbar.
+- [ ] Tatsächlich fertige APK mit Download-Link ausliefern; keinen Erfolg behaupten, bevor Build und Signatur geprüft sind.
+
+**Akzeptanz:** Auf dem Smartphone sieht der Nutzer nur drei auswählbare, aus seinen Original-PNGs zusammengesetzte Eimer, und Papier verschwindet beim Einwurf glaubwürdig hinter deren Vorderwand. Der Scope-Freeze gilt bis zu einer neuen ausdrücklichen Nutzeranweisung. **Alles andere am Designlabor ist gestrichen.**

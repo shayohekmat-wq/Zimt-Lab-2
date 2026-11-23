@@ -22,7 +22,10 @@ internal class NotePressSafety {
         phase = Phase.PRESSED
     }
 
-    fun isTracking(): Boolean = phase in setOf(Phase.PRESSED, Phase.LIFTED, Phase.WARNING, Phase.DRAGGING)
+    fun isTracking(): Boolean = when (phase) {
+        Phase.PRESSED, Phase.LIFTED, Phase.WARNING, Phase.DRAGGING -> true
+        else -> false
+    }
 
     fun nextDeadlineMs(): Long? = when (phase) {
         Phase.PRESSED -> NoteHoldTiming.LIFT_MS

@@ -448,3 +448,12 @@ Nutzer meldete per Screenshots, dass Flechtkorb korrekt wirkt, Holzkübel und Zi
 - Commit `77b108549bf692e16fed9145108c2f8f35a42f85`: explizite Imports für `ByteBuffer`, `DataInputStream`, `BufferedInputStream`, `CRC32`; im Prüfcode unqualifizierte Klassennamen. `versionCode=38`, `versionName=0.3.3-dev25`.
 - CI [45243560345](https://github.com/shayohekmat-wq/Zimt-Lab-2/actions/runs/45243560345) wurde automatisch durch den Push ausgelöst und war bei dieser Dokumentation **queued**, nicht bestanden. Keine Original-PNG-Dateien, Design-IDs, Room-Tabellen oder Nutzerdaten verändert.
 - **Offen:** CI-Abschluss und gegebenenfalls weitere Fehler beheben; danach visuelle Android-Prüfung von REAR/PAPER/FRONT, Papierverdeckung, Animation und Haptik; originales Zertifikat und Update-Datenbestandsschutz nachweisen. Keine signierte Update-APK behaupten, bevor tatsächlich verifiziert.
+
+
+### 0.3.3-dev26 / Build 39 — Release-Identität vor Signierung prüfen (23.11.2026)
+
+- Vorheriger Build 38, GitHub Actions Run 45243560345: **success** für Debug, Unit-Tests und Release-Kompilierung; unsigned Release-Artefakt vorhanden. Der ursprüngliche PKCS12-Schlüssel und die Passwortdatei wurden in der privaten ChatGPT-Dateibibliothek wiedergefunden; sie werden nicht ins Repository übertragen. Die Update-APK für Build 38 wurde separat lokal signiert; Geräteinstallation bleibt ungetestet.
+- Commit `fbb93440`: CI prüft jetzt unmittelbar nach Release-Kompilierung die **tatsächliche APK-Manifest-Paketkennung** `de.zimt.eimerliste` und verlangt `versionCode > 38`, bevor ein signierbares Artefakt hochgeladen wird. Fehler bei Paketkennung/Version stoppen den Job. Keine UI- oder Datenbankänderung.
+- Commit `71c5c507`: `versionCode=39`, `versionName=0.3.3-dev26`.
+- **Noch offen:** CI-Ergebnis für Build 39, Originalsignatur einer Build-39-APK, visuelle Android-Abnahme von Papier-Okklusion und Eimeröffnung sowie Installation über vorhandene App mit echten Daten. Keine Update-Freigabe ohne diese getrennten Nachweise.
+- Scope-Freeze Abschnitt 17 unverändert: nur drei Nutzer-PNG-Designs; keine Erweiterungen.

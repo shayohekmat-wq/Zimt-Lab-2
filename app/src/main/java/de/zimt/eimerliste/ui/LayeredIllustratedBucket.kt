@@ -9,6 +9,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -84,7 +85,11 @@ fun LayeredIllustratedBucket(
     }
     // Move the complete vessel (both PNG layers and the paper) as one object.
     // Never transform a single PNG independently: their authored registration must survive rocking.
-    BoxWithConstraints(modifier.graphicsLayer { rotationZ = bucketRockDegrees(t) }, contentAlignment = Alignment.Center) {
+    BoxWithConstraints(modifier.graphicsLayer {
+        // Pivot near the base so the vessel rocks on its bottom instead of spinning in mid-air.
+        transformOrigin = TransformOrigin(0.5f, 0.88f)
+        rotationZ = bucketRockDegrees(t)
+    }, contentAlignment = Alignment.Center) {
         val vesselHeight = maxHeight
         val vesselWidth = maxWidth
         // Slight sideways drift follows the opening, without moving either PNG layer.

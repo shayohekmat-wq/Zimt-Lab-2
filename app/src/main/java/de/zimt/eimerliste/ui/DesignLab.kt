@@ -311,11 +311,37 @@ fun DesignLab(
             Triple(BucketArtworkCatalog.studyId(LayeredMaterialStudy.ZINC), "Zink", "TECHNISCHE MATERIALSTUDIE"),
             Triple(BucketArtworkCatalog.studyId(LayeredMaterialStudy.ENAMEL), "Emaille", "TECHNISCHE MATERIALSTUDIE")
         )
+        var galleryPaper by remember { mutableFloatStateOf(1f) }
+        var galleryPlaying by remember { mutableStateOf(false) }
+        var showStudies by remember { mutableStateOf(false) }
+        LaunchedEffect(galleryPlaying) {
+            if (galleryPlaying) {
+                for (frame in 0..30) {
+                    galleryPaper = frame / 30f
+                    kotlinx.coroutines.delay(20L)
+                }
+                for (frame in 30 downTo 0) {
+                    galleryPaper = frame / 30f
+                    kotlinx.coroutines.delay(20L)
+                }
+                galleryPaper = 1f
+                galleryPlaying = false
+            }
+        }
         Text("GESTALTUNGEN ANSEHEN & AUSPROBIEREN",
             color = Ink.Brass, fontSize = 12.sp, fontWeight = FontWeight.Bold)
         Text("Wähle ein Motiv. Die große Vorschau zeigt die echte Darstellung, die auch auf deinem Eimer erscheint.",
             color = Ink.Muted, fontSize = 12.sp)
-        galleryItems.chunked(2).forEach { group ->
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            FilterChip(selected = !showStudies, onClick = { showStudies = false },
+                label = { Text("Originalgrafiken") })
+            FilterChip(selected = showStudies, onClick = { showStudies = true },
+                label = { Text("Materialstudien") })
+        }
+        galleryItems.filter { item ->
+            if (showStudies) BucketArtworkCatalog.studyMaterial(item.first) != null
+            else BucketArtworkCatalog.studyMaterial(item.first) == null
+        }.chunked(2).forEach { group ->
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 group.forEach { item ->
                     val selected = gallerySelected == item.first
@@ -361,15 +387,22 @@ fun DesignLab(
             fontSize = 11.sp, fontWeight = FontWeight.Bold)
         val galleryName = buckets.firstOrNull { it.id == galleryTarget }?.name ?: "Mein Eimer"
         if (findIllustratedBucket(gallerySelected) != null) {
-            LayeredIllustratedBucket(findIllustratedBucket(gallerySelected)!!, galleryName, 1f,
+            LayeredIllustratedBucket(findIllustratedBucket(gallerySelected)!!, galleryName, galleryPaper,
                 Modifier.fillMaxWidth().height(225.dp))
         } else if (gallerySelected == WICKER_REFERENCE_ID) {
-            WickerReferenceBucket(galleryName, 1f, Modifier.fillMaxWidth().height(225.dp))
+            WickerReferenceBucket(galleryName, galleryPaper, Modifier.fillMaxWidth().height(225.dp))
         } else {
             BucketArtworkCatalog.studyMaterial(gallerySelected)?.let { study ->
-                LayeredBucketPrototype(galleryName, 1f, study,
+                LayeredBucketPrototype(galleryName, galleryPaper, study,
                     Modifier.fillMaxWidth().height(225.dp))
             }
+        }
+        Text("Papierbewegung prüfen", color = Ink.Muted, fontSize = 11.sp)
+        Slider(value = galleryPaper, onValueChange = { galleryPaper = it },
+            valueRange = 0f..1f)
+        OutlinedButton(onClick = { galleryPlaying = true }, enabled = !galleryPlaying,
+            modifier = Modifier.fillMaxWidth()) {
+            Text(if (galleryPlaying) "Animation läuft …" else "Einwurf und Auswurf abspielen")
         }
         Text("Auf welchen Eimer anwenden?", color = Ink.Paper, fontSize = 13.sp)
         buckets.forEach { bucket ->

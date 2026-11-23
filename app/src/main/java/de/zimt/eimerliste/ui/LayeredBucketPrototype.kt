@@ -71,7 +71,8 @@ fun LayeredBucketPrototype(
             drawArc(palette[4], 180f, 180f, false,
                 Offset(w * .19f, h * .235f), Size(w * .62f, h * .115f),
                 style = Stroke(w * .019f))
-            // PAPER: moves down into the mouth, always behind the front wall.
+            // PAPER: a narrow, folded note enters the opening.
+            // At full depth it is completely hidden by the opaque front wall.
             val y = h * (.14f + .43f * t)
             val paper = Path().apply {
                 moveTo(w * .405f, y)

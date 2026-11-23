@@ -260,6 +260,7 @@ fun EimerApp(vm: EimerViewModel = viewModel()) {
                                 design = findLabDesign(designSelections[bucket.id]),
                                 layeredStudy = BucketArtworkCatalog.studyMaterial(designSelections[bucket.id]),
                                 isWickerReference = designSelections[bucket.id] == WICKER_REFERENCE_ID,
+                                illustratedAsset = findIllustratedBucket(designSelections[bucket.id]),
                                 count = countsByBucket[bucket.id] ?: 0,
                                 highlighted = hoveredBucket == bucket.id ||
                                     heldBucketId == bucket.id || ejectingBucketId == bucket.id,
@@ -526,6 +527,7 @@ private fun BucketTile(
     design: LabDesign?,
     layeredStudy: LayeredMaterialStudy?,
     isWickerReference: Boolean,
+    illustratedAsset: IllustratedBucketAsset?,
     count: Int,
     highlighted: Boolean,
     isHeld: Boolean,
@@ -542,8 +544,8 @@ private fun BucketTile(
     val wobble = remember { Animatable(0f) }
     val ejectFlight = remember { Animatable(0f) }
     val wickerPaper = remember { Animatable(1f) }
-    LaunchedEffect(impactToken, isWickerReference) {
-        if (isWickerReference && impactToken > 0 && ValueAnimator.areAnimatorsEnabled()) {
+    LaunchedEffect(impactToken, isWickerReference, illustratedAsset) {
+        if ((isWickerReference || illustratedAsset != null) && impactToken > 0 && ValueAnimator.areAnimatorsEnabled()) {
             wickerPaper.snapTo(0f)
             wickerPaper.animateTo(1f, tween(480, easing = FastOutSlowInEasing))
         } else {
@@ -638,7 +640,14 @@ private fun BucketTile(
                     scaleY = 1f - .042f * impact.value
                     transformOrigin = TransformOrigin(.5f, .84f)
                 }
-            if (isWickerReference) {
+            if (illustratedAsset != null) {
+                LayeredIllustratedBucket(
+                    asset = illustratedAsset,
+                    title = bucket.name,
+                    paperProgress = if (isEjecting) 1f - ejectFlight.value else wickerPaper.value,
+                    modifier = artworkModifier
+                )
+            } else if (isWickerReference) {
                 WickerReferenceBucket(
                     title = bucket.name,
                     paperProgress = if (isEjecting) 1f - ejectFlight.value else wickerPaper.value,
@@ -660,7 +669,7 @@ private fun BucketTile(
                     modifier = artworkModifier
                 )
             }
-            if (isEjecting && !isWickerReference) {
+            if (isEjecting && !isWickerReference && illustratedAsset == null) {
                 FoldedPaperArtwork(
                     progress = 3f,
                     message = "",

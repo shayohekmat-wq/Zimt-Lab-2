@@ -143,4 +143,20 @@ class BucketArtworkCatalogTest {
             BUCKET_PAINT_ORDER)
     }
 
+    @Test fun bucketRockSettlesAndKeepsFiniteBounds() {
+        assertEquals(0f, bucketRockDegrees(0f), .0001f)
+        assertEquals(0f, bucketRockDegrees(.5f), .0001f)
+        assertEquals(0f, bucketRockDegrees(1f), .0001f)
+        assertEquals(0f, bucketRockDegrees(Float.NaN), .0001f)
+        assertEquals(0f, bucketRockDegrees(Float.POSITIVE_INFINITY), .0001f)
+        assertTrue(bucketRockDegrees(.25f) > 0f)
+        assertTrue(bucketRockDegrees(.75f) < 0f)
+        assertEquals(-bucketRockDegrees(.25f), bucketRockDegrees(.75f), .0001f)
+        for (step in 0..100) {
+            val angle = bucketRockDegrees(step / 100f)
+            assertTrue(angle.isFinite())
+            assertTrue(kotlin.math.abs(angle) <= 2.21f)
+        }
+    }
+
 }

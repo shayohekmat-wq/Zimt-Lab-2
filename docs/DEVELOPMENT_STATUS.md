@@ -38,3 +38,11 @@ This is an evidence ledger, **not** a completion claim. Reconcile against curren
 - **IMPLEMENTED TESTS, NOT EXECUTED:** `NotePressSafetyTest.kt` now includes drag/cancel after warning and timing boundary scenarios (commit `34a4b550`).
 - **NOT VERIFIED:** No commit-specific GitHub workflow runs or combined status checks were returned by available connector queries. Do not claim compilation, passing tests, device behavior, or release readiness. Gesture handler still needs end-to-end Compose/device validation, including multitouch, lifecycle cancellation, pointer consumption, and Room/Undo upgrade tests.
 - **P0 NEXT:** obtain CI run evidence, fix any compilation errors, test actual pointer sequences and process/lifecycle transitions, then verify original signing and upgrade before release.
+
+## Development Doctrine 5.0 rollout — 2026-11-23
+- IMPLEMENTED: binding risk-based doctrine in all four Lab repositories, including Lab 2 main and development branch; no blanket feature freeze.
+- IMPLEMENTED: `docs/ACTIVE_SCOPE.md` on Lab 2 main and development; historical `BUILD_PLAN.md` now begins with an explicit authority pointer. Active catalog is only the three original paired-PNG buckets; active note gesture scope remains unchanged.
+- IMPLEMENTED: `AGENTS.md` pointers updated in all Labs; Lab 2 CI contract now checks doctrine and active scope files.
+- IMPLEMENTED: hourly Lab 2 development automation prompt aligned with Doctrine 5.0, current branch routing, incremental testing and truthful release gates; schedule unchanged.
+- UNVERIFIED: new CI checks have not been shown passing on current HEAD. Existing gesture state still has duplicated Compose flags; the single-source-of-truth refactor, Room/lifecycle regression suite, physical Moto G6/Nothing tests and signed update APK remain open. Do not claim these are complete.
+- NEXT: safely refactor the gesture adapter with one authoritative phase and explicit commit semantics; run exact-SHA CI, fix failures, test migration/Undo and hardware behavior before release.

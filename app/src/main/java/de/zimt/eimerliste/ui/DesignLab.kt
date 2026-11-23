@@ -72,14 +72,20 @@ data class BucketVisualProfile(
 fun visualProfile(design: LabDesign): BucketVisualProfile {
     val lowPoly = design.style == 4
     val openingY = if (lowPoly) when (design.variant) {
-        1, 4 -> .39f
-        2, 5 -> .25f
+        1 -> .38f
+        4 -> .40f
+        2 -> .20f
+        5 -> .23f
+        0 -> .25f
         else -> .29f
     } else .27f + (design.variant % 3) * .025f
     val openingLeft = if (lowPoly) when (design.variant) {
-        4 -> .11f
-        1 -> .13f
-        else -> .24f
+        4 -> .10f
+        1 -> .12f
+        2 -> .30f
+        5 -> .28f
+        0 -> .23f
+        else -> .20f
     } else .17f + (design.variant % 2) * .035f
     return BucketVisualProfile(design.id, openingLeft, 1f-openingLeft, openingY, .54f)
 }
@@ -248,9 +254,10 @@ fun LabBucketArtwork(design: LabDesign, title: String, modifier: Modifier = Modi
                 drawOval(edge,Offset(w*(left+.02f),h*(top-.017f)),
                     Size(w*(right-left-.04f),h*.05f))
             } else {
-                val rimY = if(v==1 || v==4) .39f else if(v==2 || v==5) .25f else .29f
-                val rimL = if(v==4) .11f else if(v==1) .13f else .24f
-                val rimR = 1f-rimL
+                val profile = visualProfile(design)
+                val rimY = profile.openingY
+                val rimL = profile.openingLeft
+                val rimR = profile.openingRight
                 drawLine(edge,Offset(w*rimL,h*rimY),Offset(w*rimR,h*rimY),w*.027f)
                 drawLine(Color.White.copy(alpha=.32f),
                     Offset(w*(rimL+.025f),h*(rimY-.015f)),

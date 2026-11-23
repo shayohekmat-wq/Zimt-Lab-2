@@ -1,0 +1,35 @@
+name: Import licensed human-designed art
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'tools/import_human_assets.py'
+      - '.github/workflows/import-human-art.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install Pillow==11.3.0
+      - name: Download and preserve real CC0 artist sprites
+        run: python tools/import_human_assets.py
+      - name: Commit actual binary PNG assets to repository
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app/src/main/res/drawable-nodpi/kenney_human_*.png
+          if git diff --cached --quiet; then
+            echo "Assets already committed"
+          else
+            git commit -m "Import five actual Kenney CC0 human-created game art images"
+            git push origin HEAD:main
+          fi

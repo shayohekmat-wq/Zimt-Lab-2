@@ -302,6 +302,7 @@ fun DesignLab(
         // This interactive engineering proof is deliberately not selectable as premium art.
         var showLayerProof by remember { mutableStateOf(false) }
         var paperDepth by remember { mutableFloatStateOf(0f) }
+        var materialStudy by remember { mutableStateOf(LayeredMaterialStudy.WALNUT) }
         OutlinedButton(
             onClick = { showLayerProof = !showLayerProof },
             modifier = Modifier.fillMaxWidth()
@@ -311,9 +312,27 @@ fun DesignLab(
         if (showLayerProof) {
             Text("TECHNISCHER PROTOTYP · KEIN FERTIGES DESIGN",
                 color = Ink.Brass, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                LayeredMaterialStudy.entries.forEach { study ->
+                    val selected = materialStudy == study
+                    OutlinedButton(
+                        onClick = { materialStudy = study },
+                        modifier = Modifier.weight(1f),
+                        border = androidx.compose.foundation.BorderStroke(
+                            if (selected) 2.dp else 1.dp,
+                            if (selected) Ink.Brass else Ink.Muted.copy(alpha = .45f)
+                        ),
+                        contentPadding = PaddingValues(horizontal = 3.dp, vertical = 7.dp)
+                    ) {
+                        Text(study.displayName, fontSize = 11.sp,
+                            color = if (selected) Ink.Brass else Ink.Paper)
+                    }
+                }
+            }
             LayeredBucketPrototype(
                 title = "Papier-Test",
                 paperProgress = paperDepth,
+                material = materialStudy,
                 modifier = Modifier.fillMaxWidth().height(210.dp)
             )
             Slider(

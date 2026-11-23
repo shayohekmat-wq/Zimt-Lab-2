@@ -311,6 +311,7 @@ fun DesignLab(
         Spacer(Modifier.height(14.dp))
         Spacer(Modifier.height(10.dp))
         var resetPickerVisible by remember { mutableStateOf(false) }
+        var pendingReset by remember { mutableStateOf<String?>(null) }
         OutlinedButton(
             onClick = { resetPickerVisible = !resetPickerVisible },
             modifier = Modifier.fillMaxWidth()
@@ -323,11 +324,30 @@ fun DesignLab(
                     verticalAlignment = Alignment.CenterVertically) {
                     Text(bucket.name, modifier = Modifier.weight(1f), color = Ink.Paper,
                         fontSize = 12.sp, maxLines = 2)
-                    OutlinedButton(onClick = { onReset(bucket.id) }) {
+                    OutlinedButton(onClick = { pendingReset = bucket.id }) {
                         Text("Zurücksetzen")
                     }
                 }
             }
+        }
+        pendingReset?.let { resetId ->
+            val resetName = buckets.firstOrNull { it.id == resetId }?.name ?: "diesen Eimer"
+            androidx.compose.material3.AlertDialog(
+                onDismissRequest = { pendingReset = null },
+                title = { Text("Originaldesign wiederherstellen?") },
+                text = { Text("Nur die Gestaltung von „$resetName“ wird zurückgesetzt. Alle Zettel bleiben erhalten.") },
+                confirmButton = {
+                    androidx.compose.material3.TextButton(onClick = {
+                        onReset(resetId)
+                        pendingReset = null
+                    }) { Text("Design zurücksetzen") }
+                },
+                dismissButton = {
+                    androidx.compose.material3.TextButton(onClick = { pendingReset = null }) {
+                        Text("Abbrechen")
+                    }
+                }
+            )
         }
         Spacer(Modifier.height(8.dp))
         OutlinedButton(onClick = {

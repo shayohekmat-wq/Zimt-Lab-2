@@ -299,6 +299,46 @@ fun DesignLab(
             color = Ink.Muted, fontSize = 12.sp
         )
         Spacer(Modifier.height(12.dp))
+        Text("NEU · EIGENSTÄNDIGE ORIGINALENTWÜRFE",
+            color = Ink.Brass, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+        Text("Picknickkorb · handkonstruierte Flechtgrafik mit Henkel, Innenraum und eigener Vorderwand.",
+            color = Ink.Paper, fontSize = 12.sp)
+        var wickerTarget by remember { mutableStateOf<String?>(null) }
+        var wickerDepth by remember { mutableFloatStateOf(0f) }
+        WickerReferenceBucket(
+            title = buckets.firstOrNull { it.id == wickerTarget }?.name ?: "Mein Picknickkorb",
+            paperProgress = wickerDepth,
+            modifier = Modifier.fillMaxWidth().height(250.dp)
+        )
+        Text("Zettel-Einwurf ausprobieren", color = Ink.Muted, fontSize = 11.sp)
+        Slider(value = wickerDepth, onValueChange = { wickerDepth = it },
+            valueRange = 0f..1f, modifier = Modifier.fillMaxWidth())
+        Text("Eimer auswählen", color = Ink.Paper, fontSize = 12.sp)
+        buckets.forEach { bucket ->
+            val selected = wickerTarget == bucket.id
+            Row(
+                Modifier.fillMaxWidth().padding(vertical = 3.dp)
+                    .border(if (selected) 2.dp else 1.dp,
+                        if (selected) Ink.Brass else Ink.Muted.copy(alpha = .4f),
+                        RoundedCornerShape(5.dp))
+                    .clickable { wickerTarget = bucket.id }
+                    .padding(12.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(if (selected) "●  " else "○  ", color = Ink.Brass)
+                Text(bucket.name, color = Ink.Paper)
+            }
+        }
+        Button(
+            onClick = {
+                wickerTarget?.let { onApplied(it, WICKER_REFERENCE_ID) }
+            },
+            enabled = wickerTarget != null,
+            modifier = Modifier.fillMaxWidth()
+        ) { Text("Picknickkorb übernehmen") }
+        Text("Eigenes Vektor-Original, keine externe Grafik. Noch keine fertig kuratierte Galerie.",
+            color = Ink.Muted, fontSize = 11.sp)
+        Spacer(Modifier.height(18.dp))
         // This interactive engineering proof is deliberately not selectable as premium art.
         var showLayerProof by remember { mutableStateOf(false) }
         var paperDepth by remember { mutableFloatStateOf(0f) }

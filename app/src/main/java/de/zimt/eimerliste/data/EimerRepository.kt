@@ -31,6 +31,21 @@ class EimerRepository(private val dao: EimerDao) {
         check(dao.renameBucket(bucketId, validName, System.currentTimeMillis()) == 1) { "Eimer nicht gefunden." }
     }
 
+    /**
+     * Preserve the original note row, drawing and stable ID.
+     * The DAO rejects stale source IDs, deleted notes and missing destinations.
+     */
+    suspend fun moveNote(noteId: String, sourceBucketId: String, destinationBucketId: String) =
+        withContext(Dispatchers.IO) {
+            require(noteId.isNotBlank() && sourceBucketId.isNotBlank() && destinationBucketId.isNotBlank()) {
+                "Ungültiger Zettel oder Eimer."
+            }
+            require(sourceBucketId != destinationBucketId) { "Der Zettel liegt bereits in diesem Eimer." }
+            check(dao.moveNote(noteId, sourceBucketId, destinationBucketId, System.currentTimeMillis()) == 1) {
+                "Zettel oder Zieleimer nicht mehr verfügbar."
+            }
+        }
+
     suspend fun createNote(bucketId: String, text: String, drawingPayload: String? = null): String = withContext(Dispatchers.IO) {
         require(NoteRules.canSubmit(text, drawingPayload)) { "Der Zettel ist leer, die Skizze ungültig oder der Text zu lang." }
         val now = System.currentTimeMillis()

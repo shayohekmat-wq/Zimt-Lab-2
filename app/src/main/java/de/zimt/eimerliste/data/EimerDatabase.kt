@@ -74,6 +74,26 @@ interface EimerDao {
     @Insert
     suspend fun addNote(note: NoteEntity)
 
+    /**
+     * One atomic SQL UPDATE preserves note ID, content, sketch and creation time.
+     * The EXISTS guard prevents moving a note into a removed bucket.
+     */
+    @Query("""
+        UPDATE notes SET bucketId = :destinationBucketId, updatedAt = :updatedAt
+        WHERE id = :noteId AND bucketId = :sourceBucketId AND deletedAt IS NULL
+          AND :sourceBucketId != :destinationBucketId
+          AND EXISTS (
+            SELECT 1 FROM buckets
+            WHERE id = :destinationBucketId AND deletedAt IS NULL
+          )
+    """)
+    suspend fun moveNote(
+        noteId: String,
+        sourceBucketId: String,
+        destinationBucketId: String,
+        updatedAt: Long
+    ): Int
+
     @Query("UPDATE buckets SET name = :name, updatedAt = :updatedAt WHERE id = :id AND deletedAt IS NULL")
     suspend fun renameBucket(id: String, name: String, updatedAt: Long): Int
 }

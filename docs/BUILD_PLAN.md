@@ -208,3 +208,19 @@ Wir wollen **viele außergewöhnlich schöne, wirklich unterschiedliche und voll
 - [x] Vier Frontgrafiken zusätzlich mit motivspezifischen Elementen differenziert: Kupfernieten/-streben, Porzellanornamente, Waldblätter/-ranken und Sternmotive. Weiterhin dieselbe Grundsilhouette; **nicht als vier vollständig unabhängige Premiumassets deklarieren**.
 - [x] Ersten realen CI-Kompilierfehler in `LayeredIllustratedBucket.kt` diagnostiziert (`maxHeight` im verschachtelten Scope) und mit lokal gespeicherter `vesselHeight`-Dimension behoben (Commit `0d8096afdda4262760f35eb23779f1063e352d12`). Aktuelle Nachfolge-CI-Ergebnisse stehen noch aus.
 - [ ] Vor 50-%-Freigabe: erfolgreicher finaler CI-Run, visuelle Screenshots, stärkere Silhouettenvielfalt, echte Premiumtexturen, Lizenzprüfung und Gerätetest. Keine originalsignierte APK ohne Signaturprüfung.
+
+## 14. Fortsetzung 23.11.2026 – eigenständige Silhouetten, sechs neue Motive und Live-Galerie
+
+**Auftrag:** Länger weiterentwickeln, mindestens 50 % der großen Neugestaltung erreichen. Nicht nach einzelnen Kleinänderungen abbrechen.
+
+**Neue tatsächlich eingecheckte Leistungen:**
+- [x] Alle vier ursprünglichen Split-Layer-Illustrationen geometrisch überarbeitet: eigenständige Konturen für Astralgefäß, Kupferkessel, Porzellankrug und Waldkorb statt nur Farbwechsel derselben Grundform. Je Motiv echte separate lokale transparente REAR-/FRONT-Vektorressourcen, motivspezifische Ornamente.
+- [x] Zwei zusätzliche eigenständige Motive **Uhrwerkkorb** und **Amethysttruhe** mit eigenen separaten transparenten REAR-/FRONT-Ressourcen. Gesamt **sechs neue illustrierte Originalmotive / zwölf Vektor-Layerdateien** plus vorhandener Flechtkorb. Sie sind App-lokal und benötigen kein Netzwerk.
+- [x] `LayeredIllustratedBucket.kt`: alle sechs Motive mit stabilen IDs registriert, in tatsächlichem Eimer-Hauptgitter und Designlabor auswählbar; gemeinsame REAR → PAPER → FRONT-Reihenfolge.
+- [x] `DesignLab.kt`: Filter zwischen **Originalgrafiken** und ausdrücklich getrennten **Materialstudien**; große Live-Vorschau besitzt Papierpositionsregler und abspielbare Einwurf-/Auswurfbewegung für alle dargestellten Designs. Auswahl, Zieleimer, Bestätigung und Datenerhalt bleiben.
+- [x] `BucketArtworkCatalogTest.kt`: Regressionstests für sechs eindeutige stabile Design-IDs, separate Layerreferenzen, Legacy-Kompatibilität.
+- [x] CI des Zwischenstands `59ab98b3e492d644fe730cd1612279a613b0b114` erfolgreich. **Neuester Gesamtstand und neue Tests noch nicht CI-bestätigt.**
+
+**Abnahmepunkte ehrlich:** Neue Grafikvielfalt, funktionsfähige Galerie und tatsächliche Layerinteraktion sind erheblich ausgebaut. Die sechs Motive sind individuell gezeichnete, stilisierte Android-Vektorillustrationen; **sie sind noch keine extern kuratierten Premium-Digitalgrafiken, keine KI-generierten Renderassets und nicht auf einem Gerät visuell abgenommen**. Herkunftsgruppen HUMAN_DESIGNED und AI_GENERATED weiterhin nicht geliefert. Die 50-%-Qualitätsgrenze aus Abschnitt 11 darf nicht als abgenommen gelten, bevor mindestens ein grafisch hochwertiges freigestelltes Premiumasset visuell bestätigt und der neueste Build CI-grün ist. Aktuellen Stand nicht als signierte Update-APK ausgeben.
+
+**Nächster Prioritätsschritt:** Visuelle Referenz-/Gerätescreenshots prüfen und Silhouetten, Texturen, Schatten und Maßstab verbessern; echte, nachweislich lizenzierte menschliche Digitalgrafiken und separate KI-Renderassets integrieren; ggf. Android-XML-/Kotlin-Fehler aus CI beheben; signierte Release-APK erst nach Prüfung des ursprünglichen Zertifikats erstellen.

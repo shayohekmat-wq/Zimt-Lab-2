@@ -721,7 +721,7 @@ private fun PaperComposer(
                         .semantics { contentDescription = "Zettel dreimal falten" },
                     contentAlignment = Alignment.Center
                 ) {
-                    Text("↴", color = Ink.InkBlack, fontSize = 27.sp, fontWeight = FontWeight.Bold)
+                    PaperSubmitGlyph()
                 }
             }
         }

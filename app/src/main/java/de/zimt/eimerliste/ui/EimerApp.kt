@@ -1017,6 +1017,12 @@ private fun BucketContents(
             ) {
                 items(notes,key={it.id}) { note ->
                     var warningActive by remember(note.id) { mutableStateOf(false) }
+                    var burningActive by remember(note.id) { mutableStateOf(false) }
+                    val burnProgress by androidx.compose.animation.core.animateFloatAsState(
+                        targetValue = if (burningActive) 1f else 0f,
+                        animationSpec = tween(durationMillis = 1250, easing = FastOutSlowInEasing),
+                        label = "paper-burn-progress"
+                    )
                     val warningTransition = androidx.compose.animation.core.rememberInfiniteTransition(label = "note-warning")
                     val warningAngle by warningTransition.animateFloat(
                         initialValue = -1.1f,
@@ -1031,6 +1037,9 @@ private fun BucketContents(
                             .graphicsLayer {
                                 rotationZ = if (warningActive) warningAngle else 0f
                                 shadowElevation = if (warningActive) 9.dp.toPx() else 0f
+                                alpha = 1f - burnProgress
+                                scaleX = 1f - burnProgress * 0.28f
+                                scaleY = 1f - burnProgress * 0.52f
                             }
                             .pointerInput(note.id) {
                                 detectTapGestures(
@@ -1066,6 +1075,8 @@ private fun BucketContents(
                                                     warningActive = false
                                                     if (beforeIgnition == null) {
                                                         // Ignite only after a continuously held gesture.
+                                                        burningActive = true
+                                                        kotlinx.coroutines.delay(1250L)
                                                         onIgnite(note)
                                                         tryAwaitRelease()
                                                     } else if (beforeIgnition) {

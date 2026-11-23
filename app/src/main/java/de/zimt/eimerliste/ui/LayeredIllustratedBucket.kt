@@ -61,6 +61,8 @@ fun LayeredIllustratedBucket(
     modifier: Modifier = Modifier
 ) {
     val t = paperProgress.coerceIn(0f, 1f)
+    // Smooth the insertion/extraction at both ends; reverse progress uses the same path.
+    val eased = t * t * (3f - 2f * t)
     // Artwork shares a viewport; only the paper flight is design-specific.
     val mouthStart = when (asset.id) {
         "user-wicker-01" -> .14f
@@ -86,12 +88,13 @@ fun LayeredIllustratedBucket(
         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
             Box(
                 Modifier.fillMaxWidth(.18f).fillMaxHeight(.15f)
-                    .offset(y = vesselHeight * (mouthStart + mouthTravel * t))
+                    .offset(y = vesselHeight * (mouthStart + mouthTravel * eased))
                     .graphicsLayer {
-                        rotationZ = -9f + 15f * t
-                        scaleX = 1f - .18f * t
-                        scaleY = 1f - .18f * t
-                        alpha = 1f - .20f * t
+                        rotationZ = -9f + 15f * eased
+                        scaleX = 1f - .18f * eased
+                        scaleY = 1f - .18f * eased
+                        // Fully hide the note at the bottom, including transparent front openings.
+                        alpha = (1f - ((eased - .65f) / .35f).coerceIn(0f, 1f))
                     }
             ) {
                 androidx.compose.foundation.Canvas(Modifier.fillMaxSize()) {

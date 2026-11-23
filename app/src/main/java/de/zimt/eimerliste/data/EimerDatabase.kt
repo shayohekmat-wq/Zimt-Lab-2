@@ -94,6 +94,14 @@ interface EimerDao {
         updatedAt: Long
     ): Int
 
+    // Reversible soft deletion: the row and drawing remain intact for Undo.
+    @Query("UPDATE notes SET deletedAt = :deletedAt, updatedAt = :deletedAt WHERE id = :noteId AND deletedAt IS NULL")
+    suspend fun softDeleteNote(noteId: String, deletedAt: Long): Int
+
+    // The matching deletion timestamp prevents undoing a different later operation.
+    @Query("UPDATE notes SET deletedAt = NULL, updatedAt = :restoredAt WHERE id = :noteId AND deletedAt = :deletedAt")
+    suspend fun restoreNote(noteId: String, deletedAt: Long, restoredAt: Long): Int
+
     @Query("UPDATE buckets SET name = :name, updatedAt = :updatedAt WHERE id = :id AND deletedAt IS NULL")
     suspend fun renameBucket(id: String, name: String, updatedAt: Long): Int
 }

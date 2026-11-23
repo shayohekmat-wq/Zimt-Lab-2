@@ -121,3 +121,14 @@ Wir wollen **viele außergewöhnlich schöne, wirklich unterschiedliche und voll
 **Noch offen / Qualitätsgrenzen:** Animation ist im Quellcode verdrahtet, aber Screenshot-/Geräteabnahme und CI dieses Commits müssen separat bestätigt werden. Es fehlt weiterhin die hochwertige freigestellte Premium-Grafik, eine breite kuratierte Galerie und die geprüften menschlichen/AI-Einzelassets. Keine Behauptung, das neue Designlabor sei schon fertig. Der derzeitige Vektorkorb ist ein Funktionsreferenzobjekt.
 
 **Nächster großer Build-Schritt:** Echte hochwertige, getrennte transparente Vorder-/Rückgrafiken statt Canvas-Demo in denselben funktionalen Renderer integrieren; mehrere unverwechselbare Designs in einer echten Galerie bereitstellen; parallel konkret lizenzierte menschliche digitale Asset-Dateien recherchieren. Danach drei Papierpositionen und Einwurf/Auswurf auf Gerät prüfen, Datenmigration und signiertes Update verifizieren. Planpflege immer gemeinsam mit tatsächlicher Entwicklung.
+
+## 9. Release-Abschluss 23.11.2026 – 0.3.3-dev4 (versionCode 17)
+
+- [x] CI-Lauf [45097506539](https://github.com/shayohekmat-wq/Zimt-Lab-2/actions/runs/45097506539) für Commit `0768954f24b3786790f4e86a73703297e08072c8`: **success**; Debug-/Unit-Test- und Release-Kompilierung erfolgreich.
+- [x] Originales UNSIGNED-release-Artefakt `14784046604` privat heruntergeladen und mit ursprünglichem lokalem PKCS12-Schlüssel signiert. Schlüssel und Passwort nicht im Repository/CI hinterlegt.
+- [x] `apksigner verify --verbose --print-certs`: **Verifies**, v2/v3 erfolgreich; Zertifikats-SHA256 `40e6b73383a29f9ca792595b369329e2ab8f9165f49eec69b4eb57a8ffe26fe1`.
+- [x] Android-Manifest geprüft: Paket `de.zimt.eimerliste`, Version `0.3.3-dev4`, versionCode `17` (vorher `16`).
+- [x] Signierte Datei privat erstellt: `Eimer-Liste-Designlabor-2026-11-23-0200-UPDATE.apk`, SHA256 `c2a38ea0d4a3c7fdb20918b2943b559303f6989357928077c9fc486f6809c838`.
+- [ ] **Nicht durchgeführt:** echte Installation über Bestands-App auf Nothing Phone 3a/Moto G6, Room-Datenmigration auf Gerät, Screenshot-/visuelle Premium-Abnahme. Daher Entwicklungs-Update, **kein Designlabor-Finalrelease**.
+
+**Nächster Entwicklungszyklus:** Hochwertige lokale Einzelassets mit echten transparenten Front-/Back-Layern statt Canvas-Demos, Galerie mit mehreren tatsächlich auswählbaren Designs, konkrete lizenzgeprüfte digitale Grafiken menschlicher Urheber. Vor weiteren Änderungen zuerst aktuelle Release-Artefakte prüfen; Plan mit jedem Zyklus synchronisieren.

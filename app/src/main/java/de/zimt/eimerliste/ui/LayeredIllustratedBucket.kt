@@ -56,6 +56,19 @@ fun LayeredIllustratedBucket(
     modifier: Modifier = Modifier
 ) {
     val t = paperProgress.coerceIn(0f, 1f)
+    // Artwork shares a viewport; only the paper flight is design-specific.
+    val mouthStart = when (asset.id) {
+        "user-wicker-01" -> .14f
+        "user-wood-01" -> .12f
+        "user-zinc-01" -> .13f
+        else -> .14f
+    }
+    val mouthTravel = when (asset.id) {
+        "user-wicker-01" -> .36f
+        "user-wood-01" -> .33f
+        "user-zinc-01" -> .35f
+        else -> .36f
+    }
     BoxWithConstraints(modifier, contentAlignment = Alignment.Center) {
         val vesselHeight = maxHeight
         // Both original PNGs share one viewport and the exact same Fit transform.
@@ -68,9 +81,11 @@ fun LayeredIllustratedBucket(
         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
             Box(
                 Modifier.fillMaxWidth(.18f).fillMaxHeight(.15f)
-                    .offset(y = vesselHeight * (.16f + .35f * t))
+                    .offset(y = vesselHeight * (mouthStart + mouthTravel * t))
                     .graphicsLayer {
                         rotationZ = -9f + 15f * t
+                        scaleX = 1f - .18f * t
+                        scaleY = 1f - .18f * t
                         alpha = 1f - .20f * t
                     }
             ) {

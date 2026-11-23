@@ -2,7 +2,10 @@
 
 **Aktueller verbindlicher Stand: 23.11.2026.** Diese Richtlinie ersetzt die frühere Einordnung von Fotografien handgefertigter Körbe als „Von Menschen gemacht“.
 
-## Kategorien – strikt trennen
+## Vielfalt ist Pflicht, Ausschließlichkeit nicht
+Das Designlabor soll **viele** von Menschen gestaltete digitale Grafikoptionen enthalten, **zusätzlich** zu hochwertigen KI-generierten Designs und unseren selbst konstruierten Originalen. Alle drei Entstehungswege sind ausdrücklich erlaubt und erwünscht. Getrennte Kennzeichnung dient nur der ehrlichen Herkunftsinformation, **nicht** dem Ausschluss anderer Herstellungsverfahren.
+
+## Kategorien – Herkunft transparent kennzeichnen
 
 ### Von Menschen designt (digitale Grafikassets)
 Professionelle **digitale Grafikdateien**, von menschlichen Grafikdesignern, Illustratoren, Pixel-Art- oder 3D-Künstlern geschaffen: transparente PNGs, SVGs, Sprites, handmodellierte 3D-Objekte/Renderings, UI-Assets. **Keine KI-generierten oder KI-assistierten Grafiken in dieser Kategorie.** Die bloße Behauptung „No AI“ ist ein Prüfhinweis, kein Beweis. Bevorzugt Quelldateien/Entstehungsnachweise und direkte Urheberangaben.

@@ -530,6 +530,15 @@ private fun BucketTile(
     val impact = remember { Animatable(0f) }
     val wobble = remember { Animatable(0f) }
     val ejectFlight = remember { Animatable(0f) }
+    val wickerPaper = remember { Animatable(1f) }
+    LaunchedEffect(impactToken, isWickerReference) {
+        if (isWickerReference && impactToken > 0 && ValueAnimator.areAnimatorsEnabled()) {
+            wickerPaper.snapTo(0f)
+            wickerPaper.animateTo(1f, tween(480, easing = FastOutSlowInEasing))
+        } else {
+            wickerPaper.snapTo(1f)
+        }
+    }
     LaunchedEffect(impactToken) {
         if (impactToken > 0 && ValueAnimator.areAnimatorsEnabled()) {
             impact.snapTo(0f)
@@ -621,7 +630,7 @@ private fun BucketTile(
             if (isWickerReference) {
                 WickerReferenceBucket(
                     title = bucket.name,
-                    paperProgress = 1f,
+                    paperProgress = if (isEjecting) 1f - ejectFlight.value else wickerPaper.value,
                     modifier = artworkModifier
                 )
             } else if (layeredStudy != null) {
@@ -640,7 +649,7 @@ private fun BucketTile(
                     modifier = artworkModifier
                 )
             }
-            if (isEjecting) {
+            if (isEjecting && !isWickerReference) {
                 FoldedPaperArtwork(
                     progress = 3f,
                     message = "",

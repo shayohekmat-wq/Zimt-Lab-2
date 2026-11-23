@@ -361,3 +361,11 @@ Nutzer meldete per Screenshots, dass Flechtkorb korrekt wirkt, Holzkübel und Zi
 - `9c26ca8f`: smooth insertion/extraction easing and full paper disappearance at end of travel for the three user PNG buckets. Original assets, Room schema, IDs and legacy resolver untouched.
 - `bfc8ff2e`: versionCode 28, versionName 0.3.3-dev15.
 - Outstanding: CI for dev15, device screenshot/animation acceptance, verify original SHA256 signing fingerprint before releasing an UPDATE APK. Full fade does not itself prove correct intermediate-frame occlusion. Scope freeze remains.
+
+
+### 0.3.3-dev16 / Build 29 — non-finite animation safety (23.11.2026)
+- Previous dev15 CI run `45143589427`: **success**, unsigned release artifact `14803626068` exists. No verified update signature, therefore no update APK released.
+- Commit `f0b67dce`: protect layered-paper renderer against NaN/Infinity progress; invalid animation progress now resets to zero rather than propagating NaN to Compose transforms. The original six PNGs, three design IDs, Room schema and legacy resolver remain unchanged.
+- Commit `ee84c7d4`: versionCode 29 / versionName 0.3.3-dev16. CI result and original-key signature still require verification.
+- Blocker: original PKCS12 signing key not located in accessible Library search (password file exists). Do not sign with another key or publish unsigned/debug as an update. Device screenshots, seams and real paper occlusion remain unverified.
+- Scope freeze continues: only three user artwork pairs, no new gallery entries or design assets.

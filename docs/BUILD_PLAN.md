@@ -439,3 +439,12 @@ Nutzer meldete per Screenshots, dass Flechtkorb korrekt wirkt, Holzkübel und Zi
 - [ ] CI-/Unit-Test-Erfolg von Build 37 nicht bestätigt; nicht als bestanden ausgeben. Auf Android visuell Vorderwandverdeckung, Eimeröffnungen, Haptik und Papierflug prüfen.
 - [ ] Originaler PKCS12-Signierschlüssel und Update-Signatur mit Zertifikat SHA256 `40e6b73383a29f9ca792595b369329e2ab8f9165f49eec69b4eb57a8ffe26fe1` weiterhin nicht nachgewiesen. Keine unsigned oder anders signierte APK als Update freigeben.
 - Nächste Arbeit: tatsächliche Android-Qualitätsabnahme statt weiterer Designlabor-Erweiterungen oder bloßer Metadatenänderungen.
+
+
+## 18. Build 38 · 23.11.2026 · CI-Kompilierungsblocker behoben (Scope-Freeze unverändert)
+
+- **Verbindlich bleibt Abschnitt 17.** Die alten Abschnitte 1–16 enthalten historische, inzwischen gestrichene Designlabor-Expansionsideen und sind nicht zur Umsetzung freigegeben. Ausschließlich die drei Original-PNG-Eimer und ihre stabilen IDs bleiben aktiv.
+- Build 37 CI [45234578252](https://github.com/shayohekmat-wq/Zimt-Lab-2/actions/runs/45234578252) ist **fehlgeschlagen**: Kotlin-DSL-Skriptkompilierung in `app/build.gradle.kts`, weil `java.nio`, `java.io` und `java.util` im Gradle-Android-Skript nicht als Paketnamen aufgelöst wurden (Shadowing durch Gradle-DSL-Eigenschaft `java`). Die dadurch folgenden Typinferenzfehler sind Folgefehler.
+- Commit `77b108549bf692e16fed9145108c2f8f35a42f85`: explizite Imports für `ByteBuffer`, `DataInputStream`, `BufferedInputStream`, `CRC32`; im Prüfcode unqualifizierte Klassennamen. `versionCode=38`, `versionName=0.3.3-dev25`.
+- CI [45243560345](https://github.com/shayohekmat-wq/Zimt-Lab-2/actions/runs/45243560345) wurde automatisch durch den Push ausgelöst und war bei dieser Dokumentation **queued**, nicht bestanden. Keine Original-PNG-Dateien, Design-IDs, Room-Tabellen oder Nutzerdaten verändert.
+- **Offen:** CI-Abschluss und gegebenenfalls weitere Fehler beheben; danach visuelle Android-Prüfung von REAR/PAPER/FRONT, Papierverdeckung, Animation und Haptik; originales Zertifikat und Update-Datenbestandsschutz nachweisen. Keine signierte Update-APK behaupten, bevor tatsächlich verifiziert.

@@ -28,8 +28,6 @@ data class IllustratedBucketAsset(
 )
 
 val illustratedBucketAssets = listOf(
-    IllustratedBucketAsset("user-zinc-01", "Zinkeimer · Originalgrafik",
-        R.drawable.bucket_zinc_user_rear, R.drawable.bucket_zinc_user_front),
     IllustratedBucketAsset("illustrated-astral-01", "Astralgefäß",
         R.drawable.bucket_astral_rear, R.drawable.bucket_astral_front),
     IllustratedBucketAsset("illustrated-copper-01", "Kupferkessel",

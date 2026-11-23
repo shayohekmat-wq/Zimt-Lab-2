@@ -42,6 +42,16 @@ jobs:
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '9.6.0'
+      - name: Verify design quality contract is present
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -s AGENTS.md
+          test -s docs/DESIGN_PRINCIPLES.md
+          test -s docs/DESIGN_QA.md
+          grep -q 'Animation-maximalist' AGENTS.md
+          grep -q 'MOT-01' docs/DESIGN_QA.md
+          echo "Design QA contract present; visual/device acceptance requires separate evidence"
       - name: Compile debug and unit tests (isolated Room schema generation)
         run: gradle --no-daemon :app:assembleDebug :app:testDebugUnitTest
       - name: Upload JUnit reports even on test failure

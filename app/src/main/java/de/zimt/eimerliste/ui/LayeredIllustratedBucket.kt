@@ -48,14 +48,14 @@ fun LayeredIllustratedBucket(
     modifier: Modifier = Modifier
 ) {
     val t = paperProgress.coerceIn(0f, 1f)
-    Box(modifier, contentAlignment = Alignment.Center) {
+    BoxWithConstraints(modifier, contentAlignment = Alignment.Center) {
         Image(painterResource(asset.rear), contentDescription = null,
             modifier = Modifier.fillMaxSize())
         // Paper starts above the rim and descends behind the opaque front.
         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
             Box(
                 Modifier.fillMaxWidth(.18f).fillMaxHeight(.15f)
-                    .offset(y = androidx.compose.ui.unit.Dp(256f * (.16f + .35f * t)))
+                    .offset(y = maxHeight * (.16f + .35f * t))
                     .graphicsLayer {
                         rotationZ = -9f + 15f * t
                         alpha = 1f - .20f * t
@@ -75,6 +75,6 @@ fun LayeredIllustratedBucket(
         Text(title, color = Color(0xFFFFE3AB), fontSize = 10.sp,
             fontWeight = FontWeight.Bold, textAlign = TextAlign.Center, maxLines = 2,
             modifier = Modifier.align(Alignment.Center).fillMaxWidth(.28f)
-                .offset(y = androidx.compose.ui.unit.Dp(256f * .22f)))
+                .offset(y = maxHeight * .22f))
     }
 }

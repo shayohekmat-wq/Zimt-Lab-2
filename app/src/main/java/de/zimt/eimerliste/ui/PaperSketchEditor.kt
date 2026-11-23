@@ -56,10 +56,11 @@ import de.zimt.eimerliste.domain.PaperDrawingCodec
 import kotlinx.coroutines.launch
 
 private val sketchColors = listOf(
-    0xff35271e.toInt(), // warm black ink
-    0xff84432f.toInt(), // red-brown pencil
-    0xff365965.toInt(), // blue-grey ink
-    0xff64804d.toInt()  // forest green
+    0xff35271e.toInt(), // existing warm black ink
+    0xff75283F.toInt(), // burgundy / wine red
+    0xff285A88.toInt(), // deep blue
+    0xffA28CC6.toInt(), // lilac
+    0xff285A42.toInt()  // dark forest green
 )
 
 private fun DrawScope.drawStroke(stroke: InkStroke) {
@@ -258,15 +259,6 @@ fun PaperSketchEditor(
                     modifier = Modifier.fillMaxSize()
                 )
             }
-            Row(Modifier.fillMaxWidth().padding(top = 3.dp), verticalAlignment = Alignment.CenterVertically) {
-                IconButton(
-                    onClick = { leaveAndKeepSketch(toText = true) { onTextEdit(workingPayload) } },
-                    enabled = !leaving,
-                    modifier = Modifier.background(Ink.BrassDark.copy(alpha = .28f), CircleShape)
-                        .semantics { contentDescription = "Zur Textbearbeitung wechseln und Skizze behalten" }
-                ) { Icon(Icons.Default.TextFields, contentDescription = null, tint = Ink.Brass) }
-            }
-            Spacer(Modifier.height(4.dp))
             Row(
                 Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
                 verticalAlignment = Alignment.CenterVertically,
@@ -299,6 +291,21 @@ fun PaperSketchEditor(
                         Box(Modifier.size(if (brushWidth < 6f) 5.dp else 15.dp)
                             .background(Ink.Paper, CircleShape))
                     }
+                }
+                Spacer(Modifier.width(6.dp))
+                // Same warm paper circle as the pencil button in the text editor.
+                // Keep this beside the ink and width controls, not on a separate toolbar row.
+                Box(
+                    modifier = Modifier.size(44.dp).clip(CircleShape)
+                        .background(Ink.PaperEdge)
+                        .semantics { contentDescription = "Zur Textbearbeitung wechseln und Skizze behalten" }
+                        .clickable(enabled = !leaving) {
+                            leaveAndKeepSketch(toText = true) { onTextEdit(workingPayload) }
+                        },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(Icons.Default.TextFields, contentDescription = null,
+                        tint = Ink.InkBlack, modifier = Modifier.size(25.dp))
                 }
             }
             Row(

@@ -418,10 +418,9 @@ fun EimerApp(vm: EimerViewModel = viewModel()) {
                     bucket = visibleBucket,
                     notes = if (visibleBucket.id == selectedId) notes else emptyList(),
                     onNote = { openNote = it },
-                    onLiftNote = {
-                        haptics.performHapticFeedback(HapticFeedbackType.GestureThresholdActivate)
-                        movingNote = it
-                    },
+                    onLiftNote = { movingNote = it },
+                    onLiftHaptic = { haptics.performHapticFeedback(HapticFeedbackType.GestureThresholdActivate) },
+                    onWarningHaptic = { haptics.performHapticFeedback(HapticFeedbackType.SegmentTick) },
                     onRandom = {
                         scope.launch {
                             try {
@@ -969,6 +968,8 @@ private fun BucketContents(
     notes: List<NoteEntity>,
     onNote: (NoteEntity) -> Unit,
     onLiftNote: (NoteEntity) -> Unit,
+    onLiftHaptic: () -> Unit,
+    onWarningHaptic: () -> Unit,
     onRandom: () -> Unit
 ) {
     Column(Modifier.fillMaxWidth().padding(horizontal=20.dp).heightIn(min=260.dp,max=650.dp)) {
@@ -999,14 +1000,30 @@ private fun BucketContents(
                                 detectTapGestures(
                                     onTap = { onNote(note) },
                                     onPress = {
-                                        // Keep short taps intact. Lift is triggered at 700 ms,
-                                        // not at Android's device-dependent long-press timeout.
-                                        val lifted = kotlinx.coroutines.withTimeoutOrNull(NoteHoldTiming.LIFT_MS) {
+                                        // A cancelled or released press never triggers delayed feedback.
+                                        // The destination picker is shown only on release, leaving the
+                                        // stationary 1.5s warning interval reachable.
+                                        val releasedEarly = kotlinx.coroutines.withTimeoutOrNull(NoteHoldTiming.LIFT_MS) {
                                             tryAwaitRelease()
-                                        } == null
-                                        if (lifted) {
+                                        }
+                                        if (releasedEarly == null) {
+                                            onLiftHaptic()
+                                            val releasedBeforeWarning = kotlinx.coroutines.withTimeoutOrNull(
+                                                NoteHoldTiming.WARNING_MS - NoteHoldTiming.LIFT_MS
+                                            ) { tryAwaitRelease() }
+                                            if (releasedBeforeWarning == null) {
+                                                onWarningHaptic()
+                                                val releasedBeforeSecondPulse = kotlinx.coroutines.withTimeoutOrNull(180L) {
+                                                    tryAwaitRelease()
+                                                }
+                                                if (releasedBeforeSecondPulse == null) {
+                                                    onWarningHaptic()
+                                                    tryAwaitRelease()
+                                                }
+                                            }
+                                            // Do not burn or delete anything until the reversible
+                                            // ignition/undo implementation is actually available.
                                             onLiftNote(note)
-                                            tryAwaitRelease()
                                         }
                                     }
                                 )

@@ -132,3 +132,15 @@ Wir wollen **viele außergewöhnlich schöne, wirklich unterschiedliche und voll
 - [ ] **Nicht durchgeführt:** echte Installation über Bestands-App auf Nothing Phone 3a/Moto G6, Room-Datenmigration auf Gerät, Screenshot-/visuelle Premium-Abnahme. Daher Entwicklungs-Update, **kein Designlabor-Finalrelease**.
 
 **Nächster Entwicklungszyklus:** Hochwertige lokale Einzelassets mit echten transparenten Front-/Back-Layern statt Canvas-Demos, Galerie mit mehreren tatsächlich auswählbaren Designs, konkrete lizenzgeprüfte digitale Grafiken menschlicher Urheber. Vor weiteren Änderungen zuerst aktuelle Release-Artefakte prüfen; Plan mit jedem Zyklus synchronisieren.
+
+## 9. Entwicklungszyklus 23.11.2026 – Skizzen-Enter + Designlabor (Ergänzung, kein Zielwechsel)
+
+**Nutzerkorrektur:** In der aufgeklappten Mal-/Skizzenansicht soll die Enter-/Falt-Schaltfläche den Zettel **wirklich falten**, nicht bloß zur Texteingabe zurückkehren. Der Text auf dem großen Zeichenblatt soll etwas tiefer stehen. Diese Änderungen sind Ergänzungen und dürfen das Designlabor-Hauptziel nicht ersetzen. In der normalen mehrzeiligen Texteingabe bleibt Enter ein Zeilenumbruch.
+
+**Implementierter Quellstand:**
+- [x] `PaperSketchEditor.kt`: separater `onFold`-Callback für die untere Falt-Schaltfläche, bestehender Textwechsel-Button bleibt unabhängig; Text auf dem ausgeklappten Papier von 21 auf 32 dp oberen Abstand versetzt (Commit `56f3f9816ace0aa325c7c613f8546a11ce1367e8`).
+- [x] `EimerApp.kt`: Skizze wird vor dem Falten gesichert; Falten nur bei gültigem Zettel und vorhandenem Eimer, dann startet der vorhandene echte Falt-/Einwurfablauf (Commit `410d4a837e33ce4f1d5bdc3ca7c0d8b9234232ef`).
+- [x] **Parallel Designlabor:** Die echte Flechtkorb-Vorschau erhält eine abspielbare bidirektionale Einwurf-/Auswurfdemonstration zusätzlich zum manuellen Regler (Commit `1c49e3a0be2e8e4b43df93becc74bdd42eed8cd9`).
+- [ ] CI-Ergebnis dieses Standes, reale Tastatur-/TalkBack-/Geräteprüfung, visuelle Abnahme und originalsignierte UPDATE-APK separat nachweisen.
+
+**Nächstes großes Designlabor-Ziel unverändert:** Professionelle lokal eingebundene, transparente Back-/Front-Grafikassets, kuratierte Vielfalt inklusive konkret lizenzierter menschlicher Digitalgrafiken, eigene und KI-Designs, durchgängige Papierinteraktion in echten Tiles, geprüfte Persistenz und originalsigniertes Update. Kleine UX-Korrekturen dürfen den Hauptentwicklungszyklus nicht verdrängen.

@@ -148,7 +148,8 @@ fun PaperSketchEditor(
     initialPayload: String?,
     text: String,
     onTextEdit: (String?) -> Unit,
-    onApply: (String?) -> Unit
+    onApply: (String?) -> Unit,
+    onFold: (String?) -> Unit
 ) {
     // Persist the in-progress sketch across activity recreation, e.g. rotation.
     var workingPayload by rememberSaveable(initialPayload) { mutableStateOf(initialPayload) }
@@ -236,7 +237,7 @@ fun PaperSketchEditor(
                         overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
                         modifier = Modifier.align(Alignment.TopStart)
                             .fillMaxWidth()
-                            .padding(start = 17.dp, end = 12.dp, top = 21.dp)
+                            .padding(start = 17.dp, end = 12.dp, top = 32.dp)
                     )
                 }
                 SketchCanvas(
@@ -352,7 +353,7 @@ fun PaperSketchEditor(
                         if (strokes.isNotEmpty() && encoded == null) {
                             status = "Die Zeichnung ist zu groß, bitte einen Strich zurücknehmen."
                         } else {
-                            leaveAndKeepSketch { onApply(encoded) }
+                            leaveAndKeepSketch { onFold(encoded) }
                         }
                     },
                     enabled = !leaving,

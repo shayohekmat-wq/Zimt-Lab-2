@@ -9,4 +9,5 @@
 <path android:fillColor="#F2BA72" android:pathData="M94,170 L162,170 L159,197 L97,197 Z"/>
 <path android:fillColor="#4A221B" android:pathData="M99,174 L157,174 L154,193 L102,193 Z"/>
 <path android:fillColor="#F2BA72" android:pathData="M123,177 L133,177 L133,190 L123,190 Z"/>
+<path android:strokeColor="#F8CF87" android:strokeWidth="5" android:pathData="M75,137 L79,194 M176,137 L171,194"/><path android:fillColor="#F8CF87" android:pathData="M70,150 A5,5 0,1 0,80 150 A5,5 0,1 0,70 150 M174,150 A5,5 0,1 0,184 150 A5,5 0,1 0,174 150 M78,190 A4,4 0,1 0,86 190 A4,4 0,1 0,78 190 M169,190 A4,4 0,1 0,177 190 A4,4 0,1 0,169 190"/>
 </vector>

@@ -87,15 +87,53 @@ fun LabBucketArtwork(design: LabDesign, title: String, modifier: Modifier = Modi
             val bottom = .85f - (v % 2) * .025f
             val left = .17f + (v % 2) * .035f
             val right = .83f - (v % 3) * .018f
+            // Shape is part of the design, not just a color parameter.
+            // The six low-poly variants have distinct physical constructions.
             val silhouette = Path().apply {
-                moveTo(w*left,h*top); lineTo(w*right,h*top)
-                lineTo(w*(right-.07f),h*bottom)
-                quadraticBezierTo(w*.5f,h*(bottom+.055f),w*(left+.07f),h*bottom)
+                if (st == 4) {
+                    when(v) {
+                        0 -> { // Hexagonal vessel, angular rim and straight walls
+                            moveTo(w*.23f,h*.25f); lineTo(w*.77f,h*.25f)
+                            lineTo(w*.88f,h*.37f); lineTo(w*.77f,h*.79f)
+                            lineTo(w*.5f,h*.89f); lineTo(w*.23f,h*.79f)
+                            lineTo(w*.12f,h*.37f)
+                        }
+                        1 -> { // Heavy trapezoid stone trough, no curved base
+                            moveTo(w*.12f,h*.38f); lineTo(w*.88f,h*.38f)
+                            lineTo(w*.79f,h*.83f); lineTo(w*.21f,h*.83f)
+                        }
+                        2 -> { // Tall, narrow asymmetric polygon
+                            moveTo(w*.30f,h*.20f); lineTo(w*.77f,h*.25f)
+                            lineTo(w*.84f,h*.48f); lineTo(w*.68f,h*.88f)
+                            lineTo(w*.31f,h*.83f); lineTo(w*.19f,h*.44f)
+                        }
+                        3 -> { // Stave-built wooden bucket
+                            moveTo(w*.20f,h*.29f); lineTo(w*.80f,h*.29f)
+                            lineTo(w*.72f,h*.86f); lineTo(w*.28f,h*.86f)
+                        }
+                        4 -> { // Wide squat steel pail
+                            moveTo(w*.10f,h*.40f); lineTo(w*.90f,h*.40f)
+                            lineTo(w*.75f,h*.75f); lineTo(w*.25f,h*.75f)
+                        }
+                        else -> { // Crystal taper with a pointed bottom
+                            moveTo(w*.28f,h*.23f); lineTo(w*.72f,h*.23f)
+                            lineTo(w*.88f,h*.39f); lineTo(w*.70f,h*.74f)
+                            lineTo(w*.50f,h*.91f); lineTo(w*.30f,h*.74f)
+                            lineTo(w*.12f,h*.39f)
+                        }
+                    }
+                } else {
+                    moveTo(w*left,h*top); lineTo(w*right,h*top)
+                    lineTo(w*(right-.07f),h*bottom)
+                    quadraticBezierTo(w*.5f,h*(bottom+.055f),w*(left+.07f),h*bottom)
+                }
                 close()
             }
             drawOval(Color(0x55000000),Offset(w*.19f,h*.85f),Size(w*.62f,h*.08f))
-            drawArc(edge,180f,180f,false,Offset(w*.16f,h*.08f),Size(w*.68f,h*.48f),
-                style=Stroke(width=w*(if(st==0) .028f else .018f)))
+            if (st != 4 || v == 3 || v == 4) {
+                drawArc(edge,180f,180f,false,Offset(w*.16f,h*.08f),Size(w*.68f,h*.48f),
+                    style=Stroke(width=w*(if(st==0) .028f else .018f)))
+            }
             drawPath(silhouette,brush=if(st==2) Brush.horizontalGradient(listOf(c,c))
                 else Brush.horizontalGradient(listOf(c.copy(alpha=.72f),c,c.copy(alpha=.7f))))
             clipPath(silhouette) {
@@ -123,11 +161,27 @@ fun LabBucketArtwork(design: LabDesign, title: String, modifier: Modifier = Modi
                             w*(.08f+i%3*.017f),
                             Offset(w*(.24f+(i*7%9)*.061f),h*(.34f+(i*3%8)*.067f)))
                     }
-                    4 -> { // faceted low-poly geometry
-                        for(i in 0..5) {
-                            val x=w*(.19f+i*.105f)
-                            drawLine(if(i%2==0) Color.White.copy(alpha=.36f) else edge.copy(alpha=.3f),
-                                Offset(x,h*.3f),Offset(w*.5f,h*(.60f+(i%3)*.085f)),w*.025f)
+                    4 -> { // Each construction receives different facet planes.
+                        val facets = when(v) {
+                            0 -> listOf(.18f,.34f,.50f,.66f,.82f)
+                            1 -> listOf(.21f,.40f,.60f,.79f)
+                            2 -> listOf(.26f,.46f,.73f)
+                            3 -> listOf(.28f,.40f,.52f,.64f,.76f)
+                            4 -> listOf(.20f,.37f,.63f,.80f)
+                            else -> listOf(.20f,.36f,.50f,.64f,.80f)
+                        }
+                        facets.forEachIndexed { i, x ->
+                            drawLine(if(i%2==0) Color.White.copy(alpha=.25f)
+                                else edge.copy(alpha=.26f),
+                                Offset(w*x,h*.26f),
+                                Offset(w*(x + (if(i%2==0) .035f else -.025f)),h*.87f),
+                                w*.012f)
+                        }
+                        if(v==3) { // Separate stave hoops
+                            listOf(.43f,.73f).forEach { y ->
+                                drawLine(edge.copy(alpha=.8f),Offset(w*.18f,h*y),
+                                    Offset(w*.82f,h*y),w*.03f)
+                            }
                         }
                     }
                     5 -> { // handmade clay fingerprint rings
@@ -151,10 +205,20 @@ fun LabBucketArtwork(design: LabDesign, title: String, modifier: Modifier = Modi
                 }
             }
             drawPath(silhouette,edge,style=Stroke(w*(if(st==0) .023f else .012f)))
-            drawOval(c.copy(alpha=.92f),Offset(w*(left-.015f),h*(top-.045f)),
-                Size(w*(right-left+.03f),h*.11f))
-            drawOval(edge,Offset(w*(left+.02f),h*(top-.017f)),
-                Size(w*(right-left-.04f),h*.05f))
+            if (st != 4) {
+                drawOval(c.copy(alpha=.92f),Offset(w*(left-.015f),h*(top-.045f)),
+                    Size(w*(right-left+.03f),h*.11f))
+                drawOval(edge,Offset(w*(left+.02f),h*(top-.017f)),
+                    Size(w*(right-left-.04f),h*.05f))
+            } else {
+                val rimY = if(v==1 || v==4) .39f else if(v==2 || v==5) .25f else .29f
+                val rimL = if(v==4) .11f else if(v==1) .13f else .24f
+                val rimR = 1f-rimL
+                drawLine(edge,Offset(w*rimL,h*rimY),Offset(w*rimR,h*rimY),w*.027f)
+                drawLine(Color.White.copy(alpha=.32f),
+                    Offset(w*(rimL+.025f),h*(rimY-.015f)),
+                    Offset(w*(rimR-.025f),h*(rimY-.015f)),w*.012f)
+            }
             if(st==0 || st==7) {
                 drawCircle(Color(0xFFE9C58D),w*.016f,Offset(w*left,h*(top+.05f)))
                 drawCircle(Color(0xFFE9C58D),w*.016f,Offset(w*right,h*(top+.05f)))
@@ -218,17 +282,8 @@ fun DesignLab(
                 repeat(3-row.size) { Spacer(Modifier.weight(1f)) }
             }
         }
-        Spacer(Modifier.height(14.dp))
-        Text("Von Menschen gemacht", color=Ink.Paper, fontSize=19.sp, fontWeight=FontWeight.Bold)
-        Text("Echte Handwerksobjekte · CC0-Fotografien", color=Ink.Muted, fontSize=11.sp)
-        Spacer(Modifier.height(5.dp))
-        RealBasketGallery()
-        Spacer(Modifier.height(14.dp))
-        Text("Bildgeneriert", color=Ink.Paper, fontSize=19.sp, fontWeight=FontWeight.Bold)
-        Text("Sechs eigene Bildentwürfe · App-Assets in Vorbereitung", color=Ink.Muted, fontSize=11.sp)
-        Spacer(Modifier.height(5.dp))
-        GeneratedBasketPreview()
-        Spacer(Modifier.height(12.dp))
+        // Unusable raw photographs and text-only placeholders are intentionally
+        // excluded from the usable design picker until properly prepared assets exist.
         chosen?.let { design ->
             Spacer(Modifier.height(8.dp))
             Text("Für welchen Eimer?",color=Ink.Paper,fontSize=13.sp)

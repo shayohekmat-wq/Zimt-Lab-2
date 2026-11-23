@@ -1098,90 +1098,89 @@ private fun BucketContents(
                                     val startedAt = down.uptimeMillis
                                     var lastPosition = start
                                     val originalBounds = noteBounds
-                                    val pressSafety = NotePressSafety().apply { down(startedAt) }
-                                    var lifted = false
-                                    var moved = false
-                                    var warned = false
-                                    var ignited = false
-                                    var cancelled = false
-                                    var released = false
+                                    val gesture = NotePressSafety().apply { down(startedAt) }
                                     noteDrag = Offset.Zero
                                     dragging = false
                                     warningActive = false
-                                    while (!released && !cancelled && !ignited) {
-                                        val elapsed = android.os.SystemClock.uptimeMillis() - startedAt
-                                        val nextDeadline = when {
-                                            !lifted -> NoteHoldTiming.LIFT_MS
-                                            !warned -> NoteHoldTiming.WARNING_MS
-                                            else -> NoteHoldTiming.IGNITION_MS
-                                        }
-                                        val remaining = (nextDeadline - elapsed).coerceAtLeast(1L)
-                                        val event = if (moved) {
-                                            awaitPointerEvent(PointerEventPass.Main)
-                                        } else kotlinx.coroutines.withTimeoutOrNull(remaining) {
-                                            awaitPointerEvent(PointerEventPass.Main)
-                                        }
-                                        if (event == null) {
-                                            val now = android.os.SystemClock.uptimeMillis() - startedAt
-                                            val phase = pressSafety.advance(android.os.SystemClock.uptimeMillis())
-                                            if (!lifted && phase == NotePressSafety.Phase.LIFTED) {
-                                                lifted = true
-                                                onLiftHaptic()
-                                            } else if (!moved && !warned && phase == NotePressSafety.Phase.WARNING) {
-                                                warned = true
-                                                warningActive = true
-                                                onWarningHaptic()
-                                            } else if (!moved && phase == NotePressSafety.Phase.IGNITED && pressSafety.mayCommitBurn()) {
-                                                ignited = true
-                                                warningActive = false
-                                                onIgnitionHaptic()
-                                                burningActive = true
-                                            }
-                                        } else {
-                                            val pointer = event.changes.firstOrNull { it.id == down.id }
-                                            if (pointer == null || event.changes.size > 1 ||
-                                                event.changes.any { it.isConsumed && it.id != down.id }) {
-                                                pressSafety.cancel()
-                                                cancelled = true
-                                            } else if (!pointer.pressed) {
-                                                pressSafety.release()
-                                                released = true
-                                                if (!pointer.previousPressed) cancelled = true
+                                    try {
+                                        while (gesture.isTracking()) {
+                                            val elapsed = (android.os.SystemClock.uptimeMillis() - startedAt).coerceAtLeast(0L)
+                                            val nextDeadline = gesture.nextDeadlineMs()
+                                            val event = if (nextDeadline == null) {
+                                                awaitPointerEvent(PointerEventPass.Main)
                                             } else {
-                                                lastPosition = pointer.position
-                                                val delta = lastPosition - start
-                                                if (delta.getDistance() > touchSlop) {
-                                                    pressSafety.move(beyondSlop = true)
-                                                    if (!lifted) {
-                                                        // Let the parent LazyColumn scroll naturally.
-                                                        cancelled = true
-                                                    } else {
-                                                        moved = true
-                                                        dragging = true
+                                                kotlinx.coroutines.withTimeoutOrNull(
+                                                    (nextDeadline - elapsed).coerceAtLeast(1L)
+                                                ) { awaitPointerEvent(PointerEventPass.Main) }
+                                            }
+                                            if (event == null) {
+                                                when (gesture.advance(android.os.SystemClock.uptimeMillis())) {
+                                                    NotePressSafety.Phase.LIFTED -> onLiftHaptic()
+                                                    NotePressSafety.Phase.WARNING -> {
+                                                        warningActive = true
+                                                        onWarningHaptic()
+                                                    }
+                                                    NotePressSafety.Phase.IGNITED -> {
                                                         warningActive = false
-                                                        noteDrag = delta
-                                                        originalBounds?.let { onDragLocation(it.center + delta) }
-                                                        pointer.consume()
+                                                        onIgnitionHaptic()
+                                                        burningActive = true
+                                                    }
+                                                    else -> Unit
+                                                }
+                                            } else {
+                                                val pointer = event.changes.firstOrNull { it.id == down.id }
+                                                if (pointer == null || event.changes.size > 1 ||
+                                                    event.changes.any { it.isConsumed && it.id != down.id }) {
+                                                    gesture.cancel()
+                                                } else if (!pointer.pressed) {
+                                                    if (!pointer.previousPressed) gesture.cancel()
+                                                    else gesture.release()
+                                                } else {
+                                                    lastPosition = pointer.position
+                                                    val delta = lastPosition - start
+                                                    if (delta.getDistance() > touchSlop) {
+                                                        val wasLifted = gesture.phase == NotePressSafety.Phase.LIFTED ||
+                                                            gesture.phase == NotePressSafety.Phase.WARNING ||
+                                                            gesture.phase == NotePressSafety.Phase.DRAGGING
+                                                        if (!wasLifted) {
+                                                            // Hand control to the parent scrolling container.
+                                                            gesture.cancel()
+                                                        } else {
+                                                            gesture.move(beyondSlop = true)
+                                                            dragging = true
+                                                            warningActive = false
+                                                            noteDrag = delta
+                                                            originalBounds?.let { onDragLocation(it.center + delta) }
+                                                            pointer.consume()
+                                                        }
                                                     }
                                                 }
                                             }
                                         }
-                                    }
-                                    warningActive = false
-                                    if (released && !cancelled && !ignited) {
-                                        when {
-                                            moved && lifted -> originalBounds?.let { onDropNote(note, it.center + noteDrag) }
-                                            lifted -> onLiftNote(note) // Accessible fallback picker.
-                                            else -> onNote(note)
+                                        when (gesture.phase) {
+                                            NotePressSafety.Phase.RELEASED -> when (gesture.releasedFrom) {
+                                                NotePressSafety.Phase.DRAGGING ->
+                                                    originalBounds?.let { onDropNote(note, it.center + noteDrag) }
+                                                NotePressSafety.Phase.LIFTED, NotePressSafety.Phase.WARNING ->
+                                                    onLiftNote(note) // Accessible fallback picker.
+                                                NotePressSafety.Phase.PRESSED -> onNote(note)
+                                                else -> Unit
+                                            }
+                                            NotePressSafety.Phase.IGNITED -> {
+                                                // Once ignition is confirmed, the reversible data operation
+                                                // is not owned by the visual animation's coroutine.
+                                                if (gesture.mayCommitBurn()) onIgnite(note)
+                                                kotlinx.coroutines.delay(1250L)
+                                            }
+                                            else -> Unit
                                         }
+                                    } finally {
+                                        warningActive = false
+                                        burningActive = false
+                                        dragging = false
+                                        noteDrag = Offset.Zero
+                                        onDragLocation(Offset(-100000f, -100000f))
                                     }
-                                    if (ignited && pressSafety.mayCommitBurn()) {
-                                        kotlinx.coroutines.delay(1250L)
-                                        if (pressSafety.mayCommitBurn()) onIgnite(note)
-                                    }
-                                    dragging = false
-                                    noteDrag = Offset.Zero
-                                    if (cancelled) onDragLocation(Offset(-100000f, -100000f))
                                 }
                             }
                     ) {

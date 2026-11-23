@@ -1,32 +1,41 @@
-# Designlabor – Asset-Provenienz und Freigaberegeln
+# Designlabor – Herkunft, Rechte und Integrationsfähigkeit
 
-## Zwei neue, getrennte Rubriken
+**Aktueller verbindlicher Stand: 23.11.2026.** Diese Richtlinie ersetzt die frühere Einordnung von Fotografien handgefertigter Körbe als „Von Menschen gemacht“.
 
-1. **Von Menschen gemacht**: Fotos realer handgefertigter Körbe. Nur einzelne Bilder mit nachgewiesener, zur Nutzung passender Lizenz. Bildurheber, Dateiseite, Lizenz und ggf. Änderungen in der App nachvollziehbar machen. Die fotografierten Objekte wurden von Menschen hergestellt; die Fotografen sind gesondert zu nennen.
-2. **Bildgeneriert**: eigenständig per Bildgenerierung erzeugte Illustrationen. Niemals als historische Fotografien oder menschliche Handwerksfotos ausgeben. Pro Objekt separat zuschneiden, Hintergrund freistellen, Kanten prüfen und das originale Bild in der Dokumentation referenzieren.
+## Kategorien – strikt trennen
 
-## Konkrete, einzeln recherchierte CC0-Fotografie-Kandidaten
+### Von Menschen designt (digitale Grafikassets)
+Professionelle **digitale Grafikdateien**, von menschlichen Grafikdesignern, Illustratoren, Pixel-Art- oder 3D-Künstlern geschaffen: transparente PNGs, SVGs, Sprites, handmodellierte 3D-Objekte/Renderings, UI-Assets. **Keine KI-generierten oder KI-assistierten Grafiken in dieser Kategorie.** Die bloße Behauptung „No AI“ ist ein Prüfhinweis, kein Beweis. Bevorzugt Quelldateien/Entstehungsnachweise und direkte Urheberangaben.
 
-| Motiv | Fotograf / Quelle | Lizenz | Originalseite | Status |
-| --- | --- | --- | --- | --- |
-| Nigerianischer geflochtener Korb | AgnesAbah | CC0 1.0 | https://commons.wikimedia.org/wiki/File:Woven-Basket.jpg | Quelle und Lizenz recherchiert; Freistellung und visuelle Prüfung offen |
-| Palmblatt-Dekorkorb | KaoneChombo | CC0 1.0 | https://commons.wikimedia.org/wiki/File:Decorative_woven_basket.jpg | Quelle und Lizenz recherchiert; Freistellung offen |
-| Teepflückkorb aus Kenia | AGRI-BIOTECH FARM INTERNATIONAL | CC0 1.0 | https://commons.wikimedia.org/wiki/File:Wicker_Basket_for_Tea_Harvesting.jpg | Quelle und Lizenz recherchiert; Freistellung offen |
-| Traditioneller geflochtener Korb | Gaone1991 | CC0 1.0 | https://commons.wikimedia.org/wiki/File:Traditional_Woven_Basket.jpg | Quelle und Lizenz recherchiert; Freistellung offen |
-| Palmblattkorb | KaoneChombo | CC0 1.0 | https://commons.wikimedia.org/wiki/File:Woven_basket_from_palm_leaves.jpg | Quelle und Lizenz recherchiert; Freistellung offen |
-| Historischer Weidenkorb mit Tonmünzen | Gary Todd | CC0 1.0 | https://commons.wikimedia.org/wiki/File:Wicker_Basket_Containing_Clay_Coins_(10112682876).jpg | Quelle und Lizenz recherchiert; Freistellung offen |
+### Bildgeneriert
+Eigenständig generierte digitale Grafiken, als solche deklariert, tatsächlich als einzelne nutzbare Assets exportiert und in die App eingebunden. Kein Kontaktbogen, Textplatzhalter oder prozeduraler Dummy zählt als fertiges Bildasset.
 
-CC0 bezieht sich auf die Fotografie. Keine Aussage darüber, dass ein traditionelles Muster, ein Kulturobjekt oder seine kulturelle Herkunft beliebig angeeignet oder falsch zugeschrieben werden darf.
+### Eigenes App-Design
+Manuell konstruierte Originalobjekte und selbst geschriebene Vektor-/Compose-Geometrie. Bei relevanter KI-Beteiligung transparent kennzeichnen. Das Referenzobjekt muss auch technisch als Eimer funktionieren.
 
-## Generierte Ausgangsillustration
+### Recherche-/Archivmaterial (nicht Teil der Menschen-Grafikgalerie)
+Fotos realer Körbe und historische Korbillustrationen sind **allenfalls Form- und Materialreferenzen**, nicht die vom Nutzer geforderte Galerie menschlich designter digitaler Grafikassets. Die zuvor recherchierten CC0-Korbfotografien bleiben ausschließlich historische Recherchehinweise, nicht Produktkandidaten für die Hauptkategorie.
 
-Eine eigens per Bildgenerierung erzeugte 2×3-Tafel in der Chat-Konversation enthält Weidenkorb, Bambuskorb, farbigen Spiral-Flechtkorb, Picknickkorb, Holzdaubeneimer und Kupferkübel. Sie ist **noch nicht** als sechs freigestellte, gerätegetestete App-Assets im Repository hinterlegt. Keine prozeduralen Ersatzzeichnungen unter dieser Rubrik ausgeben.
+## Kandidaten und Integrationsfreigabe
+Pro konkreter **Datei** dokumentieren:
 
-## Technische Abnahmekriterien
+| Feld | Pflicht |
+| --- | --- |
+| Asset-ID, Künstler/Studio und Originaldatei | Ja; direkter prüfbarer Link, nicht nur Plattform-Suchseite |
+| Herkunft/Nicht-KI-Nachweis | Ja; Quelle und Unsicherheit dokumentieren |
+| Lizenz, kommerzielle App-Nutzung, Bearbeitung und Weiterverteilung | Ja; konkreter Lizenztext und Datum |
+| Format, Auflösung, Alpha und Größe | Ja; Handy-Tauglichkeit nachweisen |
+| Öffnungsmaske, hintere/vordere Ebene, Label-Anker | Ja; oder dokumentierter Bearbeitungsplan |
+| Tatsächlicher Status | Gefunden → Rechte geprüft → technisch aufbereitet → integriert → auf Gerät geprüft → freigegeben |
+| Attribution | Falls erforderlich, in App und Dokumentation |
 
-- Originale Bilder im Repository oder reproduzierbar versionierten Build-Assets, nicht unkontrolliert von externen URLs zur Laufzeit geladen.
-- Originalfoto und Bildgenerierung im UI deutlich unterscheidbar.
-- Freigestellte Alpha-Kanten ohne Schachbretthintergrund; getrennte sechs Dateien, passende Bilddichte, Speicherbudget.
-- Bucket-IDs und Zettel bleiben unverändert; Designwechsel ist nicht-destruktiv.
-- Animationen und Namensschild als native UI-Schichten; keine verzerrten Bildassets.
-- Vor der Freigabe: tatsächliche Darstellung auf Android prüfen, Lizenzdateien mitliefern, Signatur prüfen.
+**Nie „integriert“ behaupten, wenn lediglich ein Link oder ein Vorschaubild existiert.** Externe Assets nur nach Rechteprüfung und als lokal gebündelte, versionierte Dateien. Keine fremden Fonts ohne eigene Lizenzprüfung.
+
+## Aktuelle Recherchequellen, keine verifizierten Einzelassets
+- [Kenney Game Assets](https://kenney.itch.io/kenney-game-assets) – digital gestaltete Asset-Pakete; konkrete Behälterdateien und Paketlizenz einzeln prüfen.
+- [Kenney Support/Lizenz](https://kenney.nl/support) – allgemeine Lizenzinformationen, keine Freigabe einer ungeprüften Einzeldatei.
+- [Gelidus Canimons Vegetable Asset](https://gelidus-canimons.itch.io/vegetable-asset) – handgemaltes Grafikpaket laut Anbieter; konkrete Datei, Lizenz und Eimer-Funktion prüfen.
+- [itch.io No-AI Game Assets](https://itch.io/game-assets/tag-no-ai) – Suchquelle, keine automatisch verifizierte Urheberschaft.
+
+## Technisches Gate
+Keine Grafik als auswählbares finales Eimerdesign anbieten, bevor der Zettel hinter der Vorderwand verschwinden kann, die Öffnung plausibel ist, der Name lesbar bleibt, das Objekt auf kleinen Android-Displays funktioniert und die Nutzungsrechte geklärt sind. Alte Design-IDs und Bestandsdaten bleiben erhalten.

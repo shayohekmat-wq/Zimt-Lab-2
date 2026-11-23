@@ -72,6 +72,13 @@ data class BucketArtworkSpec(
         require(id.isNotBlank() && displayName.isNotBlank())
         require(labelY in 0f..1f)
         require(paperPath.startY <= opening.bottom && paperPath.endY >= opening.top)
+        // Paper must pass through the opening, not a solid side wall.
+        val entryT = if (paperPath.endY == paperPath.startY) 0f else
+            ((opening.top - paperPath.startY) / (paperPath.endY - paperPath.startY)).coerceIn(0f, 1f)
+        val entryX = paperPath.position(entryT).first
+        require(entryX in opening.left..opening.right) {
+            "Paper path must enter through the visible opening"
+        }
         require(backLayerResource == null || backLayerResource.isNotBlank())
         require(frontLayerResource == null || frontLayerResource.isNotBlank())
         require(openingMaskResource == null || openingMaskResource.isNotBlank())

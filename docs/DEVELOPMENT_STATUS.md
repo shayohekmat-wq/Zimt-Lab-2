@@ -32,3 +32,9 @@ This is an evidence ledger, **not** a completion claim. Reconcile against curren
 - **DOCUMENTED:** quality evidence ledger, future integration contract and consolidated Motion First agent rules across Labs 1–4.
 - **UNVERIFIED:** current CI test/build success, actual Motorola performance, touch/haptic UX, lifecycle and data-upgrade safety. The connector's commit-specific PR workflow-run query yielded no runs; absence of runs is not evidence of success or failure.
 - **NEXT P0:** integrate and test state machine in Compose handler, add lifecycle/drag/Room regression tests, obtain a successful CI run and inspect artifacts before any signed APK or release.
+
+## P0 integration checkpoint — 2026-11-23
+- **IMPLEMENTED IN SOURCE:** `EimerApp.kt` note gesture now creates `NotePressSafety`, updates it on touch move, release and cancel, and gates ignition plus deferred `onIgnite` through `mayCommitBurn()` (commit `92e7d421`).
+- **IMPLEMENTED TESTS, NOT EXECUTED:** `NotePressSafetyTest.kt` now includes drag/cancel after warning and timing boundary scenarios (commit `34a4b550`).
+- **NOT VERIFIED:** No commit-specific GitHub workflow runs or combined status checks were returned by available connector queries. Do not claim compilation, passing tests, device behavior, or release readiness. Gesture handler still needs end-to-end Compose/device validation, including multitouch, lifecycle cancellation, pointer consumption, and Room/Undo upgrade tests.
+- **P0 NEXT:** obtain CI run evidence, fix any compilation errors, test actual pointer sequences and process/lifecycle transitions, then verify original signing and upgrade before release.

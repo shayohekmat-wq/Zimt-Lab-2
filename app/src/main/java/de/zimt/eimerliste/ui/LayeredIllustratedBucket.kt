@@ -28,6 +28,9 @@ data class IllustratedBucketAsset(
 )
 
 val illustratedBucketAssets = listOf(
+    IllustratedBucketAsset("user-wicker-01", "Flechtkorb", R.drawable.flechtkorb_hinten, R.drawable.flechtkorb_vorne),
+    IllustratedBucketAsset("user-wood-01", "Holzkübel", R.drawable.holzkuebel_hinten, R.drawable.holzkuebel_vorne),
+    IllustratedBucketAsset("user-zinc-01", "Zinkeimer", R.drawable.bucket_zinc_user_rear, R.drawable.bucket_zinc_user_front),
     IllustratedBucketAsset("illustrated-astral-01", "Astralgefäß",
         R.drawable.bucket_astral_rear, R.drawable.bucket_astral_front),
     IllustratedBucketAsset("illustrated-copper-01", "Kupferkessel",
@@ -56,6 +59,7 @@ fun LayeredIllustratedBucket(
     BoxWithConstraints(modifier, contentAlignment = Alignment.Center) {
         val vesselHeight = maxHeight
         Image(painterResource(asset.rear), contentDescription = null,
+            contentScale = androidx.compose.ui.layout.ContentScale.Fit,
             modifier = Modifier.fillMaxSize())
         // Paper starts above the rim and descends behind the opaque front.
         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
@@ -77,6 +81,7 @@ fun LayeredIllustratedBucket(
             }
         }
         Image(painterResource(asset.front), contentDescription = null,
+            contentScale = androidx.compose.ui.layout.ContentScale.Fit,
             modifier = Modifier.fillMaxSize())
         // Do not paint a second, clipped title over the decorative artwork.
         // Gallery cards already display the full bucket name below the image.

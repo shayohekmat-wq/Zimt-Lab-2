@@ -1,3 +1,11 @@
+## 23. November – Designlabor 0.3.0
+- Acht grafische Familien: Comic, 3D, Pixel Art, Aquarell, Low Poly, Knetoptik, Kupferstich, CharmingX4. Sechs katalogisierte Entwürfe je Stil (48 IDs).
+- Direkt unter den Eimern als Footer des bestehenden scrollbaren Gitters; Auswahl eines Entwurfs und Ziel-Eimers.
+- Designzuordnung in separaten lokalen SharedPreferences mit stabiler Bucket-ID, keine Änderung an Room-v1, Namen, Notizen oder Zeichnungen.
+- Sämtliche Zeichenformen als eigene Compose-Canvas-Geometrie. Keine fremden Assets oder Lizenzrisiken; Provenienz: neu programmierte Formen und Materialeffekte im Repository.
+- Qualität vor Freigabe: Android CI, Kataloganzahl 8×6, UI-Layout, Persistenz nach Neustart, TalkBack und originale Signatur prüfen.
+- Noch offen: stilistische Tiefe der 48 Entwürfe, echte Geräteprüfung, Reduzierung möglicher GPU-Kosten und robustere UI-Auswahl für viele Eimer.
+
 ## 23. November – Rückweg Zeichenpapier → Textfeld (P0)
 - Kein Kollaps an der oberen Papierkante. Beim Wechsel zur Texteingabe soll das Blatt auf ungefähr die **reale Höhe des unteren Textfelds** verkleinern und gleichzeitig **nach unten** an dessen Bildschirmposition wandern.
 - Breite beibehalten, statt zu einer winzigen Fläche zu schrumpfen. Werkzeuge sanft ausblenden, anschließend Textfeld mit vorhandenem Text/Skizze wieder zeigen; Fokus erst nach Transition.

@@ -259,6 +259,7 @@ fun EimerApp(vm: EimerViewModel = viewModel()) {
                                 bucket = bucket,
                                 design = findLabDesign(designSelections[bucket.id]),
                                 layeredStudy = BucketArtworkCatalog.studyMaterial(designSelections[bucket.id]),
+                                isWickerReference = designSelections[bucket.id] == WICKER_REFERENCE_ID,
                                 count = countsByBucket[bucket.id] ?: 0,
                                 highlighted = hoveredBucket == bucket.id ||
                                     heldBucketId == bucket.id || ejectingBucketId == bucket.id,
@@ -513,6 +514,7 @@ private fun BucketTile(
     bucket: BucketEntity,
     design: LabDesign?,
     layeredStudy: LayeredMaterialStudy?,
+    isWickerReference: Boolean,
     count: Int,
     highlighted: Boolean,
     isHeld: Boolean,
@@ -616,7 +618,13 @@ private fun BucketTile(
                     scaleY = 1f - .042f * impact.value
                     transformOrigin = TransformOrigin(.5f, .84f)
                 }
-            if (layeredStudy != null) {
+            if (isWickerReference) {
+                WickerReferenceBucket(
+                    title = bucket.name,
+                    paperProgress = 1f,
+                    modifier = artworkModifier
+                )
+            } else if (layeredStudy != null) {
                 LayeredBucketPrototype(
                     title = bucket.name,
                     paperProgress = 1f,

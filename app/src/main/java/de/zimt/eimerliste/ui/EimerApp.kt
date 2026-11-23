@@ -35,6 +35,7 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalHapticFeedback
@@ -104,6 +105,13 @@ fun EimerApp(vm: EimerViewModel = viewModel()) {
         val focus = LocalFocusManager.current
         val haptics = LocalHapticFeedback.current
         val density = LocalDensity.current
+        val appContext = LocalContext.current
+        val designSelections = remember { mutableStateMapOf<String, String>() }
+        LaunchedEffect(buckets) {
+            buckets.forEach { bucket ->
+                BucketDesignPreferences.get(appContext, bucket.id)?.let { designSelections[bucket.id] = it }
+            }
+        }
         val imeVisible = WindowInsets.ime.getBottom(density) > 0
 
         val countsByBucket = remember(counts) { counts.associate { it.bucketId to it.noteCount } }
@@ -240,6 +248,7 @@ fun EimerApp(vm: EimerViewModel = viewModel()) {
                             }
                             BucketTile(
                                 bucket = bucket,
+                                design = findLabDesign(designSelections[bucket.id]),
                                 count = countsByBucket[bucket.id] ?: 0,
                                 highlighted = hoveredBucket == bucket.id ||
                                     heldBucketId == bucket.id || ejectingBucketId == bucket.id,
@@ -267,6 +276,13 @@ fun EimerApp(vm: EimerViewModel = viewModel()) {
                                     }
                                 }
                             )
+                        }
+                        item(span = { androidx.compose.foundation.lazy.grid.GridItemSpan(maxLineSpan) }) {
+                            DesignLab(buckets = buckets, onApplied = { bucketId, designId ->
+                                BucketDesignPreferences.set(appContext, bucketId, designId)
+                                designSelections[bucketId] = designId
+                                haptics.performHapticFeedback(HapticFeedbackType.Confirm)
+                            })
                         }
                     }
                 }
@@ -481,6 +497,7 @@ private fun EmptyStage(modifier: Modifier, onCreate: () -> Unit) {
 @Composable
 private fun BucketTile(
     bucket: BucketEntity,
+    design: LabDesign?,
     count: Int,
     highlighted: Boolean,
     isHeld: Boolean,
@@ -577,17 +594,22 @@ private fun BucketTile(
             Modifier.fillMaxWidth().aspectRatio(1.08f),
             contentAlignment = Alignment.Center
         ) {
-            BucketArtwork(
-                material = BucketMaterial.fromKey(bucket.material),
-                title = bucket.name,
-                modifier = Modifier.fillMaxSize().graphicsLayer {
+            val artworkModifier = Modifier.fillMaxSize().graphicsLayer {
                     rotationZ = wobble.value + impact.value * 1.1f
                     translationY = impact.value * 5.dp.toPx()
                     scaleX = 1f + .022f * impact.value
                     scaleY = 1f - .042f * impact.value
                     transformOrigin = TransformOrigin(.5f, .84f)
                 }
-            )
+            if (design != null) {
+                LabBucketArtwork(design, bucket.name, artworkModifier)
+            } else {
+                BucketArtwork(
+                    material = BucketMaterial.fromKey(bucket.material),
+                    title = bucket.name,
+                    modifier = artworkModifier
+                )
+            }
             if (isEjecting) {
                 FoldedPaperArtwork(
                     progress = 3f,

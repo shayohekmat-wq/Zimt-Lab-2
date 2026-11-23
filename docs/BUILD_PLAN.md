@@ -290,3 +290,15 @@ Alle sechs Dateien wurden am 23.11.2026 in `app/src/main/res/drawable-nodpi/` au
 - [ ] Tatsächlich fertige APK mit Download-Link ausliefern; keinen Erfolg behaupten, bevor Build und Signatur geprüft sind.
 
 **Akzeptanz:** Auf dem Smartphone sieht der Nutzer nur drei auswählbare, aus seinen Original-PNGs zusammengesetzte Eimer, und Papier verschwindet beim Einwurf glaubwürdig hinter deren Vorderwand. Der Scope-Freeze gilt bis zu einer neuen ausdrücklichen Nutzeranweisung. **Alles andere am Designlabor ist gestrichen.**
+
+### Implementierungsfortschritt des 3-PNG-Builds (23.11.2026)
+
+- [x] Alle sechs Originaldateien in `drawable-nodpi` verifiziert; keine Nutzer-Uploads mehr nötig.
+- [x] `LayeredIllustratedBucket.kt`: drei reale Originalpaare als `user-wicker-01`, `user-wood-01`, `user-zinc-01` registriert. Beide Ebenen verwenden identisches `fillMaxSize` und `ContentScale.Fit`, Zettel wird zwischen REAR und FRONT gezeichnet. Commit `4c2729ae`.
+- [x] `DesignLab.kt`: frühere Kategorien und 48 Experimente aus aktiver Designlabor-Oberfläche entfernt, genau drei Originaldesigns mit Preview, Zettel-Slider, Einwurf/Auswurf, Zieleimerauswahl und bestätigtem Anwenden. Legacy-Code für gespeicherte IDs bleibt vorhanden. Commit `42be66ac`.
+- [x] `EimerApp.kt`: bereits bestehender LayeredIllustratedBucket-Pfad nimmt neue IDs automatisch an und zeigt Einwurf-/Ejektionsanimation im echten Eimer-Gitter; keine Datenbankschema-Änderung.
+- [x] VersionCode 19, `0.3.3-dev6` (Commit `87e3dbcd`).
+- [x] Test für alle drei stabilen IDs, separate Layer-Ressourcen und Paint-Reihenfolge (Commit `870be069`).
+- [ ] CI-Run `45106531746` muss vollständig erfolgreich sein; Android-Geräteprüfung und verifizierte, mit bisherigem Zertifikat signierte Update-APK stehen noch aus. Keine Freigabe vor bestandenem CI und Signaturprüfung.
+
+**Wichtig:** Die bestehende Papierbewegung wird jetzt auch für diese drei hochgeladenen Designs genutzt. Die tatsächliche visuelle Okklusionsqualität ist ohne Screenshot-/Geräteprüfung noch nicht als perfekt belegt.

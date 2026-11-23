@@ -6,7 +6,7 @@ Dieser Plan ist die **einzige aktive Aufgabenpriorisierung**. Frühere Entwürfe
 ## Build-Auslöser und Benachrichtigung (Nutzervorgabe)
 - **„weiter machen“** (auch „weitermachen“) in diesem Projektchat bedeutet: **sofort den nächsten tatsächlichen Entwicklungs-/Buildzyklus starten**, nicht bloß den Plan erläutern. GitHub-Codeänderung, Tests, Build und überprüfbare Artefakte soweit technisch möglich durchführen. Wenn ein Schritt blockiert ist, Blocker und tatsächlichen Stand nennen; keinen Build-Erfolg behaupten.
 - Die bestehende zeitgesteuerte Entwicklungsautomatisierung läuft zusätzlich unabhängig von Chat-Nachrichten. Eine Chat-Nachricht löst nicht technisch automatisch einen GitHub-Actions-Workflow aus; der Assistent muss den Build bei Eingang aktiv anstoßen.
-- **Sobald eine neue, nachweislich gute Designlabor-Version fertig und getestet ist, proaktiv benachrichtigen** und in der Antwort **✨** verwenden. Nenne Version, konkrete sichtbare Verbesserungen, Teststatus und APK-Link nur wenn wirklich verfügbar. Keine Erfolgsmeldung bei reiner Planung, grünem CI ohne Qualitätsprüfung oder fehlender signierter Update-APK.
+- **Nur bei vollständig fertiggestelltem und qualitätsgeprüftem neuen Designlabor** die besondere Abschlussbenachrichtigung mit **✨** verwenden. Für Zwischenversionen, Commits, CI-Erfolge und Einzelverbesserungen ist das Symbol verboten. Nenne Version, konkrete sichtbare Verbesserungen, Teststatus und APK-Link nur wenn wirklich verfügbar. Keine Erfolgsmeldung bei reiner Planung, grünem CI ohne Qualitätsprüfung oder fehlender signierter Update-APK.
 
 ## 1. Unverhandelbare Produktentscheidung
 Wir wollen **viele außergewöhnlich schöne, wirklich unterschiedliche und voll funktionierende Eimer**. Keine festen acht Stilrichtungen, keine 8×6-Pflicht und keine künstliche Zielzahl. Umfärbungen derselben Grundform sind keine neuen Designs.
@@ -76,4 +76,30 @@ Wir wollen **viele außergewöhnlich schöne, wirklich unterschiedliche und voll
 ## 5. Verbindlicher Bericht je Entwicklungszyklus
 `Commit/Dateien | sichtbare funktionierende Änderung | tatsächliche Tests | offener Gerätetest | mehrere konkrete menschliche Grafikassets + Urheber/Lizenz/Original-Link | KI-/Eigendesign-Fortschritt | originalsignierte UPDATE-APK verfügbar? | nächster P0-Blocker`
 
-**Nächster Auftrag:** P0-A (Layer-Renderer, Katalogresolver, Legacy-Fallback, visuelle Tests) **und parallel** konkrete menschlich designte digitale Grafikdateien recherchieren. Danach P0-B (Premium-Referenzeimer). Keine neue Versionsnummer nur für Planänderungen.
+**Nächster Auftrag:** Das verbindliche große Build-Paket aus Abschnitt 6 implementieren und verifizieren. Keine neue Versionsnummer nur für Planänderungen.
+
+## 6. Aktualisierung 23.11.2026 – verbindlicher nächster großer Designlabor-Build
+
+**Nutzerfeedback:** Die bisherigen kleinen Material-, Kontur-, Button- und Prototypänderungen erzeugten keine wirklich neue Designlabor-Erfahrung. Ab jetzt nur substanzielle, zusammenhängende, sichtbar nutzbare Entwicklungsmeilensteine als Produktfortschritt melden. Kleine interne Commits bleiben zulässig, zählen aber nicht als Meilenstein.
+
+### Tatsächlicher Quellstand (Commit e9edeeab8d888be1d42f7218d8a3a2b641c7190c)
+- [x] `BucketArtworkCatalog.kt`: ID-, Herkunfts-, Öffnungs- und Papierpfad-Grundmodell, Legacy- und Studien-IDs.
+- [x] `LayeredBucketPrototype.kt`: technischer REAR→PAPER→FRONT→LABEL-Test mit drei Materialstudien, **kein Premiumdesign**.
+- [x] `WickerReferenceBucket.kt`: erster eigenständig konstruierter geflochtener Picknickkorb mit Henkel, Innenraum, Front und Papierpfad.
+- [x] `DesignLab.kt` / `EimerApp.kt`: neue Picknickkorb-Vorschau mit Papierregler, Ziel-Eimer-Auswahl, Übernahme und Rendering im Hauptgitter im Quellcode verdrahtet.
+- [ ] Noch **nicht nachgewiesen**: erfolgreicher aktueller CI-Build, Geräteprüfung, echter Einwurf/Auswurf im Hauptgitter, Premium-Grafikqualität, menschliche Lizenzassets, KI-Einzelassets, vollwertige neue Galerie. Quellcode allein ist keine Qualitätsabnahme.
+
+### Nächstes Build-Paket – alle Punkte als zusammenhängendes Produktziel
+1. **Echtes Premium-Asset:** Mindestens ein visuell herausragender freigestellter Eimer mit individuellen lokal eingebundenen Rück-/Vordergrafiken, glaubwürdigem Material, Schatten, Öffnungsmaske und Namensschild. Den bisherigen Vektor-Picknickkorb kritisch prüfen, nicht als fertiges Premiumasset ausgeben.
+2. **Reale Papieranimation:** Einwurf und Auswurf im tatsächlichen Eimer-Tile durch denselben Layer-Renderer, mit echter Vorderlippen-Okklusion, Falten/Knüllen, passender Eimerbewegung und Haptik. Drei Papierpositionen visuell prüfen; Slider allein reicht nicht.
+3. **Neue kuratierte Galerie:** Große echte Asset-Vorschauen, Herkunftsgruppen, Ziel-Eimer, Übernehmen/Abbrechen, Rücksetzen, Persistenz. Legacy-Experimente klar getrennt; keine Textplatzhalter als neue Designs.
+4. **Parallel menschliche digitale Assets:** Pro Entwicklungszyklus mehrere **konkrete Einzelgrafiken** von menschlichen Designern mit Originaldatei-URL, Urheber, Lizenz, kommerzieller Nutzbarkeit, Dateiformat und Layer-Aufwand recherchieren und dokumentieren. Keine Rohfotos oder historische Illustrationen als Ersatz. KI-generierte und eigene Assets bleiben gleichberechtigt erwünscht.
+5. **Qualitäts-Gate:** Erfolgreiche CI und Tests, echte Screenshot-/Visuellprüfung in Galerie und Hauptgitter, Papierpfad, Auswahl/Persistenz, Android-Kompatibilität, Datenbestandsschutz. Für eine Update-APK Originalsignatur, unveränderte Paketkennung und steigenden `versionCode` prüfen; APK als Datei liefern, wenn technisch möglich. Nicht getestete Eigenschaften ausdrücklich offenlassen.
+
+### Verbindliche Regeln für jeden weiteren Zyklus
+- **Keine Mini-Updates als großer Fortschritt.** Der Nutzer muss unmittelbar einen deutlich neuen und tatsächlich nutzbaren Designlabor-Zustand sehen können.
+- **Keine Schein-Galerien:** Nur nachweislich vorhandene, korrekt integrierte, nutzbare Assets als fertig anbieten.
+- **Vor jeder Rückfrage vorhandene Zugänge prüfen:** Dateien, frühere Uploads, Schlüssel, Passwörter, GitHub und Artefakte selbst suchen; keine unnötige erneute Upload-Anforderung. Geheime Daten niemals committen oder offenlegen.
+- **Keine unverdiente Abschlussmeldung:** ✨ ausschließlich bei vollständig fertiggestelltem, qualitätsgeprüftem neuen Designlabor.
+- **ZIMT-Integration sicherstellen:** Renderer und Designkatalog modular und aus der Lab-App übernehmbar halten.
+- **Versionen nicht durch Planänderungen erhöhen.** Build und APK erst als erfolgreich bezeichnen, wenn die relevanten Prüfungen tatsächlich vorliegen.

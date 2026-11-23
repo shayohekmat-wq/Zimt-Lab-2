@@ -302,3 +302,10 @@ Alle sechs Dateien wurden am 23.11.2026 in `app/src/main/res/drawable-nodpi/` au
 - [ ] CI-Run `45106531746` muss vollständig erfolgreich sein; Android-Geräteprüfung und verifizierte, mit bisherigem Zertifikat signierte Update-APK stehen noch aus. Keine Freigabe vor bestandenem CI und Signaturprüfung.
 
 **Wichtig:** Die bestehende Papierbewegung wird jetzt auch für diese drei hochgeladenen Designs genutzt. Die tatsächliche visuelle Okklusionsqualität ist ohne Screenshot-/Geräteprüfung noch nicht als perfekt belegt.
+
+### Verifizierte Auslieferung 0.3.3-dev6 / Build 19
+
+- Android-CI `45106531746`: Debug-Compile, Unit-Tests und Release-Compile **success** (Commit `870be069`).
+- Unsigned Release-Artefakt `14787652841` aus genau diesem Run heruntergeladen; enthaltene `app-release-unsigned.apk` (24.893.114 Bytes) lokal mit dem **bestehenden privaten** PKCS12-Schlüssel signiert. Schlüssel nicht im Repository gespeichert.
+- Ausgabe: `Eimer-Liste-v0.3.3-dev6-3-Eimer-UPDATE.apk` (24.911.601 Bytes), APK-Signatur v2 und v3 **true**, Zertifikat SHA256 `40e6b73383a29f9ca792595b369329e2ab8f9165f49eec69b4eb57a8ffe26fe1` stimmt mit bisherigem Update-Zertifikat überein.
+- APK im Chat bereitgestellt. **Keine echte Smartphone-Screenshot-/Animationsprüfung durchgeführt**; mögliche visuelle Naht- oder Tiefenprobleme müssen nach Installation geprüft werden.

@@ -282,6 +282,10 @@ fun EimerApp(vm: EimerViewModel = viewModel()) {
                                 BucketDesignPreferences.set(appContext, bucketId, designId)
                                 designSelections[bucketId] = designId
                                 haptics.performHapticFeedback(HapticFeedbackType.Confirm)
+                            }, onReset = { bucketId ->
+                                BucketDesignPreferences.clear(appContext, bucketId)
+                                designSelections.remove(bucketId)
+                                haptics.performHapticFeedback(HapticFeedbackType.Confirm)
                             })
                         }
                     }

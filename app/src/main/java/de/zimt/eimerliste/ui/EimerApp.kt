@@ -994,8 +994,22 @@ private fun BucketContents(
                 contentPadding=PaddingValues(bottom=35.dp)
             ) {
                 items(notes,key={it.id}) { note ->
+                    var warningActive by remember(note.id) { mutableStateOf(false) }
+                    val warningTransition = androidx.compose.animation.core.rememberInfiniteTransition(label = "note-warning")
+                    val warningAngle by warningTransition.animateFloat(
+                        initialValue = -1.1f,
+                        targetValue = 1.1f,
+                        animationSpec = androidx.compose.animation.core.infiniteRepeatable(
+                            animation = tween(durationMillis = 115, easing = androidx.compose.animation.core.LinearEasing),
+                            repeatMode = androidx.compose.animation.core.RepeatMode.Reverse
+                        ), label = "note-warning-angle"
+                    )
                     PaperSheet(
                         Modifier.fillMaxWidth().heightIn(min=68.dp)
+                            .graphicsLayer {
+                                rotationZ = if (warningActive) warningAngle else 0f
+                                shadowElevation = if (warningActive) 9.dp.toPx() else 0f
+                            }
                             .pointerInput(note.id) {
                                 detectTapGestures(
                                     onTap = { onNote(note) },
@@ -1014,6 +1028,7 @@ private fun BucketContents(
                                             val releasedNormally = if (releasedBeforeWarning != null) {
                                                 releasedBeforeWarning
                                             } else {
+                                                warningActive = true
                                                 onWarningHaptic()
                                                 val afterFirstPulse = kotlinx.coroutines.withTimeoutOrNull(180L) {
                                                     tryAwaitRelease()
@@ -1027,7 +1042,10 @@ private fun BucketContents(
                                             }
                                             // Cancelled gestures never open a destination picker.
                                             // Ignition remains disabled until reversible deletion exists.
+                                            warningActive = false
                                             if (releasedNormally) onLiftNote(note)
+                                        } else {
+                                            warningActive = false
                                         }
                                     }
                                 )

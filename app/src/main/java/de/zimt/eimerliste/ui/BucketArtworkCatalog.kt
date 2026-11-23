@@ -92,11 +92,25 @@ data class BucketArtworkSpec(
 object BucketArtworkCatalog {
     private val premium = linkedMapOf<String, BucketArtworkSpec>()
 
+    /** Stable identifiers for selectable layered studies, kept separate from premium releases. */
+    private const val STUDY_PREFIX = "layer-study-"
+    fun studyMaterial(id: String?): LayeredMaterialStudy? = when (id) {
+        "${STUDY_PREFIX}walnut" -> LayeredMaterialStudy.WALNUT
+        "${STUDY_PREFIX}zinc" -> LayeredMaterialStudy.ZINC
+        "${STUDY_PREFIX}enamel" -> LayeredMaterialStudy.ENAMEL
+        else -> null
+    }
+    fun studyId(material: LayeredMaterialStudy): String = when (material) {
+        LayeredMaterialStudy.WALNUT -> "${STUDY_PREFIX}walnut"
+        LayeredMaterialStudy.ZINC -> "${STUDY_PREFIX}zinc"
+        LayeredMaterialStudy.ENAMEL -> "${STUDY_PREFIX}enamel"
+    }
+
     fun find(id: String?): BucketArtworkSpec? = id?.let(premium::get)
 
     /** Legacy ids remain readable and writable, preserving existing preferences across updates. */
     fun isKnownDesignId(id: String): Boolean =
-        findLabDesign(id) != null || premium.containsKey(id)
+        findLabDesign(id) != null || premium.containsKey(id) || studyMaterial(id) != null
 
     fun releasedDesigns(): List<BucketArtworkSpec> = premium.values.filter { it.released }
 

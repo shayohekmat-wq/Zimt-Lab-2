@@ -78,8 +78,8 @@ fun LayeredIllustratedBucket(
         // User-requested correction: move ONLY the interior/rear artwork UP.
         // No scaling, no horizontal shift, no changes to the front or wicker.
         val rearLift = when (asset.id) {
-            "user-wood-01" -> .012f  // subtle lift: 1.2% of shared viewport height
-            "user-zinc-01" -> .045f  // stronger lift: 4.5%
+            "user-wood-01" -> .075f  // clearly visible lift: 7.5% of shared viewport height
+            "user-zinc-01" -> .14f   // clearly visible lift: 14%
             else -> 0f
         }
         Image(painterResource(asset.rear), contentDescription = null,

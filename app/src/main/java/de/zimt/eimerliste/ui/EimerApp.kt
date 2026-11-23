@@ -108,8 +108,17 @@ fun EimerApp(vm: EimerViewModel = viewModel()) {
         val appContext = LocalContext.current
         val designSelections = remember { mutableStateMapOf<String, String>() }
         LaunchedEffect(buckets) {
+            val existingIds = buckets.mapTo(mutableSetOf()) { it.id }
+            designSelections.keys.toList().filterNot { it in existingIds }
+                .forEach { designSelections.remove(it) }
             buckets.forEach { bucket ->
-                BucketDesignPreferences.get(appContext, bucket.id)?.let { designSelections[bucket.id] = it }
+                val savedId = BucketDesignPreferences.get(appContext, bucket.id)
+                if (findLabDesign(savedId) != null) {
+                    designSelections[bucket.id] = savedId!!
+                } else {
+                    // Missing or obsolete designs fall back to the original artwork.
+                    designSelections.remove(bucket.id)
+                }
             }
         }
         val imeVisible = WindowInsets.ime.getBottom(density) > 0

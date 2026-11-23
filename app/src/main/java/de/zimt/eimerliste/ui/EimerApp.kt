@@ -10,6 +10,13 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.*
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.ui.input.pointer.awaitPointerEvent
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.positionChanged
+import androidx.compose.ui.platform.LocalViewConfiguration
+import kotlin.math.abs
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -420,6 +427,35 @@ fun EimerApp(vm: EimerViewModel = viewModel()) {
                     notes = if (visibleBucket.id == selectedId) notes else emptyList(),
                     onNote = { openNote = it },
                     onLiftNote = { movingNote = it },
+                    onDragLocation = { point ->
+                        hoveredBucket = bucketBounds.entries.firstOrNull { (id, rect) ->
+                            id != visibleBucket.id && rect.contains(point)
+                        }?.key
+                    },
+                    onDropNote = { note, point ->
+                        val target = buckets.firstOrNull { candidate ->
+                            candidate.id != note.bucketId && bucketBounds[candidate.id]?.contains(point) == true
+                        }
+                        hoveredBucket = null
+                        if (target != null && !noteMoveSaving) {
+                            noteMoveSaving = true
+                            scope.launch {
+                                try {
+                                    vm.moveNote(note.id, note.bucketId, target.id)
+                                    bucketImpactEvents[target.id] = (bucketImpactEvents[target.id] ?: 0) + 1
+                                    haptics.performHapticFeedback(HapticFeedbackType.Confirm)
+                                    openBucket = null
+                                    snackbar.showSnackbar("Zettel in ${target.name} gelegt.")
+                                } catch (error: Exception) {
+                                    snackbar.showSnackbar(error.message ?: "Verschieben fehlgeschlagen.")
+                                } finally {
+                                    noteMoveSaving = false
+                                }
+                            }
+                        } else {
+                            haptics.performHapticFeedback(HapticFeedbackType.Reject)
+                        }
+                    },
                     onLiftHaptic = { haptics.performHapticFeedback(HapticFeedbackType.GestureThresholdActivate) },
                     onWarningHaptic = { haptics.performHapticFeedback(HapticFeedbackType.SegmentTick) },
                     onIgnitionHaptic = { haptics.performHapticFeedback(HapticFeedbackType.LongPress) },
@@ -993,12 +1029,15 @@ private fun BucketContents(
     notes: List<NoteEntity>,
     onNote: (NoteEntity) -> Unit,
     onLiftNote: (NoteEntity) -> Unit,
+    onDragLocation: (Offset) -> Unit,
+    onDropNote: (NoteEntity, Offset) -> Unit,
     onLiftHaptic: () -> Unit,
     onWarningHaptic: () -> Unit,
     onIgnitionHaptic: () -> Unit,
     onIgnite: (NoteEntity) -> Unit,
     onRandom: () -> Unit
 ) {
+    val touchSlop = LocalViewConfiguration.current.touchSlop
     Column(Modifier.fillMaxWidth().padding(horizontal=20.dp).heightIn(min=260.dp,max=650.dp)) {
         Text(bucket.name,fontFamily=FontFamily.Serif,fontSize=30.sp,fontWeight=FontWeight.Bold)
         Text(
@@ -1023,6 +1062,9 @@ private fun BucketContents(
                 items(notes,key={it.id}) { note ->
                     var warningActive by remember(note.id) { mutableStateOf(false) }
                     var burningActive by remember(note.id) { mutableStateOf(false) }
+                    var noteDrag by remember(note.id) { mutableStateOf(Offset.Zero) }
+                    var noteBounds by remember(note.id) { mutableStateOf<Rect?>(null) }
+                    var dragging by remember(note.id) { mutableStateOf(false) }
                     val burnProgress by androidx.compose.animation.core.animateFloatAsState(
                         targetValue = if (burningActive) 1f else 0f,
                         animationSpec = tween(durationMillis = 1250, easing = FastOutSlowInEasing),
@@ -1041,60 +1083,98 @@ private fun BucketContents(
                         Modifier.fillMaxWidth().heightIn(min=68.dp)
                             .graphicsLayer {
                                 rotationZ = if (warningActive) warningAngle else 0f
+                                translationX = noteDrag.x
+                                translationY = noteDrag.y
+                                scaleX = if (dragging) 1.05f else 1f - burnProgress * 0.28f
+                                scaleY = if (dragging) 1.05f else 1f - burnProgress * 0.52f
                                 shadowElevation = if (warningActive) 9.dp.toPx() else 0f
                                 alpha = 1f - burnProgress
-                                scaleX = 1f - burnProgress * 0.28f
-                                scaleY = 1f - burnProgress * 0.52f
                             }
-                            .pointerInput(note.id) {
-                                detectTapGestures(
-                                    onTap = { onNote(note) },
-                                    onPress = {
-                                        // A cancelled or released press never triggers delayed feedback.
-                                        // The destination picker is shown only on release, leaving the
-                                        // stationary 1.5s warning interval reachable.
-                                        val releasedEarly = kotlinx.coroutines.withTimeoutOrNull(NoteHoldTiming.LIFT_MS) {
-                                            tryAwaitRelease()
+                            .onGloballyPositioned { noteBounds = it.boundsInRoot() }
+                            .pointerInput(note.id, touchSlop) {
+                                awaitEachGesture {
+                                    val down = awaitFirstDown(requireUnconsumed = false)
+                                    val start = down.position
+                                    val startedAt = down.uptimeMillis
+                                    var lastPosition = start
+                                    var lifted = false
+                                    var moved = false
+                                    var warned = false
+                                    var ignited = false
+                                    var cancelled = false
+                                    var released = false
+                                    noteDrag = Offset.Zero
+                                    dragging = false
+                                    warningActive = false
+                                    while (!released && !cancelled && !ignited) {
+                                        val elapsed = lastPosition.let { android.os.SystemClock.uptimeMillis() - startedAt }
+                                        val nextDeadline = when {
+                                            !lifted -> NoteHoldTiming.LIFT_MS
+                                            !warned -> NoteHoldTiming.WARNING_MS
+                                            else -> NoteHoldTiming.IGNITION_MS
                                         }
-                                        if (releasedEarly == null) {
-                                            onLiftHaptic()
-                                            val beforeWarning = kotlinx.coroutines.withTimeoutOrNull(
-                                                NoteHoldTiming.WARNING_MS - NoteHoldTiming.LIFT_MS
-                                            ) { tryAwaitRelease() }
-                                            if (beforeWarning != null) {
-                                                if (beforeWarning) onLiftNote(note)
-                                            } else {
+                                        val remaining = (nextDeadline - elapsed).coerceAtLeast(1L)
+                                        val event = kotlinx.coroutines.withTimeoutOrNull(remaining) {
+                                            awaitPointerEvent(PointerEventPass.Main)
+                                        }
+                                        if (event == null) {
+                                            val now = android.os.SystemClock.uptimeMillis() - startedAt
+                                            if (!lifted && now >= NoteHoldTiming.LIFT_MS) {
+                                                lifted = true
+                                                onLiftHaptic()
+                                            } else if (!moved && !warned && now >= NoteHoldTiming.WARNING_MS) {
+                                                warned = true
                                                 warningActive = true
                                                 onWarningHaptic()
-                                                val beforeSecondPulse = kotlinx.coroutines.withTimeoutOrNull(180L) {
-                                                    tryAwaitRelease()
-                                                }
-                                                if (beforeSecondPulse != null) {
-                                                    warningActive = false
-                                                    if (beforeSecondPulse) onLiftNote(note)
-                                                } else {
-                                                    onWarningHaptic()
-                                                    val beforeIgnition = kotlinx.coroutines.withTimeoutOrNull(
-                                                        NoteHoldTiming.IGNITION_MS - NoteHoldTiming.WARNING_MS - 180L
-                                                    ) { tryAwaitRelease() }
-                                                    warningActive = false
-                                                    if (beforeIgnition == null) {
-                                                        // Ignite only after a continuously held gesture.
-                                                        onIgnitionHaptic()
-                                                        burningActive = true
-                                                        kotlinx.coroutines.delay(1250L)
-                                                        onIgnite(note)
-                                                        tryAwaitRelease()
-                                                    } else if (beforeIgnition) {
-                                                        onLiftNote(note)
+                                            } else if (!moved && now >= NoteHoldTiming.IGNITION_MS) {
+                                                ignited = true
+                                                warningActive = false
+                                                onIgnitionHaptic()
+                                                burningActive = true
+                                            }
+                                        } else {
+                                            val pointer = event.changes.firstOrNull { it.id == down.id }
+                                            if (pointer == null || event.changes.size > 1 ||
+                                                event.changes.any { it.isConsumed && it.id != down.id }) {
+                                                cancelled = true
+                                            } else if (!pointer.pressed) {
+                                                released = true
+                                                if (!pointer.previousPressed) cancelled = true
+                                            } else {
+                                                lastPosition = pointer.position
+                                                val delta = lastPosition - start
+                                                if (delta.getDistance() > touchSlop) {
+                                                    if (!lifted) {
+                                                        // Let the parent LazyColumn scroll naturally.
+                                                        cancelled = true
+                                                    } else {
+                                                        moved = true
+                                                        dragging = true
+                                                        warningActive = false
+                                                        noteDrag = delta
+                                                        noteBounds?.let { onDragLocation(it.center + delta) }
+                                                        pointer.consume()
                                                     }
                                                 }
                                             }
-                                        } else {
-                                            warningActive = false
                                         }
                                     }
-                                )
+                                    warningActive = false
+                                    if (released && !cancelled && !ignited) {
+                                        when {
+                                            moved && lifted -> noteBounds?.let { onDropNote(note, it.center + noteDrag) }
+                                            lifted -> onLiftNote(note) // Accessible fallback picker.
+                                            else -> onNote(note)
+                                        }
+                                    }
+                                    if (ignited) {
+                                        kotlinx.coroutines.delay(1250L)
+                                        onIgnite(note)
+                                    }
+                                    dragging = false
+                                    noteDrag = Offset.Zero
+                                    if (cancelled) onDragLocation(Offset(-100000f, -100000f))
+                                }
                             }
                     ) {
                         Box(Modifier.fillMaxWidth()) {

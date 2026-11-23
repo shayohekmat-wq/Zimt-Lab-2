@@ -144,3 +144,14 @@ Wir wollen **viele außergewöhnlich schöne, wirklich unterschiedliche und voll
 - [ ] CI-Ergebnis dieses Standes, reale Tastatur-/TalkBack-/Geräteprüfung, visuelle Abnahme und originalsignierte UPDATE-APK separat nachweisen.
 
 **Nächstes großes Designlabor-Ziel unverändert:** Professionelle lokal eingebundene, transparente Back-/Front-Grafikassets, kuratierte Vielfalt inklusive konkret lizenzierter menschlicher Digitalgrafiken, eigene und KI-Designs, durchgängige Papierinteraktion in echten Tiles, geprüfte Persistenz und originalsigniertes Update. Kleine UX-Korrekturen dürfen den Hauptentwicklungszyklus nicht verdrängen.
+
+## 10. Entwicklungszyklus 23.11.2026 – Papieröffnung absichern, CI der vorigen Änderungen geprüft
+
+**Bestätigt:** GitHub Actions für Commit `9674ef0acd63c418e3196e673439f38c7b23822d` (Skizzen-Faltschaltfläche, abgesenkter Text und Designlabor-Papiervorschau) erfolgreich abgeschlossen. Das ist eine **CI-Bestätigung**, keine Geräte-/Grafik-/Signaturabnahme.
+
+**Neue tatsächliche Codeänderung:**
+- [x] `BucketArtworkCatalog.kt` (Commit `9b910d723052a23825e0b9b51f21427b5d1d1472`): Ein Papierpfad darf die Eimeröffnung nicht nur vertikal berühren, sondern muss auch **horizontal durch die sichtbare Öffnung** laufen. Damit werden spätere Back-/Front-Premiumassets mit fehlerhaftem Einwurf durch eine massive Seitenwand bereits im Katalog zurückgewiesen.
+- [x] `BucketArtworkCatalogTest.kt` (Commit `f112d92bb03584718943a335a87a33a3b2eaef9b`): Regressionstests für ungültigen seitlichen Einwurf und gültigen mittigen Einwurf ergänzt.
+- [ ] CI dieser beiden neuen Commits noch prüfen; Tests nicht vor CI als bestanden ausgeben.
+
+**Zielkontrolle:** Diese technische Schutzmaßnahme dient dem zentralen Designlabor-Ziel, ist aber **kein neuer Premiumeimer** und kein Ersatz für hochwertige Grafikassets. Nächster substantieller Meilenstein bleibt eine kuratierte Galerie mit echten transparenten Vorder-/Rückgrafiken und vielfältigen, rechtlich geprüften menschlich designten Digitalgrafiken sowie KI-/Originaldesigns. Vor Freigabe visuelle Abnahme, Datenbestandsschutz und Originalsignatur nachweisen.

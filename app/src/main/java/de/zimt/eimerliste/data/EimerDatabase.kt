@@ -62,6 +62,10 @@ interface EimerDao {
     @Query("SELECT * FROM notes WHERE bucketId = :bucketId AND deletedAt IS NULL ORDER BY createdAt DESC")
     fun observeNotes(bucketId: String): Flow<List<NoteEntity>>
 
+    // Tombstones stay recoverable after process death, rotation and snackbar expiry.
+    @Query("SELECT * FROM notes WHERE bucketId = :bucketId AND deletedAt IS NOT NULL ORDER BY deletedAt DESC")
+    fun observeDeletedNotes(bucketId: String): Flow<List<NoteEntity>>
+
     @Query("SELECT bucketId, COUNT(*) AS noteCount FROM notes WHERE deletedAt IS NULL GROUP BY bucketId")
     fun observeCounts(): Flow<List<BucketCount>>
 

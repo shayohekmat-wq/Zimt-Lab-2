@@ -28,6 +28,10 @@ class EimerViewModel(application: Application) : AndroidViewModel(application) {
         if (id == null) flowOf(emptyList()) else repository.notes(id)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
+    val selectedDeletedNotes = selectedBucketId.flatMapLatest { id ->
+        if (id == null) flowOf(emptyList()) else repository.deletedNotes(id)
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
     fun selectBucket(id: String) {
         selectedBucketId.value = id
     }

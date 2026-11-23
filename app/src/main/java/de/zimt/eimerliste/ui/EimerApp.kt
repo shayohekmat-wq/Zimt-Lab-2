@@ -79,6 +79,8 @@ fun EimerApp(vm: EimerViewModel = viewModel()) {
 
         var openBucket by rememberSaveable { mutableStateOf<String?>(null) }
         var openNote by remember { mutableStateOf<NoteEntity?>(null) }
+        var movingNote by remember { mutableStateOf<NoteEntity?>(null) }
+        var noteMoveSaving by remember { mutableStateOf(false) }
         var createDialog by remember { mutableStateOf(false) }
 
         // A draft and its folded version are never deleted until the destination write succeeds.
@@ -416,6 +418,7 @@ fun EimerApp(vm: EimerViewModel = viewModel()) {
                     bucket = visibleBucket,
                     notes = if (visibleBucket.id == selectedId) notes else emptyList(),
                     onNote = { openNote = it },
+                    onLiftNote = { movingNote = it },
                     onRandom = {
                         scope.launch {
                             try {
@@ -433,6 +436,48 @@ fun EimerApp(vm: EimerViewModel = viewModel()) {
                     }
                 )
             }
+        }
+        movingNote?.let { note ->
+            AlertDialog(
+                onDismissRequest = { if (!noteMoveSaving) movingNote = null },
+                title = { Text("Zettel umlegen") },
+                text = {
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text("Wähle einen anderen Eimer. Text und Zeichnung bleiben erhalten.")
+                        buckets.filter { it.id != note.bucketId }.forEach { target ->
+                            TextButton(
+                                enabled = !noteMoveSaving,
+                                onClick = {
+                                    noteMoveSaving = true
+                                    scope.launch {
+                                        try {
+                                            vm.moveNote(note.id, note.bucketId, target.id)
+                                            bucketImpactEvents[target.id] = (bucketImpactEvents[target.id] ?: 0) + 1
+                                            haptics.performHapticFeedback(HapticFeedbackType.Confirm)
+                                            movingNote = null
+                                            openBucket = null
+                                            snackbar.showSnackbar("Zettel in „" + target.name + "“ verschoben.")
+                                        } catch (error: Exception) {
+                                            haptics.performHapticFeedback(HapticFeedbackType.Reject)
+                                            snackbar.showSnackbar(error.message ?: "Verschieben fehlgeschlagen.")
+                                        } finally {
+                                            noteMoveSaving = false
+                                        }
+                                    }
+                                }
+                            ) { Text(target.name) }
+                        }
+                        if (buckets.none { it.id != note.bucketId }) {
+                            Text("Lege zuerst einen zweiten Eimer an.")
+                        }
+                    }
+                },
+                confirmButton = {
+                    TextButton(enabled = !noteMoveSaving, onClick = { movingNote = null }) {
+                        Text("Abbrechen")
+                    }
+                }
+            )
         }
         openNote?.let { note ->
             DialogPaper(note = note, onDismiss = { openNote = null })
@@ -920,6 +965,7 @@ private fun BucketContents(
     bucket: BucketEntity,
     notes: List<NoteEntity>,
     onNote: (NoteEntity) -> Unit,
+    onLiftNote: (NoteEntity) -> Unit,
     onRandom: () -> Unit
 ) {
     Column(Modifier.fillMaxWidth().padding(horizontal=20.dp).heightIn(min=260.dp,max=650.dp)) {
@@ -946,7 +992,22 @@ private fun BucketContents(
                 items(notes,key={it.id}) { note ->
                     PaperSheet(
                         Modifier.fillMaxWidth().heightIn(min=68.dp)
-                            .clickable { onNote(note) }
+                            .pointerInput(note.id) {
+                                detectTapGestures(
+                                    onTap = { onNote(note) },
+                                    onPress = {
+                                        // Keep short taps intact. Lift is triggered at 700 ms,
+                                        // not at Android's device-dependent long-press timeout.
+                                        val lifted = kotlinx.coroutines.withTimeoutOrNull(NoteHoldTiming.LIFT_MS) {
+                                            tryAwaitRelease()
+                                        } == null
+                                        if (lifted) {
+                                            onLiftNote(note)
+                                            tryAwaitRelease()
+                                        }
+                                    }
+                                )
+                            }
                     ) {
                         Row(
                             Modifier.fillMaxWidth().padding(18.dp),

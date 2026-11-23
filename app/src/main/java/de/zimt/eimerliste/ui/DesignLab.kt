@@ -51,6 +51,39 @@ val labDesigns: List<LabDesign> = names.flatMapIndexed { style, row ->
 }
 fun findLabDesign(id: String?): LabDesign? = labDesigns.firstOrNull { it.id == id }
 
+/** Normalized anchors allow independently authored art to share app interactions.
+ * Artwork coordinates are relative to the visible object's full bounding box.
+ * Future bitmap designs must provide front/back layers instead of fake galleries.
+ */
+data class BucketVisualProfile(
+    val designId: String,
+    val openingLeft: Float,
+    val openingRight: Float,
+    val openingY: Float,
+    val labelY: Float,
+    val hasSeparateFrontLayer: Boolean = false
+) {
+    init {
+        require(openingLeft in 0f..1f && openingRight in 0f..1f)
+        require(openingLeft < openingRight)
+        require(openingY in 0f..1f && labelY in 0f..1f)
+    }
+}
+fun visualProfile(design: LabDesign): BucketVisualProfile {
+    val lowPoly = design.style == 4
+    val openingY = if (lowPoly) when (design.variant) {
+        1, 4 -> .39f
+        2, 5 -> .25f
+        else -> .29f
+    } else .27f + (design.variant % 3) * .025f
+    val openingLeft = if (lowPoly) when (design.variant) {
+        4 -> .11f
+        1 -> .13f
+        else -> .24f
+    } else .17f + (design.variant % 2) * .035f
+    return BucketVisualProfile(design.id, openingLeft, 1f-openingLeft, openingY, .54f)
+}
+
 /** Kept separate from Room v1: preferences are keyed by existing stable bucket IDs. */
 object BucketDesignPreferences {
     private const val PREFS = "bucket-design-lab-v1"
@@ -59,7 +92,7 @@ object BucketDesignPreferences {
     fun set(context: Context, bucketId: String, designId: String) {
         require(findLabDesign(designId) != null)
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
-            .putString(bucketId, designId).apply()
+            .putString(bucketId, designId).apply()\n    }\n    fun clear(context: Context, bucketId: String) {\n        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()\n            .remove(bucketId).apply()
     }
 }
 
@@ -282,11 +315,11 @@ fun DesignLab(
                 repeat(3-row.size) { Spacer(Modifier.weight(1f)) }
             }
         }
-        // Unusable raw photographs and text-only placeholders are intentionally
+        Text("Von Menschen gestaltet · in Vorbereitung", color=Ink.Muted, fontSize=12.sp)\n        Text("Bildgeneriert · in Vorbereitung", color=Ink.Muted, fontSize=12.sp)\n        // Unusable raw photographs and text-only placeholders are intentionally
         // excluded from the usable design picker until properly prepared assets exist.
         chosen?.let { design ->
             Spacer(Modifier.height(8.dp))
-            Text("Für welchen Eimer?",color=Ink.Paper,fontSize=13.sp)
+            Text("Vorschau", color=Ink.Paper, fontSize=13.sp)\n            LabBucketArtwork(design, buckets.firstOrNull { it.id == target }?.name ?: "Mein Eimer", Modifier.fillMaxWidth().height(156.dp))\n            Text("Für welchen Eimer?",color=Ink.Paper,fontSize=13.sp)
             buckets.forEach { bucket ->
                 Text(bucket.name,modifier=Modifier.fillMaxWidth()
                     .clickable { target=bucket.id }.padding(9.dp)

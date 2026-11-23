@@ -43,11 +43,30 @@ fun LayeredBucketPrototype(
         Canvas(Modifier.fillMaxSize()) {
             val w = size.width
             val h = size.height
+            // Distinct geometry: timber pail, flared zinc utility bucket,
+            // and rounded enamel kitchen vessel. Not merely recolors.
             val outer = Path().apply {
-                moveTo(w * .18f, h * .29f)
-                lineTo(w * .82f, h * .29f)
-                lineTo(w * .73f, h * .88f)
-                quadraticBezierTo(w * .5f, h * .95f, w * .27f, h * .88f)
+                when (material) {
+                    LayeredMaterialStudy.WALNUT -> {
+                        moveTo(w * .18f, h * .29f)
+                        lineTo(w * .82f, h * .29f)
+                        lineTo(w * .73f, h * .88f)
+                        quadraticBezierTo(w * .5f, h * .95f, w * .27f, h * .88f)
+                    }
+                    LayeredMaterialStudy.ZINC -> {
+                        moveTo(w * .13f, h * .29f)
+                        lineTo(w * .87f, h * .29f)
+                        lineTo(w * .72f, h * .90f)
+                        quadraticBezierTo(w * .5f, h * .96f, w * .28f, h * .90f)
+                    }
+                    LayeredMaterialStudy.ENAMEL -> {
+                        moveTo(w * .21f, h * .30f)
+                        lineTo(w * .79f, h * .30f)
+                        cubicTo(w * .86f, h * .46f, w * .80f, h * .88f, w * .68f, h * .91f)
+                        quadraticBezierTo(w * .5f, h * .97f, w * .32f, h * .91f)
+                        cubicTo(w * .20f, h * .88f, w * .14f, h * .46f, w * .21f, h * .30f)
+                    }
+                }
                 close()
             }
             val palette = when (material) {
@@ -88,10 +107,27 @@ fun LayeredBucketPrototype(
                 Offset(w * .57f, y + h * .075f), w * .004f)
             // FRONT: actual opaque wall, occludes paper once it enters.
             val front = Path().apply {
-                moveTo(w * .18f, h * .34f)
-                quadraticBezierTo(w * .5f, h * .41f, w * .82f, h * .34f)
-                lineTo(w * .73f, h * .88f)
-                quadraticBezierTo(w * .5f, h * .95f, w * .27f, h * .88f)
+                when (material) {
+                    LayeredMaterialStudy.WALNUT -> {
+                        moveTo(w * .18f, h * .34f)
+                        quadraticBezierTo(w * .5f, h * .41f, w * .82f, h * .34f)
+                        lineTo(w * .73f, h * .88f)
+                        quadraticBezierTo(w * .5f, h * .95f, w * .27f, h * .88f)
+                    }
+                    LayeredMaterialStudy.ZINC -> {
+                        moveTo(w * .13f, h * .34f)
+                        quadraticBezierTo(w * .5f, h * .41f, w * .87f, h * .34f)
+                        lineTo(w * .72f, h * .90f)
+                        quadraticBezierTo(w * .5f, h * .96f, w * .28f, h * .90f)
+                    }
+                    LayeredMaterialStudy.ENAMEL -> {
+                        moveTo(w * .21f, h * .35f)
+                        quadraticBezierTo(w * .5f, h * .41f, w * .79f, h * .35f)
+                        cubicTo(w * .86f, h * .51f, w * .80f, h * .88f, w * .68f, h * .91f)
+                        quadraticBezierTo(w * .5f, h * .97f, w * .32f, h * .91f)
+                        cubicTo(w * .20f, h * .88f, w * .14f, h * .51f, w * .21f, h * .35f)
+                    }
+                }
                 close()
             }
             drawPath(front, Brush.horizontalGradient(listOf(

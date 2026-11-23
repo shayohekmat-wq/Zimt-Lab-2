@@ -56,4 +56,22 @@ class NotePressSafetyTest {
         assertFalse(g.mayCommitBurn())
         assertEquals(NotePressSafety.Phase.PRESSED, g.advance(3000))
     }
+
+    @Test fun dragAfterWarningStillDisarms() {
+        val g = NotePressSafety()
+        g.down(0)
+        assertEquals(NotePressSafety.Phase.WARNING, g.advance(1500))
+        g.move(beyondSlop = true)
+        assertEquals(NotePressSafety.Phase.DRAGGING, g.advance(5000))
+        assertFalse(g.mayCommitBurn())
+    }
+
+    @Test fun cancelAfterWarningNeverIgnites() {
+        val g = NotePressSafety()
+        g.down(0)
+        g.advance(1999)
+        g.cancel()
+        assertEquals(NotePressSafety.Phase.CANCELLED, g.advance(10000))
+        assertFalse(g.mayCommitBurn())
+    }
 }

@@ -1,3 +1,5 @@
+> **CURRENT AUTHORITY (Development Doctrine 5.0):** The concise active product scope is [ACTIVE_SCOPE.md](ACTIVE_SCOPE.md). This file retains historical build records and superseded proposals. Its earlier expansion sections are NOT authorized work. For implementation, read [DEVELOPMENT_DOCTRINE.md](DEVELOPMENT_DOCTRINE.md), current source and [DEVELOPMENT_STATUS.md](DEVELOPMENT_STATUS.md). New independent features are welcome; the current three-bucket design-lab scope remains binding unless explicitly changed by the user.
+
 # Eimer-Liste · verbindlicher aktiver Buildplan
 **Stand: 23.11.2026 · Gültig für Zimt-Lab-2 · Priorität: echtes Designlabor-Redesign**
 

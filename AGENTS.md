@@ -1,29 +1,27 @@
-# ZIMT Lab 2 — Agent instructions
+# ZIMT Lab 2 — Engineering agent contract
 
-Android/Kotlin/Jetpack Compose app. Features built in this lab must remain modular and transferable into the main ZIMT app. Current product requirements and acceptance criteria: `docs/BUILD_PLAN.md`; direct user instructions take precedence.
+**Mission:** Deliver reliable, beautiful Android features in this independent lab while preserving existing user data and keeping functionality portable into the main ZIMT app. This document controls *how* to work, not what features to invent.
 
-## Execute the requested milestone
-1. Inspect the relevant source, tests, requirements and available tools. Define concrete acceptance criteria internally; avoid spending the run on planning or process documentation.
-2. Implement a **substantial, coherent vertical slice** (UI, state, persistence, edge cases and tests as applicable). Keep working after individual edits, tool results or commits. Do not expand the agreed scope.
-3. **Verify iteratively:** after a meaningful batch, run targeted tests/builds as available; inspect failures, fix them and rerun. Do not postpone all compilation until a supposedly perfect implementation. A successful build is not proof of correct device behavior.
-4. **Finish the actual deliverable:** for a release, verify the package, versionCode, signing certificate and safe update path; retrieve and deliver the tested APK. Never present an old or unsigned build as a safe update.
-5. **Only stop** after delivering the requested result, a user-directed scope change, or a genuine execution limit. If blocked, continue independent work first, then report exactly what changed, what was tested, what remains and what is blocking it. Never claim unrun tests or completed features.
-6. For direct development orders, **no small progress-only replies**. A file write, commit, CI trigger or partial implementation is not a completion signal. Do not promise work outside the actual execution session.
+## 1. Authority and scope
+- Follow the latest explicit user request and applicable safety/data constraints. Product requirements live in `docs/BUILD_PLAN.md`; **§17 supersedes historical design-expansion ideas in §§1–16**, and §19 specifies current note gestures. Do not silently combine conflicting historical plans.
+- Active, testable requirements: `docs/ACCEPTANCE_CRITERIA.md`. If a genuine conflict remains, resolve from dated user instructions and record the decision; ask only when the conflict materially blocks safe implementation.
+- Preserve exactly three active user-designed buckets (`user-wicker-01`, `user-wood-01`, `user-zinc-01`), six original REAR/FRONT PNGs, legacy IDs, notes and drawings. Do not add design styles without a new explicit user instruction.
 
-## Repository and build
-- Implement current milestone work on `development/integrated-milestone` and explicitly select that branch for connector writes. Do not silently modify `main`; merge only when the integrated changes are ready.
-- Android application ID: `de.zimt.eimerliste`; `minSdk = 26`; JDK 17; Gradle 9.6 in CI. Read `app/build.gradle.kts` for current SDK, dependencies and version.
-- CI workflow: `.github/workflows/android.yml`. Development-branch pushes and PRs run debug compilation plus unit tests; release compilation, package verification and signing run only for a manually dispatched workflow on `main` **after this workflow change is merged into main**. GitHub Actions `workflow_dispatch` must exist on the default branch to be callable. Check run logs and artifact availability; do not assume an upload happened.
-- CI build/test commands: `gradle --no-daemon :app:assembleDebug :app:testDebugUnitTest`; release only: `gradle --no-daemon :app:assembleRelease`. Fix build/test failures and rerun; never infer runtime correctness from compilation.
-- Preserve package identity, existing Room data, note IDs and drawings. Update versionCode monotonically for a release. Do not commit signing keys, credentials or other secrets. If signing secrets are unavailable, CI may produce an unsigned artifact but it is **not** an installable update; sign offline with the original certificate and verify before delivery.
+## 2. Execution loop
+1. Read current HEAD, the relevant source, `docs/DEVELOPMENT_STATUS.md`, acceptance criteria and CI results. Establish what is **verified**, not merely claimed. Read `docs/ARCHITECTURE.md` for code locations and build commands.
+2. Implement a coherent end-to-end batch: UI, state, persistence, cancellation/error paths and appropriate tests. Keep scope focused. Commits, tool successes and partial features are checkpoints, **not** completion events.
+3. After a meaningful batch, run targeted tests/CI. Read the actual failure output, fix root causes and rerun. Do not defer all builds until an imagined perfect final implementation; do not build releases on every push.
+4. Compare results against each active acceptance criterion. Compilation does not verify gestures, visual quality, haptics or data migration. Mark device-only checks as unverified until observed.
+5. Deliver the requested tested artifact when possible. For update APKs follow `docs/RELEASE_CHECKLIST.md` and `docs/RELEASE_AND_DATA.md`: package identity, strictly increasing versionCode, original certificate, non-destructive upgrade, exact artifact provenance.
+6. If genuinely blocked by tools/time, first complete independent work; then leave a factual checkpoint with HEAD, tested commands/CI runs, failures and next executable action. Never invent successful tests, APKs or autonomous continuation.
 
-## Continuation across execution limits
-- For interrupted milestones, maintain a small factual checkpoint in `docs/DEVELOPMENT_STATUS.md` (acceptance criteria, code paths changed, verified checks, exact next action). Update only when a real checkpoint is needed; avoid progress-only commits.
-- At the next run, read the checkpoint and compare it with actual HEAD and CI results before changing code. Resume the next unfinished acceptance criterion, not another planning cycle. Do not mark an item complete until its evidence exists.
+## 3. Repository and quality gates
+- Current work branch: `development/integrated-milestone`. Explicitly target it for writes; do not silently modify `main`. Review and integrate only when acceptance checks justify it.
+- `app/build.gradle.kts` is authoritative for SDK, app ID and version; `.github/workflows/android.yml` is authoritative for actual CI triggers. Current development workflow compiles debug and runs JUnit on development pushes/PRs; release compilation/signing require manual dispatch on `main` **after the workflow is merged there**.
+- Protect Room data and migrations; do not introduce destructive fallbacks. Note drag/scroll/multitouch/cancel/lifecycle must never accidentally ignite; soft-delete and Undo must preserve note content.
+- Signing secrets never enter Git, logs or shared artifacts. Unsigned/debug APKs are not safe replacements for an installed signed release.
+- Record objective release evidence: commit, run, tests, APK hash, package/version, certificate, upgrade/device checks. See `docs/RELEASE_CHECKLIST.md`.
 
-## Non-negotiable product constraints
-- Honor the three-design scope freeze in `docs/BUILD_PLAN.md` §17: only the original Flechtkorb, Holzkübel and Zinkeimer user designs, each with precisely aligned REAR/FRONT PNGs. Do not replace or mutate original assets.
-- Note gestures must not accidentally ignite during drag, scroll, cancellation, multitouch or lifecycle changes. Preserve soft-delete and accessible Undo.
-- Validate update compatibility and data preservation; distinguish static inspection, successful compilation, automated tests and actual device testing.
-
-These are repository instructions, not a mechanism that guarantees long-running execution or automatically applies to other repositories.
+## 4. Resume and communication
+- Use `docs/DEVELOPMENT_STATUS.md` only as a concise evidence-based checkpoint; reconcile it against real code/CI on every resumed run. Do not create progress-only commits or restart planning when executable work remains.
+- For direct development orders, avoid small interim reports; give one substantial result or an exact blocker. An `AGENTS.md` instruction cannot itself extend tool execution limits, schedule background work or guarantee APK delivery.

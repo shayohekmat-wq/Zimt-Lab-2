@@ -427,6 +427,9 @@ fun EimerApp(vm: EimerViewModel = viewModel()) {
                         scope.launch {
                             try {
                                 val deletedAt = vm.burnNote(note.id)
+                                // The snackbar is hosted below the modal sheet. Close the sheet
+                                // before offering Undo so the action is actually reachable.
+                                openBucket = null
                                 haptics.performHapticFeedback(HapticFeedbackType.Confirm)
                                 val result = snackbar.showSnackbar(
                                     message = "Zettel verbrannt.",

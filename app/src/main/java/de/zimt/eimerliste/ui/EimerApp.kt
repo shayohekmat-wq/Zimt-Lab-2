@@ -447,6 +447,17 @@ fun EimerApp(vm: EimerViewModel = viewModel()) {
                 onApply = {
                     drawing = it
                     sketchOpen = false
+                },
+                onFold = { finishedDrawing ->
+                    // Preserve the completed sketch before starting the real fold sequence.
+                    drawing = finishedDrawing
+                    sketchOpen = false
+                    if (pendingPaper == null && buckets.isNotEmpty() &&
+                        NoteRules.canSubmit(draft, finishedDrawing)) {
+                        keyboard?.hide()
+                        focus.clearFocus()
+                        pendingPaper = draft
+                    }
                 }
             )
         }

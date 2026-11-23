@@ -155,3 +155,23 @@ Wir wollen **viele außergewöhnlich schöne, wirklich unterschiedliche und voll
 - [ ] CI dieser beiden neuen Commits noch prüfen; Tests nicht vor CI als bestanden ausgeben.
 
 **Zielkontrolle:** Diese technische Schutzmaßnahme dient dem zentralen Designlabor-Ziel, ist aber **kein neuer Premiumeimer** und kein Ersatz für hochwertige Grafikassets. Nächster substantieller Meilenstein bleibt eine kuratierte Galerie mit echten transparenten Vorder-/Rückgrafiken und vielfältigen, rechtlich geprüften menschlich designten Digitalgrafiken sowie KI-/Originaldesigns. Vor Freigabe visuelle Abnahme, Datenbestandsschutz und Originalsignatur nachweisen.
+
+## 11. Nächster Build: große Neugestaltung – Mindestziel 50 % (Nutzeranweisung)
+
+**Verbindliche Priorität:** Im **nächsten tatsächlichen Build** mindestens **50 % der geplanten großen Designlabor-Neugestaltung** als sichtbare, nutzbare und überprüfte Produktleistung liefern, ausdrücklich gerne deutlich mehr. Das ist ein **Ziel**, keine Behauptung des bisherigen Fortschritts. Kleine technische Änderungen, bloße Commits, vorhandene Legacy-Designs, kosmetische Varianten und unfertige Canvas-Studien dürfen nicht als erreichte 50 % gezählt werden. Keine neue Version nur zur Darstellung eines Prozentwerts.
+
+### Transparente, gewichtete Abnahme (100 Punkte)
+- **30 Punkte – hochwertige neue Eimerassets:** deutlich unterschiedliche, individuell gestaltete Silhouetten und Materialien; echte freigestellte Vorder-/Rückgrafiken und Öffnung; überzeugend bei Handy-Kachelgröße und großer Vorschau. Keine Farbduplikate. Punkte nur für tatsächlich integrierte, sichtbare Assets.
+- **25 Punkte – neues Designlabor als Galerie:** große visuelle Vorschauen, klare Herkunftskennzeichnung, einfache Navigation/Filter, ausgewählter Zieleimer, Übernehmen/Abbrechen/Rücksetzen, korrekte Darstellung im Hauptgitter. Keine Scheinrubriken.
+- **20 Punkte – vollständige Papierinteraktion:** Falt-/Knüll-, Einwurf- und Auswurfanimation durch reale Öffnung, korrekte Verdeckung und Eimerbewegung, Haptik-Fallback. In echten Tiles, nicht nur per Testslider.
+- **15 Punkte – echte Designvielfalt und Herkunft:** konkret nachgewiesene, lizenzierte menschliche digitale Assets sowie eigenständige KI- und Originaldesigns, mit korrekt dokumentierter Provenienz und nutzbaren Einzelgrafiken. Nicht erfüllte Herkunftsgruppen ehrlich offenlassen.
+- **10 Punkte – Robustheit und Integration:** Datenpersistenz, Legacy-Fallback, Tests/CI, Android-Kompatibilität, modular übernehmbare ZIMT-Komponenten; signiertes Update erst nach Originalzertifikatsprüfung als fertig ausgeben.
+
+**50-%-Gate:** Mindestens 50 tatsächlich belegte Punkte **und** zwingend ein sichtbar neues, hochwertiges Designasset, eine funktionierende Galerie-Auswahl mit Übernahme und echte Papierinteraktion. Kein Punktesammeln durch isolierte Tests oder kosmetische Funktionen. **Stretch:** so viele weitere Kategorien und eigenständige Premiumeimer wie qualitätsgesichert möglich. Kein Freigabeversprechen ohne bestandene Prüfungen.
+
+### Nächste unmittelbare Entwicklungsarbeiten
+1. Vorhandenen Katalog/Renderer und erfolgreichen CI-Stand nutzen, keine alten Funktionen erneut erfinden.
+2. Hochwertige lokale freigestellte Eimergrafiken mit separater Rückwand/Vorderwand/Öffnungsmaske erstellen und integrieren; echte Unterschiede statt Varianten derselben Grundform.
+3. Designlabor von einem einzelnen Referenzkorb mit Textabschnitten zu einer kuratierten, bildstarken Galerie umbauen. Menschliche lizenzierte Digitalgrafiken konkret mit Künstler/Original-Link/Lizenz prüfen; KI- und Originaldesigns gleichberechtigt weiterentwickeln.
+4. Echte Einwurf-/Auswurf-/Faltanimation, Auswahl, Persistenz, Haptik und ZIMT-Modulgrenzen gemeinsam prüfen.
+5. Im **gleichen Buildzyklus** diesen Masterplan mit belegtem Erfüllungsgrad je Kategorie, Commits, Tests, CI, offenen Blockern und dem nächsten großen Schritt aktualisieren. Wenn 50 % nicht belegbar sind, ehrlichen Iststand melden und **keine** künstliche Erfolgsfreigabe.

@@ -19,16 +19,8 @@ Use the sequence **PLANNED → IMPLEMENTED → CI_VERIFIED → DEVICE_VERIFIED**
 ## New ideas: admission rule
 Capture user goal, visual interaction sketch, acceptance criteria, minimum supported API, expected Moto G6 load, persistence impact, haptic fallback and future ZIMT interface. Prototype the smallest slice. Only extract a shared library after two Labs demonstrate the same real requirement. Do not add features to blank Labs 3/4 without an explicit brief.
 
-## Lab 2 active development branch audit
-- `NotePressSafety.kt` pure state machine and `NotePressSafetyTest.kt` boundary/cancellation tests are **IMPLEMENTED BUT NOT CI VERIFIED**. The existing Compose gesture handler has **not** been refactored to use this state machine; do not claim runtime safety from these tests alone.
-- Workflow stale `Priority classes` assertion replaced with Motion First 2.2 document checks. **CI outcome not yet verified**.
-- Existing note burn/drag/Undo, lifecycle and Room migration behavior: **UNVERIFIED** on a physical device. No release authorization.
-
-## P0 integration checkpoint — 2026-11-23
-- **IMPLEMENTED IN SOURCE:** `EimerApp.kt` note gesture now creates `NotePressSafety`, updates it on touch move, release and cancel, and gates ignition plus deferred `onIgnite` through `mayCommitBurn()` (commit `92e7d421`).
-- **IMPLEMENTED TESTS, NOT EXECUTED:** `NotePressSafetyTest.kt` now includes drag/cancel after warning and timing boundary scenarios (commit `34a4b550`).
-- **NOT VERIFIED:** No commit-specific GitHub workflow runs or combined status checks were returned by available connector queries. Do not claim compilation, passing tests, device behavior, or release readiness. Gesture handler still needs end-to-end Compose/device validation, including multitouch, lifecycle cancellation, pointer consumption, and Room/Undo upgrade tests.
-- **P0 NEXT:** obtain CI run evidence, fix any compilation errors, test actual pointer sequences and process/lifecycle transitions, then verify original signing and upgrade before release.
+## Historical checkpoints (superseded, retained for traceability)
+Earlier audits described the pure `NotePressSafety` class as not integrated and later described partial integration. Those statements were true only at their historical checkpoints; they are **not** the current code state. See the current Doctrine 5.0 checkpoint below. The latest source has one authoritative phase in the note gesture adapter; this remains **UNVERIFIED by CI/device**.
 
 ## Doctrine 5.0 implementation checkpoint — 2026-11-23 (single-phase gesture refactor)
 - **IMPLEMENTED:** `EimerApp.kt` pointer adapter now delegates authoritative gesture phases, deadlines and release-origin to `NotePressSafety`; old duplicated `lifted/moved/warned/ignited/cancelled/released` flags removed from the note handler. `try/finally` clears drag/warning/burning visuals and drop target on cancellation.

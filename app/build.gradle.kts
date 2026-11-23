@@ -12,8 +12,8 @@ android {
         applicationId = "de.zimt.eimerliste"
         minSdk = 26
         targetSdk = 36
-        versionCode = 34
-        versionName = "0.3.3-dev21"
+        versionCode = 35
+        versionName = "0.3.3-dev22"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
@@ -69,6 +69,7 @@ val verifyOriginalBucketPngs = tasks.register("verifyOriginalBucketPngs") {
     inputs.files(assets.map { assetDir.file(it) })
     doLast {
         val pngSignature = byteArrayOf(137.toByte(), 80, 78, 71, 13, 10, 26, 10)
+        val dimensions = mutableMapOf<String, Pair<Int, Int>>()
         assets.forEach { name ->
             val file = assetDir.file(name).asFile
             check(file.isFile) { "Required original bucket layer missing: $name" }
@@ -87,6 +88,18 @@ val verifyOriginalBucketPngs = tasks.register("verifyOriginalBucketPngs") {
             val decoded = javax.imageio.ImageIO.read(file)
             check(decoded != null && decoded.width == width && decoded.height == height) {
                 "PNG pixel data cannot be decoded consistently: $name"
+            }
+            dimensions[name] = width to height
+        }
+        // Both layers must use the same source pixel coordinate system. Reject
+        // mismatched canvases rather than silently stretching one layer.
+        listOf(
+            "flechtkorb_hinten.png" to "flechtkorb_vorne.png",
+            "holzkuebel_hinten.png" to "holzkuebel_vorne.png",
+            "bucket_zinc_user_rear.png" to "bucket_zinc_user_front.png"
+        ).forEach { (rear, front) ->
+            check(dimensions[rear] == dimensions[front]) {
+                "Original bucket layers have different canvas dimensions: $rear and $front"
             }
         }
     }

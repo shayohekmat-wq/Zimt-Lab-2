@@ -313,3 +313,11 @@ Alle sechs Dateien wurden am 23.11.2026 in `app/src/main/res/drawable-nodpi/` au
 ### 0.3.3-dev7 / Build 20 — visuelle Ebenen-Kalibrierung
 
 Nutzer meldete per Screenshots, dass Flechtkorb korrekt wirkt, Holzkübel und Zinkeimer aber im Öffnungsbereich nicht bündig schließen und die Rückwand unpassend sitzt. Original-PNGs lokal aus Nutzeruploads im gemeinsamen Koordinatenraum pixelgenau geprüft; mehrere nicht-destruktive Transformationsvarianten gerendert. Renderer-Hotfix `4ccbca92`: Nur REAR-Layer von `user-wood-01` und `user-zinc-01` horizontal 1.08×, vertikal 0.94× und um 1.7% bzw. 1.6% der Canvas-Höhe nach unten verschoben; FRONT-Layer, Flechtkorb und alle Originaldateien unverändert. Diese Parameter sind **visuell vorläufig**, nicht auf echtem Android-Gerät abgenommen. VersionCode 20 / dev7 (`debdd901`); CI-Run `45108352585` gestartet. Nächster Abnahmeschritt: Nutzer-Screenshot nach Installation, besonders Übergänge am linken/rechten oberen Rand, und ggf. Feinabgleich der drei Transformationsparameter.
+
+### 0.3.3-dev8 / Build 21 — Scope-Freeze-Koordinatenkorrektur (23.11.2026)
+
+- [x] **Codefix** `66e72369`: Die zuvor eingeführten separaten REAR-Transformationen (Holz/Zink 1.08× Breite, 0.94× Höhe, vertikaler Versatz) wurden entfernt. Alle drei Designs zeichnen nun REAR und FRONT in exakt derselben `fillMaxSize`-/`ContentScale.Fit`-Geometrie, wie Abschnitt 17 ausdrücklich verlangt. Keine Original-PNGs verändert; bestehende Design-IDs und Daten unverändert.
+- [x] `versionCode=21`, `versionName=0.3.3-dev8` (Commit `6a46e131`).
+- [ ] GitHub-CI und lokale Originalsignatur für Build 21 abschließend prüfen.
+- [ ] Visuelle Prüfung der ursprünglichen Nahtprobleme auf einem echten Android-Gerät weiterhin offen. **Identische Koordinaten garantieren keine nahtfreie Grafik, wenn die Quelldateien unterschiedlich gezeichnet wurden.** Nicht als vollständig repariert behaupten.
+- [ ] Weitere Arbeit ausschließlich an den drei Nutzergrafiken, Papier-Okklusion, Animation und Zuverlässigkeit; keine Designlabor-Expansion.

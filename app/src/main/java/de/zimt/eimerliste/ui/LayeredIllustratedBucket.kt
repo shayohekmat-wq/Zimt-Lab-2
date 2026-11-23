@@ -78,9 +78,8 @@ fun LayeredIllustratedBucket(
         }
         Image(painterResource(asset.front), contentDescription = null,
             modifier = Modifier.fillMaxSize())
-        Text(title, color = Color(0xFFFFE3AB), fontSize = 10.sp,
-            fontWeight = FontWeight.Bold, textAlign = TextAlign.Center, maxLines = 2,
-            modifier = Modifier.align(Alignment.Center).fillMaxWidth(.28f)
-                .offset(y = vesselHeight * .22f))
+        // Do not paint a second, clipped title over the decorative artwork.
+        // Gallery cards already display the full bucket name below the image.
+
     }
 }

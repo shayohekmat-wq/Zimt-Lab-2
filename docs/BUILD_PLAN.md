@@ -492,3 +492,13 @@ Nutzer meldete per Screenshots, dass Flechtkorb korrekt wirkt, Holzkübel und Zi
 - [ ] UI-Geste, tatsächliche Drop-Zielerkennung, animierte Notiz und Verbrennung mit Undo sind **nicht** implementiert. Die pure `NoteHoldTiming`-Logik ist noch nicht an Pointer-Events angeschlossen.
 - [ ] Vor Update-Auslieferung Originalsignatur, Paketkennung, Versionscode und Bestandsdaten-Installation verifizieren. Keine fertige APK für Build 40 behaupten.
 - Designlabor-Scope-Freeze aus Abschnitt 17 bleibt unangetastet.
+
+
+### 0.3.3-dev28 / Build 41 — erste bedienbare Umlegefunktion (Zwischenschritt)
+- Commits `c022268c`, `94fe4b5e`: Die Notizenliste reagiert auf 700 ms gedrückt halten (unabhängig von der Android-Standard-Longpressdauer) mit Haptik und einem Ziel-Eimer-Dialog. Kurzer Tap öffnet weiterhin die Notiz. Die Auswahl eines anderen Eimers ruft die atomare `moveNote`-Methode auf; nach bestätigtem Erfolg schließt sich das Dialogfenster und die Zählung aktualisiert sich über Room-Flows. Fehlversuche zeigen eine Snackbar und behalten den Notizdatensatz.
+- Commit `5597d395`: versionCode 41, versionName 0.3.3-dev28.
+- **Bewusst noch kein Drag-and-drop:** Der 700-ms-Dialog ist eine funktionale Zwischenlösung, nicht die geforderte schwebende Drag-Interaktion. Das ModalBottomSheet und das Hauptgitter müssen für die spätere tatsächliche Drop-Geometrie koordiniert werden.
+- **Noch kein Verbrennen:** 1,5-s-Warnwackeln, 2-s-Zündung, Ausbrennmaske und Undo sind aus Datensicherheitsgründen noch nicht an die UI angeschlossen. Keine Löschoperation implementiert.
+- [ ] CI/Kotlin-Kompilierung und echte Android-Bedienung prüfen. Finger-Release/Cancel/Scroll-Konflikte und Accessibility testen.
+- [ ] Finaler Drag-and-drop-Flow, Feueranimation und Undo sowie Originalsignatur/Update-Test fehlen. Keine APK als fertig deklarieren.
+- Designlabor-Scope-Freeze Abschnitt 17 bleibt vollständig unverändert.

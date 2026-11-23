@@ -43,5 +43,8 @@ class EimerViewModel(application: Application) : AndroidViewModel(application) {
     suspend fun addNote(bucketId: String, text: String, drawingPayload: String? = null): String =
         repository.createNote(bucketId, text, drawingPayload)
 
+    suspend fun moveNote(noteId: String, sourceBucketId: String, destinationBucketId: String) =
+        repository.moveNote(noteId, sourceBucketId, destinationBucketId)
+
     suspend fun randomNote(bucketId: String) = repository.randomNote(bucketId)
 }

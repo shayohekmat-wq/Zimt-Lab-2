@@ -395,3 +395,12 @@ Nutzer meldete per Screenshots, dass Flechtkorb korrekt wirkt, Holzkübel und Zi
 - Versionsbump `ff3e431e`: `versionCode=32`, `versionName=0.3.3-dev19`. CI für diesen neuen Commit und echte Geräteprüfung stehen noch aus; vor CI-Erfolg keine Freigabe.
 - Blocker weiterhin: privater Original-PKCS12-Schlüssel nicht verfügbar. Signatur mit bisherigem Zertifikat SHA256 `40e6b73383a29f9ca792595b369329e2ab8f9165f49eec69b4eb57a8ffe26fe1` nicht nachgewiesen; **keine** unsigned/debug/anders signierte APK als Update ausgeben.
 - Nächste Prioritäten: CI-Abschluss, visuelle Überprüfung der Eimeröffnung und tatsächlichen Zettelverdeckung sowie datenerhaltender Update-Test. Ausschließlich `user-wicker-01`, `user-wood-01`, `user-zinc-01`; Abschnitt 17 hat Vorrang.
+
+
+### 0.3.3-dev20 / Build 33 — Quell-PNG-Integrität im Build absichern (23.11.2026)
+
+- Commit `9bd516e4`: Gradle-Aufgabe `verifyOriginalBucketPngs` kontrolliert vor Android-`preBuild`, dass genau die sechs vorgeschriebenen Quelldateien als lesbare PNGs mit Signatur, IHDR und positiven Abmessungen vorhanden sind. Keine Umwandlung oder Veränderung der Originaldateien. Diese Prüfung schützt gegen versehentliches Entfernen oder fehlerhafte Ersetzung der Nutzerassets; sie prüft **nicht** die visuelle Deckungsgleichheit oder Animation.
+- Commit `649671ae`: `versionCode=33`, `versionName=0.3.3-dev20`.
+- [ ] CI-Erfolg für Build 33 und tatsächliche Ausführung des neuen Guards bestätigen. Kein CI-Erfolg oder signiertes Artefakt für diese Version vorab behaupten.
+- [ ] Unverändert ausstehend: originale PKCS12-Signatur mit Zertifikatsfingerprint `40e6b73383a29f9ca792595b369329e2ab8f9165f49eec69b4eb57a8ffe26fe1`, visuelle Android-Prüfung, Öffnungsnähte, Papier-Okklusion, Bestandsdaten-Update.
+- Scope-Freeze Abschnitt 17 weiterhin verbindlich; keine neuen Designs, Galerien oder Datenmigrationen.

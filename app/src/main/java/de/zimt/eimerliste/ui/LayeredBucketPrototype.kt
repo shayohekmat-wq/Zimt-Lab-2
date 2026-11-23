@@ -65,8 +65,8 @@ fun LayeredBucketPrototype(
                 )
             }
             // REAR: inner well and back rim.
-            drawPath(outer, Color(0xFF493524))
-            drawOval(Color(0xFF211C19), Offset(w * .19f, h * .255f),
+            drawPath(outer, palette[3])
+            drawOval(palette[3], Offset(w * .19f, h * .255f),
                 Size(w * .62f, h * .105f))
             drawArc(palette[4], 180f, 180f, false,
                 Offset(w * .19f, h * .235f), Size(w * .62f, h * .115f),
@@ -94,7 +94,7 @@ fun LayeredBucketPrototype(
                 close()
             }
             drawPath(front, Brush.horizontalGradient(listOf(
-                Color(0xFF665037), Color(0xFFC9A777), Color(0xFF765A3B)
+                palette[0], palette[1], palette[2]
             )))
             if (material == LayeredMaterialStudy.WALNUT) for (i in 0..7) {
                 val x = w * (.27f + i * .064f)
@@ -117,7 +117,7 @@ fun LayeredBucketPrototype(
                 Offset(w * .18f, h * .275f), Size(w * .64f, h * .12f),
                 style = Stroke(w * .02f))
             drawCircle(palette[4], w * .013f, Offset(w * .2f, h * .39f))
-            drawCircle(Color(0xFFE2C58D), w * .013f, Offset(w * .8f, h * .39f))
+            drawCircle(palette[4], w * .013f, Offset(w * .8f, h * .39f))
         }
         // LABEL: rendered last, never occluded by paper.
         Box(Modifier.fillMaxWidth(.49f).offset(y = 26.dp)

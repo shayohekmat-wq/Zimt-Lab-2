@@ -1,27 +1,29 @@
-# ZIMT Lab 2 — Engineering agent contract
+# ZIMT Lab — engineering agent contract
 
-**Mission:** Deliver reliable, beautiful Android features in this independent lab while preserving existing user data and keeping functionality portable into the main ZIMT app. This document controls *how* to work, not what features to invent.
+## Mission and authority
+Build a polished, reliable, independently testable Android lab whose features can later be integrated into the main ZIMT app. The **latest explicit user request** controls product scope; preserve established safety, privacy and data-integrity requirements. Read the repository README, current source and any active product plan before implementing. Never assume requirements or a framework from another lab apply here.
 
-## 1. Authority and scope
-- Follow the latest explicit user request and applicable safety/data constraints. Product requirements live in `docs/BUILD_PLAN.md`; **§17 supersedes historical design-expansion ideas in §§1–16**, and §19 specifies current note gestures. Do not silently combine conflicting historical plans.
-- Active, testable requirements: `docs/ACCEPTANCE_CRITERIA.md`. If a genuine conflict remains, resolve from dated user instructions and record the decision; ask only when the conflict materially blocks safe implementation.
-- Preserve exactly three active user-designed buckets (`user-wicker-01`, `user-wood-01`, `user-zinc-01`), six original REAR/FRONT PNGs, legacy IDs, notes and drawings. Do not add design styles without a new explicit user instruction.
+## Execution protocol
+1. Inspect actual HEAD, relevant code, existing tests, CI configuration and the most recent verified checkpoint. Identify a concrete, end-to-end acceptance target; avoid repeating planning when implementation is possible.
+2. Implement a coherent vertical slice: UI, state, persistence, animations/haptics where applicable, accessibility, cancellation and error handling, and focused tests. Preserve modularity and integration boundaries. Keep app-specific shell and package identity separate from reusable feature logic.
+3. Build/test after meaningful changes, **read the real output**, repair failures and rerun. A commit, tool success, green compilation or launched CI job is not proof of product completion. Avoid needless build loops and version bumps.
+4. Validate the strongest available evidence: unit tests, integration tests, CI, Android device behavior and upgrade compatibility. Record what was actually verified; mark device-only observations as unverified if no device was available.
+5. For requested APK updates, verify exact source commit, applicationId, monotonic versionCode, correct original signing certificate, installability and existing-data retention. Never distribute an unsigned/debug APK as a safe update or expose signing secrets.
+6. Stop at a delivered, verified result or a genuine tool/execution blocker after completing other independent work. When interrupted, leave a concise factual checkpoint (commit, tests, unresolved acceptance criteria and next executable action); resume from it rather than starting another plan.
 
-## 2. Execution loop
-1. Read current HEAD, the relevant source, `docs/DEVELOPMENT_STATUS.md`, acceptance criteria and CI results. Establish what is **verified**, not merely claimed. Read `docs/ARCHITECTURE.md` for code locations and build commands.
-2. Implement a coherent end-to-end batch: UI, state, persistence, cancellation/error paths and appropriate tests. Keep scope focused. Commits, tool successes and partial features are checkpoints, **not** completion events.
-3. After a meaningful batch, run targeted tests/CI. Read the actual failure output, fix root causes and rerun. Do not defer all builds until an imagined perfect final implementation; do not build releases on every push.
-4. Compare results against each active acceptance criterion. Compilation does not verify gestures, visual quality, haptics or data migration. Mark device-only checks as unverified until observed.
-5. Deliver the requested tested artifact when possible. For update APKs follow `docs/RELEASE_CHECKLIST.md` and `docs/RELEASE_AND_DATA.md`: package identity, strictly increasing versionCode, original certificate, non-destructive upgrade, exact artifact provenance.
-6. If genuinely blocked by tools/time, first complete independent work; then leave a factual checkpoint with HEAD, tested commands/CI runs, failures and next executable action. Never invent successful tests, APKs or autonomous continuation.
+## Non-negotiable engineering safeguards
+- **No silent data loss:** never reset databases or discard user drawings, notes or settings to simplify an update. Test migrations and backups when relevant.
+- **Portability to ZIMT:** keep domain models and business logic reusable, isolate Android Activity/navigation and storage adapters, use stable IDs and explicit interfaces. Different app IDs do not share private Android data automatically; design a tested export/import or migration path.
+- **Reliability and UX:** handle gesture cancellation, multitouch, rotation/backgrounding, reduced motion, older supported Android versions and low-end hardware as relevant. Do not assert device behavior based only on source inspection.
+- **Security:** do not commit private keys, tokens or credentials; do not introduce network services or permissions without a product need.
+- **Scope discipline:** no speculative redesign, new features or destructive refactors in place of the requested milestone.
 
-## 3. Repository and quality gates
-- Current work branch: `development/integrated-milestone`. Explicitly target it for writes; do not silently modify `main`. Review and integrate only when acceptance checks justify it.
-- `app/build.gradle.kts` is authoritative for SDK, app ID and version; `.github/workflows/android.yml` is authoritative for actual CI triggers. Current development workflow compiles debug and runs JUnit on development pushes/PRs; release compilation/signing require manual dispatch on `main` **after the workflow is merged there**.
-- Protect Room data and migrations; do not introduce destructive fallbacks. Note drag/scroll/multitouch/cancel/lifecycle must never accidentally ignite; soft-delete and Undo must preserve note content.
-- Signing secrets never enter Git, logs or shared artifacts. Unsigned/debug APKs are not safe replacements for an installed signed release.
-- Record objective release evidence: commit, run, tests, APK hash, package/version, certificate, upgrade/device checks. See `docs/RELEASE_CHECKLIST.md`.
+## Communication and recovery
+For direct implementation orders, avoid progress-only messages and premature completion reports. Distinguish **verified**, **implemented but untested**, **incomplete** and **blocked**. If no project-specific checkpoint exists, create one only when a real interruption makes it useful. These instructions cannot extend execution limits or schedule background work.
 
-## 4. Resume and communication
-- Use `docs/DEVELOPMENT_STATUS.md` only as a concise evidence-based checkpoint; reconcile it against real code/CI on every resumed run. Do not create progress-only commits or restart planning when executable work remains.
-- For direct development orders, avoid small interim reports; give one substantial result or an exact blocker. An `AGENTS.md` instruction cannot itself extend tool execution limits, schedule background work or guarantee APK delivery.
+## Lab 2 — Eimer-Liste
+- Active requirements: `docs/BUILD_PLAN.md` **§17** (three user bucket designs; overrides older expansion in §§1–16) and **§19** (note lift/drag/warning/burn). Do not reactivate superseded design catalogs.
+- Only `user-wicker-01`, `user-wood-01`, `user-zinc-01` are active user designs. Preserve six original paired REAR/FRONT PNGs, their shared geometry, stable bucket/note IDs, text, drawings and Room data.
+- Accidental ignition during drag/scroll/multitouch/cancellation/lifecycle is forbidden; soft-delete and Undo must work reliably. Device verification of gestures/occlusion/haptics is distinct from CI success.
+- On the development branch consult `docs/ACCEPTANCE_CRITERIA.md`, `docs/ARCHITECTURE.md`, `docs/DEVELOPMENT_STATUS.md`, `docs/RELEASE_CHECKLIST.md` and `docs/RELEASE_AND_DATA.md`. Those documents may not yet exist on main: check before relying on them.
+- Current active feature work belongs on `development/integrated-milestone` until reviewed; do not silently merge incomplete work into main.

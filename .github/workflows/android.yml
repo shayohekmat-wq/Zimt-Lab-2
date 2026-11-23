@@ -1,9 +1,11 @@
-name: Eimer-Liste Android CI and optional signed release
+name: Eimer-Liste CI and manually gated update release
 
 on:
   push:
-    branches: [main]
+    branches: [development/integrated-milestone]
   pull_request:
+    branches: [main]
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -39,8 +41,10 @@ jobs:
       - name: Compile debug and unit tests (isolated Room schema generation)
         run: gradle --no-daemon :app:assembleDebug :app:testDebugUnitTest
       - name: Compile release after debug (avoid concurrent KSP schema writes)
+        if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
         run: gradle --no-daemon :app:assembleRelease
       - name: Verify release package and monotonically increasing version
+        if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
         shell: bash
         run: |
           set -euo pipefail
@@ -56,13 +60,14 @@ jobs:
           test "$VERSION" -gt 38
           echo "Release manifest verified: $PACKAGE versionCode=$VERSION"
       - name: Prepare offline signing tool
+        if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
         shell: bash
         run: |
           mkdir -p signing-tool
           cp "$ANDROID_HOME/build-tools/37.0.0/lib/apksigner.jar" signing-tool/apksigner.jar
           test -s signing-tool/apksigner.jar
       - name: Upload unsigned release APK
-        if: success()
+        if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
         uses: actions/upload-artifact@v4
         with:
           name: eimerliste-UNSIGNED-release-for-private-signing
@@ -70,7 +75,7 @@ jobs:
           if-no-files-found: error
           retention-days: 14
       - name: Privately sign update (only when repository secrets are provisioned)
-        if: ${{ env.EIMER_RELEASE_KEYSTORE_B64 != '' }}
+        if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && env.EIMER_RELEASE_KEYSTORE_B64 != ''
         shell: bash
         run: |
           set -euo pipefail
@@ -93,7 +98,7 @@ jobs:
           grep -F "Verified using v3 scheme (APK Signature Scheme v3): true" "$RUNNER_TEMP/apk-verification.txt"
           rm -f "$RUNNER_TEMP/eimer-release.p12"
       - name: Upload verified signed update
-        if: ${{ env.EIMER_RELEASE_KEYSTORE_B64 != '' }}
+        if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && env.EIMER_RELEASE_KEYSTORE_B64 != ''
         uses: actions/upload-artifact@v4
         with:
           name: Eimer-Liste-update-SIGNED
@@ -101,7 +106,7 @@ jobs:
           if-no-files-found: error
           retention-days: 60
       - name: Upload offline signing tool
-        if: success()
+        if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
         uses: actions/upload-artifact@v4
         with:
           name: apksigner-for-private-release

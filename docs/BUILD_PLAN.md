@@ -337,3 +337,11 @@ Nutzer meldete per Screenshots, dass Flechtkorb korrekt wirkt, Holzkübel und Zi
 - [ ] GitHub-CI für Build 25 vollständig prüfen; bislang keine Freigabe als installierbares Update. Signatur mit Originalzertifikat und echte Android-Screenshotprüfung ausstehend.
 - [ ] Die aktuell ausdrücklich vom Nutzer gewünschte stärkere REAR-Anhebung bei Holz (7,5 %) und Zink (14 %) ist noch visuell zu validieren. Kein Skalieren, keine neuen Eimer. Rück-/Vorderkante bei Papierbewegung und Einwurf/Auswurf auf dem Gerät prüfen.
 - [ ] Vor jeder Update-Freigabe Original-Zertifikat SHA256 `40e6b73383a29f9ca792595b369329e2ab8f9165f49eec69b4eb57a8ffe26fe1`, Paket-ID, VersionCode und Datenbestandsschutz prüfen. Unsigned-Artefakte sind keine Updates.
+
+
+### 0.3.3-dev13 / Build 26 — Scope-Freeze Regressionstest repariert (23.11.2026)
+
+- CI der dev12-Läufe 45121697946 und 45121710467 schlug fehl: `BucketArtworkCatalogTest.allIllustratedDesignsHaveUniqueStableIdsAndLayerResources` erwartete fälschlich mindestens sechs aktive Designs. Die Produktanforderung erlaubt ausschließlich drei Nutzer-PNG-Eimer.
+- Commit `42794ad0`: Test erwartet nun exakt die drei stabilen IDs in richtiger Reihenfolge. Weitere Tests für Legacy-IDs und Layer-Reihenfolge bleiben bestehen. Keine Änderung an PNGs, App-Daten, Room-Schema oder Design-Auswahl.
+- Commit `1984c26f`: versionCode 26, versionName 0.3.3-dev13. CI-Abschluss und Release-Signierung noch ausstehend; kein verifiziertes Update vor Originalsignatur.
+- Nächster großer Prüfschritt: visuelle Android-Abnahme der Holz-/Zink-REAR-Anhebung, Öffnungsnähte und Papier-Okklusion. Nur die drei Nutzerdesigns; keine Galerie-Erweiterung.

@@ -354,3 +354,10 @@ Nutzer meldete per Screenshots, dass Flechtkorb korrekt wirkt, Holzkübel und Zi
 - Commit 0d0270e3: versionCode 27, versionName 0.3.3-dev14. CI and signing must be checked before distribution.
 - **Blocker:** original PKCS12 update key `Eimer-Liste-Update-Schluessel.p12` was not found in the accessible Library search. Password file alone cannot sign. Do not generate replacement key or upload secrets to CI.
 - Next: inspect CI result, visually test three bucket openings and paper occlusion, confirm persistence and sign only with original certificate SHA256 `40e6b73383a29f9ca792595b369329e2ab8f9165f49eec69b4eb57a8ffe26fe1`.
+
+
+### 0.3.3-dev15 / Build 28 — Papierflug (23.11.2026)
+- dev14 CI 45134802364: success; unsigned artifact 14799108767. No verified signed update: original PKCS12 key unavailable (password file alone insufficient).
+- `9c26ca8f`: smooth insertion/extraction easing and full paper disappearance at end of travel for the three user PNG buckets. Original assets, Room schema, IDs and legacy resolver untouched.
+- `bfc8ff2e`: versionCode 28, versionName 0.3.3-dev15.
+- Outstanding: CI for dev15, device screenshot/animation acceptance, verify original SHA256 signing fingerprint before releasing an UPDATE APK. Full fade does not itself prove correct intermediate-frame occlusion. Scope freeze remains.

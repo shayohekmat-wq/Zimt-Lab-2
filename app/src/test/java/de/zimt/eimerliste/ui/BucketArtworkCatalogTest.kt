@@ -77,4 +77,27 @@ class BucketArtworkCatalogTest {
             )
         }
     }
+
+    @Test fun rejectPaperPathEnteringThroughSolidSideWall() {
+        assertThrows(IllegalArgumentException::class.java) {
+            BucketArtworkSpec(
+                id = "test-side-wall", displayName = "Seitlicher Fehler",
+                origin = ArtworkOrigin.ORIGINAL_CONSTRUCTION,
+                opening = ArtworkOpening(.3f, .7f, .2f, .4f),
+                labelY = .6f,
+                paperPath = ArtworkPaperPath(.05f, .1f, .1f, .6f)
+            )
+        }
+    }
+
+    @Test fun allowPaperPathCrossingRealOpening() {
+        val artwork = BucketArtworkSpec(
+            id = "test-real-opening", displayName = "Korrekte Bahn",
+            origin = ArtworkOrigin.ORIGINAL_CONSTRUCTION,
+            opening = ArtworkOpening(.3f, .7f, .2f, .4f),
+            labelY = .6f,
+            paperPath = ArtworkPaperPath(.5f, .1f, .5f, .6f)
+        )
+        assertEquals(.5f, artwork.paperPath.position(.5f).first, .0001f)
+    }
 }

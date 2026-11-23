@@ -430,3 +430,12 @@ Nutzer meldete per Screenshots, dass Flechtkorb korrekt wirkt, Holzkübel und Zi
 - [ ] Geräte-Screenshots für Vorderwandverdeckung, Öffnungsränder, Einwurf/Auswurf, Haptik und Persistenz weiterhin erforderlich. CRC-Prüfungen ersetzen keine visuelle Abnahme.
 - [ ] Originalsignatur weiterhin nicht nachgewiesen. Update-APK nur mit bisherigem PKCS12-Schlüssel und Zertifikats-SHA256 `40e6b73383a29f9ca792595b369329e2ab8f9165f49eec69b4eb57a8ffe26fe1` freigeben. Keine unsigned/debug-APK als Update.
 - Scope-Freeze Abschnitt 17 bleibt oberste Priorität; keine neuen Designs, Künstlerassets oder Designlabor-Experimente.
+
+
+### 0.3.3-dev24 / Build 37 — PNG-Chunk-Reihenfolge absichern (23.11.2026)
+
+- Commit `cd823d23`: Der vorhandene PNG-Guard verlangt jetzt einen IHDR-Chunk mit Länge 13 als ersten Chunk, verbietet doppelte IHDR-Chunks und verlangt mindestens einen IDAT-Chunk vor IEND. Bestehende vollständige Dekodierung, CRC-Prüfung und Paargeometrieprüfung bleiben erhalten. `versionCode=37`, `versionName=0.3.3-dev24`.
+- Diese Änderung betrifft ausschließlich die Build-Validierung der sechs vorhandenen Nutzer-PNGs. Keine Asset-, Datenbank-, ID-, Text-, Notiz- oder UI-Änderungen; Abschnitt 17 gilt unverändert.
+- [ ] CI-/Unit-Test-Erfolg von Build 37 nicht bestätigt; nicht als bestanden ausgeben. Auf Android visuell Vorderwandverdeckung, Eimeröffnungen, Haptik und Papierflug prüfen.
+- [ ] Originaler PKCS12-Signierschlüssel und Update-Signatur mit Zertifikat SHA256 `40e6b73383a29f9ca792595b369329e2ab8f9165f49eec69b4eb57a8ffe26fe1` weiterhin nicht nachgewiesen. Keine unsigned oder anders signierte APK als Update freigeben.
+- Nächste Arbeit: tatsächliche Android-Qualitätsabnahme statt weiterer Designlabor-Erweiterungen oder bloßer Metadatenänderungen.

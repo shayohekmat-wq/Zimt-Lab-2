@@ -345,3 +345,12 @@ Nutzer meldete per Screenshots, dass Flechtkorb korrekt wirkt, Holzkübel und Zi
 - Commit `42794ad0`: Test erwartet nun exakt die drei stabilen IDs in richtiger Reihenfolge. Weitere Tests für Legacy-IDs und Layer-Reihenfolge bleiben bestehen. Keine Änderung an PNGs, App-Daten, Room-Schema oder Design-Auswahl.
 - Commit `1984c26f`: versionCode 26, versionName 0.3.3-dev13. CI-Abschluss und Release-Signierung noch ausstehend; kein verifiziertes Update vor Originalsignatur.
 - Nächster großer Prüfschritt: visuelle Android-Abnahme der Holz-/Zink-REAR-Anhebung, Öffnungsnähte und Papier-Okklusion. Nur die drei Nutzerdesigns; keine Galerie-Erweiterung.
+
+
+### 0.3.3-dev14 / Build 27 — shared PNG viewport (23.11.2026)
+
+- Previous dev13 CI run 45128518654: **success**; unsigned release artifact 14796791545 available, but no original-key signature verified. Do not distribute as update.
+- Commit 427836d3: removed wood/zinc REAR-only translation (7.5% / 14%). All three user-provided PNG pairs now render front and rear with identical `fillMaxSize` / `ContentScale.Fit` coordinates. This follows the latest scope-freeze; visually verify seams on device. No PNG edits, Room changes, design ID changes or new designs.
+- Commit 0d0270e3: versionCode 27, versionName 0.3.3-dev14. CI and signing must be checked before distribution.
+- **Blocker:** original PKCS12 update key `Eimer-Liste-Update-Schluessel.p12` was not found in the accessible Library search. Password file alone cannot sign. Do not generate replacement key or upload secrets to CI.
+- Next: inspect CI result, visually test three bucket openings and paper occlusion, confirm persistence and sign only with original certificate SHA256 `40e6b73383a29f9ca792595b369329e2ab8f9165f49eec69b4eb57a8ffe26fe1`.

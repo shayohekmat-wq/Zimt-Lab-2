@@ -1,6 +1,9 @@
 # VERBINDLICHER MASTERPLAN · DESIGNLABOR REDESIGN
 **Aktualisiert: 23. November 2026 · ersetzt bei Widerspruch ältere Designlabor-Ziele in diesem Dokument.**
 
+## Verbindliche Nutzerkorrektur · Vielfalt statt Ausschließlichkeit (23.11.2026)
+**Viele Optionen aus menschlich gestalteten digitalen Grafikassets sind ausdrücklich gewünscht – aber NICHT ausschließlich solche Assets.** Das Designlabor soll mehrere gleichberechtigte Entstehungswege umfassen: (1) zahlreiche professionell von Menschen designte PNG/SVG/Sprite-/3D-Grafiken, (2) eigens KI-generierte, hochwertig aufbereitete Designs und (3) unsere selbst konzipierten und konstruierten Originale, darunter der perfekte Referenzeimer. Die Kategorien müssen transparent gekennzeichnet sein; keine Kategorie darf die anderen verdrängen. **„Viele menschliche Optionen“ ist eine dauerhafte positive Anforderung, kein Verbot von KI-Designs.** Auswahl und Anzahl richten sich nach Qualität, Vielfalt, Nutzungsrechten und technischer Integrierbarkeit. Keine starre Stilquote.
+
 ## Entscheidung des Nutzers: keine festen acht Stilrichtungen
 Die ursprünglich festgelegten Familien Comic, 3D, Pixel Art, Aquarell, Low Poly, Knetoptik, Kupferstich und CharmingX4 sind **nur Inspirationsquellen, keine Abnahmebedingung**. Die bisherige Forderung „8 × 6“ ist aufgehoben. Keine künstliche Zahl oder Stilquote erzwingen. **Entscheidend ist eine vielfältige, kohärent kuratierte Auswahl wirklich neu entworfener, hochwertiger und technisch funktionierender Eimer.** Jeder Eimer benötigt eine erkennbare eigene Silhouette, Konstruktion, Materialidee und gestalterische Identität; Umfärbungen und marginale Variationen zählen nicht als neue Designs. Die früheren Ziele 48/24/12/84 sind Planungsgrößen, keine Liefergarantie oder Qualitätsmetrik.
 

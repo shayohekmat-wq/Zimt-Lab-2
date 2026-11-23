@@ -74,4 +74,50 @@ class NotePressSafetyTest {
         assertEquals(NotePressSafety.Phase.CANCELLED, g.advance(10000))
         assertFalse(g.mayCommitBurn())
     }
+
+    @Test fun releaseRemembersAuthoritativePhase() {
+        val g = NotePressSafety()
+        g.down(100)
+        assertEquals(700L, g.nextDeadlineMs())
+        g.advance(800)
+        assertEquals(1500L, g.nextDeadlineMs())
+        g.release()
+        assertEquals(NotePressSafety.Phase.RELEASED, g.phase)
+        assertEquals(NotePressSafety.Phase.LIFTED, g.releasedFrom)
+        assertFalse(g.isTracking())
+    }
+
+    @Test fun dragCanNeverBecomeIgnitionOrReenterHold() {
+        val g = NotePressSafety()
+        g.down(0)
+        g.advance(1500)
+        g.move(true)
+        assertNull(g.nextDeadlineMs())
+        assertEquals(NotePressSafety.Phase.DRAGGING, g.advance(10000))
+        g.release()
+        assertEquals(NotePressSafety.Phase.DRAGGING, g.releasedFrom)
+        assertFalse(g.mayCommitBurn())
+    }
+
+    @Test fun ignitionIsExactlyOnceAndCannotReenterTracking() {
+        val g = NotePressSafety()
+        g.down(0)
+        g.advance(2000)
+        assertTrue(g.mayCommitBurn())
+        assertFalse(g.isTracking())
+        g.release()
+        g.move(true)
+        assertEquals(NotePressSafety.Phase.IGNITED, g.phase)
+        assertTrue(g.mayCommitBurn())
+    }
+
+    @Test fun scrollBeforeLiftCancelsAndDoesNotOpenNote() {
+        val g = NotePressSafety()
+        g.down(0)
+        g.advance(200)
+        g.cancel()
+        g.release()
+        assertEquals(NotePressSafety.Phase.CANCELLED, g.phase)
+        assertEquals(NotePressSafety.Phase.IDLE, g.releasedFrom)
+    }
 }

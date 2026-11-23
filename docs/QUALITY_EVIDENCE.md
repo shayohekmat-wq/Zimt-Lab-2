@@ -23,3 +23,9 @@ Capture user goal, visual interaction sketch, acceptance criteria, minimum suppo
 - `NotePressSafety.kt` pure state machine and `NotePressSafetyTest.kt` boundary/cancellation tests are **IMPLEMENTED BUT NOT CI VERIFIED**. The existing Compose gesture handler has **not** been refactored to use this state machine; do not claim runtime safety from these tests alone.
 - Workflow stale `Priority classes` assertion replaced with Motion First 2.2 document checks. **CI outcome not yet verified**.
 - Existing note burn/drag/Undo, lifecycle and Room migration behavior: **UNVERIFIED** on a physical device. No release authorization.
+
+## P0 integration checkpoint — 2026-11-23
+- **IMPLEMENTED IN SOURCE:** `EimerApp.kt` note gesture now creates `NotePressSafety`, updates it on touch move, release and cancel, and gates ignition plus deferred `onIgnite` through `mayCommitBurn()` (commit `92e7d421`).
+- **IMPLEMENTED TESTS, NOT EXECUTED:** `NotePressSafetyTest.kt` now includes drag/cancel after warning and timing boundary scenarios (commit `34a4b550`).
+- **NOT VERIFIED:** No commit-specific GitHub workflow runs or combined status checks were returned by available connector queries. Do not claim compilation, passing tests, device behavior, or release readiness. Gesture handler still needs end-to-end Compose/device validation, including multitouch, lifecycle cancellation, pointer consumption, and Room/Undo upgrade tests.
+- **P0 NEXT:** obtain CI run evidence, fix any compilation errors, test actual pointer sequences and process/lifecycle transitions, then verify original signing and upgrade before release.

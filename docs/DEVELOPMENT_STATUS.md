@@ -25,3 +25,10 @@ This is an evidence ledger, **not** a completion claim. Reconcile against curren
 - Draft PR #6: https://github.com/shayohekmat-wq/Zimt-Lab-2/pull/6 . **Do not merge without reviewing the pre-existing untested UI changes.**
 - At this checkpoint, the GitHub connector returned **zero pull-request workflow runs** for commit `c837d3dd560d4b7823462c81cd85e250a11fcea9`; this does **not** prove tests failed or succeeded. CI/device/signature verification remains outstanding.
 - Next: check PR Actions/Checks for actual run and logs, fix compilation/test failures; inspect gesture drop target geometry and lifecycle behavior; perform data-upgrade/device tests before signed APK release. A working APK has **not** been produced by this engineering-system change.
+
+## Masterplan 3.0 execution checkpoint — 2026-11-23
+- **IMPLEMENTED:** corrected CI's obsolete adaptive-motion assertion to require Motion First 2.2 and Moto G6 reference documentation.
+- **IMPLEMENTED, NOT INTEGRATED:** pure `NotePressSafety` state machine with tests for timing boundaries, drag disarm, multitouch cancellation, terminal release and restart. The production Compose pointer handler still uses its prior local flags and is **not yet guarded by this class**. Do not treat the new unit tests as proof that accidental ignition is solved.
+- **DOCUMENTED:** quality evidence ledger, future integration contract and consolidated Motion First agent rules across Labs 1–4.
+- **UNVERIFIED:** current CI test/build success, actual Motorola performance, touch/haptic UX, lifecycle and data-upgrade safety. The connector's commit-specific PR workflow-run query yielded no runs; absence of runs is not evidence of success or failure.
+- **NEXT P0:** integrate and test state machine in Compose handler, add lifecycle/drag/Room regression tests, obtain a successful CI run and inspect artifacts before any signed APK or release.

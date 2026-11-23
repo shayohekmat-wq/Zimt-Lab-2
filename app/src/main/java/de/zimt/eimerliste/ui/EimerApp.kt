@@ -1060,11 +1060,12 @@ private fun BucketContents(
                 contentPadding=PaddingValues(bottom=35.dp)
             ) {
                 items(notes,key={it.id}) { note ->
-                    var warningActive by remember(note.id) { mutableStateOf(false) }
-                    var burningActive by remember(note.id) { mutableStateOf(false) }
+                    var visualPhase by remember(note.id) { mutableStateOf(NotePressSafety.Phase.PRESSED) }
+                    val warningActive = visualPhase == NotePressSafety.Phase.WARNING
+                    val burningActive = visualPhase == NotePressSafety.Phase.IGNITED
                     var noteDrag by remember(note.id) { mutableStateOf(Offset.Zero) }
                     var noteBounds by remember(note.id) { mutableStateOf<Rect?>(null) }
-                    var dragging by remember(note.id) { mutableStateOf(false) }
+                    val dragging = visualPhase == NotePressSafety.Phase.DRAGGING
                     val burnProgress by androidx.compose.animation.core.animateFloatAsState(
                         targetValue = if (burningActive) 1f else 0f,
                         animationSpec = tween(durationMillis = 1250, easing = FastOutSlowInEasing),
@@ -1100,8 +1101,7 @@ private fun BucketContents(
                                     val originalBounds = noteBounds
                                     val gesture = NotePressSafety().apply { down(startedAt) }
                                     noteDrag = Offset.Zero
-                                    dragging = false
-                                    warningActive = false
+                                    visualPhase = gesture.phase
                                     try {
                                         while (gesture.isTracking()) {
                                             val elapsed = (android.os.SystemClock.uptimeMillis() - startedAt).coerceAtLeast(0L)
@@ -1114,16 +1114,15 @@ private fun BucketContents(
                                                 ) { awaitPointerEvent(PointerEventPass.Main) }
                                             }
                                             if (event == null) {
-                                                when (gesture.advance(android.os.SystemClock.uptimeMillis())) {
+                                                val phase = gesture.advance(android.os.SystemClock.uptimeMillis())
+                                                visualPhase = phase
+                                                when (phase) {
                                                     NotePressSafety.Phase.LIFTED -> onLiftHaptic()
                                                     NotePressSafety.Phase.WARNING -> {
-                                                        warningActive = true
                                                         onWarningHaptic()
                                                     }
                                                     NotePressSafety.Phase.IGNITED -> {
-                                                        warningActive = false
                                                         onIgnitionHaptic()
-                                                        burningActive = true
                                                     }
                                                     else -> Unit
                                                 }
@@ -1147,8 +1146,7 @@ private fun BucketContents(
                                                             gesture.cancel()
                                                         } else {
                                                             gesture.move(beyondSlop = true)
-                                                            dragging = true
-                                                            warningActive = false
+                                                            visualPhase = gesture.phase
                                                             noteDrag = delta
                                                             originalBounds?.let { onDragLocation(it.center + delta) }
                                                             pointer.consume()
@@ -1175,9 +1173,7 @@ private fun BucketContents(
                                             else -> Unit
                                         }
                                     } finally {
-                                        warningActive = false
-                                        burningActive = false
-                                        dragging = false
+                                        visualPhase = NotePressSafety.Phase.PRESSED
                                         noteDrag = Offset.Zero
                                         onDragLocation(Offset(-100000f, -100000f))
                                     }

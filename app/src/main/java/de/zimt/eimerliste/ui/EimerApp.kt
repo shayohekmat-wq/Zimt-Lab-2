@@ -113,7 +113,7 @@ fun EimerApp(vm: EimerViewModel = viewModel()) {
                 .forEach { designSelections.remove(it) }
             buckets.forEach { bucket ->
                 val savedId = BucketDesignPreferences.get(appContext, bucket.id)
-                if (findLabDesign(savedId) != null) {
+                if (savedId != null && BucketArtworkCatalog.isKnownDesignId(savedId)) {
                     designSelections[bucket.id] = savedId!!
                 } else {
                     // Missing or obsolete designs fall back to the original artwork.
@@ -258,6 +258,7 @@ fun EimerApp(vm: EimerViewModel = viewModel()) {
                             BucketTile(
                                 bucket = bucket,
                                 design = findLabDesign(designSelections[bucket.id]),
+                                layeredStudy = BucketArtworkCatalog.studyMaterial(designSelections[bucket.id]),
                                 count = countsByBucket[bucket.id] ?: 0,
                                 highlighted = hoveredBucket == bucket.id ||
                                     heldBucketId == bucket.id || ejectingBucketId == bucket.id,
@@ -511,6 +512,7 @@ private fun EmptyStage(modifier: Modifier, onCreate: () -> Unit) {
 private fun BucketTile(
     bucket: BucketEntity,
     design: LabDesign?,
+    layeredStudy: LayeredMaterialStudy?,
     count: Int,
     highlighted: Boolean,
     isHeld: Boolean,
@@ -614,7 +616,14 @@ private fun BucketTile(
                     scaleY = 1f - .042f * impact.value
                     transformOrigin = TransformOrigin(.5f, .84f)
                 }
-            if (design != null) {
+            if (layeredStudy != null) {
+                LayeredBucketPrototype(
+                    title = bucket.name,
+                    paperProgress = 1f,
+                    material = layeredStudy,
+                    modifier = artworkModifier
+                )
+            } else if (design != null) {
                 LabBucketArtwork(design, bucket.name, artworkModifier)
             } else {
                 BucketArtwork(

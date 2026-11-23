@@ -129,4 +129,18 @@ class BucketArtworkCatalogTest {
         assertNull(findHumanArtistBucket("illustrated-astral-01"))
     }
 
+    @Test fun threeUserUploadedLayeredBucketsAreRegisteredInStableOrder() {
+        val user = illustratedBucketAssets.filter { it.id.startsWith("user-") }
+        assertEquals(listOf("user-wicker-01", "user-wood-01", "user-zinc-01"),
+            user.map { it.id })
+        assertEquals(3, user.size)
+        user.forEach { asset ->
+            assertTrue(BucketArtworkCatalog.isKnownDesignId(asset.id))
+            assertTrue(asset.rear != asset.front)
+            assertEquals(asset, findIllustratedBucket(asset.id))
+        }
+        assertEquals(listOf(ArtworkLayer.REAR, ArtworkLayer.PAPER, ArtworkLayer.FRONT, ArtworkLayer.LABEL),
+            BUCKET_PAINT_ORDER)
+    }
+
 }

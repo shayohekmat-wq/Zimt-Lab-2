@@ -175,3 +175,15 @@ Wir wollen **viele außergewöhnlich schöne, wirklich unterschiedliche und voll
 3. Designlabor von einem einzelnen Referenzkorb mit Textabschnitten zu einer kuratierten, bildstarken Galerie umbauen. Menschliche lizenzierte Digitalgrafiken konkret mit Künstler/Original-Link/Lizenz prüfen; KI- und Originaldesigns gleichberechtigt weiterentwickeln.
 4. Echte Einwurf-/Auswurf-/Faltanimation, Auswahl, Persistenz, Haptik und ZIMT-Modulgrenzen gemeinsam prüfen.
 5. Im **gleichen Buildzyklus** diesen Masterplan mit belegtem Erfüllungsgrad je Kategorie, Commits, Tests, CI, offenen Blockern und dem nächsten großen Schritt aktualisieren. Wenn 50 % nicht belegbar sind, ehrlichen Iststand melden und **keine** künstliche Erfolgsfreigabe.
+
+## 12. Umsetzung des 50-%-Auftrags – tatsächlicher Zwischenstand
+
+**Nutzerauftrag:** Im nächsten Build mindestens 50 % der großen Neugestaltung erreichen. Der Qualitätsmaßstab aus Abschnitt 11 bleibt verbindlich; Prozentwerte sind kein Marketing.
+
+**Tatsächliche Implementierung, Commit `58ced7c7a6ec2310f78a9919cb98687f14e63e40`:** Eine direkt bedienbare, zweispaltige Designauswahl wurde in das Designlabor integriert: vier real gerenderte Motive (ein selbst konstruierter Flechtkorb und drei ausdrücklich als technische Studien gekennzeichnete Materialvarianten), große Live-Vorschau, sichtbare Auswahl, Zieleimer-Auswahl, Übernehmen mit Bestätigungsdialog, Abbrechen, vorhandene persistente Auswahlfunktion, Datenerhalt-Hinweis. Legacy-Experimente bleiben separat. **Diese vier Motive sind keine vier Premiumgrafiken und werden nicht als solche gezählt.**
+
+**CI:** Für den vorherigen Stand `4432508f0e2929d06c07367a6f85dab9e763e550` erfolgreich; CI für die neue Galerie zunächst ausstehend. Kein Geräte- oder Screenshottest nachgewiesen.
+
+**50-%-Gate noch NICHT erfüllt:** Insbesondere die zwingenden hochwertigen freigestellten Premiumassets und belegte lizenzierte menschliche Digitalgrafiken fehlen. Die neue Galerie ist funktional, aber die Qualität der Bildinhalte reicht noch nicht zur visuellen Freigabe. Den 50-%-Meilenstein nicht als abgeschlossen melden, solange die Bedingungen aus Abschnitt 11 nicht erfüllt sind.
+
+**Unmittelbare Fortsetzung (Priorität vor weiteren Kleinänderungen):** Mehrere tatsächlich unterschiedliche, hochwertig ausgearbeitete freigestellte Back-/Front-Grafikassets in App integrieren, korrekte Öffnung/Okklusion in Galerie und Hauptgitter verbinden; geprüfte menschliche digitale Grafikassets und eigenständige KI-/Originalmotive ergänzen; visuelle Abnahme und Signaturprüfung durchführen. Erst dann Punkte belegen und ggf. 50 % oder mehr freigeben.

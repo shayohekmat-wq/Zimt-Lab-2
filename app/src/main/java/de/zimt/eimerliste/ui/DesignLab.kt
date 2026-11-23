@@ -218,6 +218,17 @@ fun DesignLab(
                 repeat(3-row.size) { Spacer(Modifier.weight(1f)) }
             }
         }
+        Spacer(Modifier.height(14.dp))
+        Text("Von Menschen gemacht", color=Ink.Paper, fontSize=19.sp, fontWeight=FontWeight.Bold)
+        Text("Echte Handwerksobjekte · CC0-Fotografien", color=Ink.Muted, fontSize=11.sp)
+        Spacer(Modifier.height(5.dp))
+        RealBasketGallery()
+        Spacer(Modifier.height(14.dp))
+        Text("Bildgeneriert", color=Ink.Paper, fontSize=19.sp, fontWeight=FontWeight.Bold)
+        Text("Sechs eigene Bildentwürfe · App-Assets in Vorbereitung", color=Ink.Muted, fontSize=11.sp)
+        Spacer(Modifier.height(5.dp))
+        GeneratedBasketPreview()
+        Spacer(Modifier.height(12.dp))
         chosen?.let { design ->
             Spacer(Modifier.height(8.dp))
             Text("Für welchen Eimer?",color=Ink.Paper,fontSize=13.sp)

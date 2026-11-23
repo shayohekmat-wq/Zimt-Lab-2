@@ -50,4 +50,31 @@ class BucketArtworkCatalogTest {
             )
         }
     }
+
+    @Test fun paperPathIsClampedAndReversible() {
+        val path = ArtworkPaperPath(.5f, .25f, .5f, .75f)
+        assertEquals(.25f, path.position(-2f).second, .0001f)
+        assertEquals(.5f, path.position(.5f).second, .0001f)
+        assertEquals(.75f, path.position(3f).second, .0001f)
+        assertEquals(path.position(0f), path.position(1f - 1f))
+    }
+
+    @Test fun paperIsAlwaysBehindFrontLayer() {
+        assertEquals(
+            listOf(ArtworkLayer.REAR, ArtworkLayer.PAPER, ArtworkLayer.FRONT, ArtworkLayer.LABEL),
+            BUCKET_PAINT_ORDER
+        )
+    }
+
+    @Test fun rejectPaperPathThatMissesOpening() {
+        assertThrows(IllegalArgumentException::class.java) {
+            BucketArtworkSpec(
+                id = "test-missed-opening", displayName = "Unbrauchbar",
+                origin = ArtworkOrigin.ORIGINAL_CONSTRUCTION,
+                opening = ArtworkOpening(.2f, .8f, .2f, .4f),
+                labelY = .5f,
+                paperPath = ArtworkPaperPath(.5f, .8f, .5f, .9f)
+            )
+        }
+    }
 }

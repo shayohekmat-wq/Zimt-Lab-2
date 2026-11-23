@@ -412,3 +412,12 @@ Nutzer meldete per Screenshots, dass Flechtkorb korrekt wirkt, Holzkübel und Zi
 - [ ] CI-/Gradle-Erfolg dieser Änderung noch nicht bestätigt; ein Commit ist kein bestandener Build. Insbesondere muss geprüft werden, dass die neue Bilddekodierung in der Android-CI-Gradle-JVM funktioniert.
 - [ ] Unverändert offen: Original-PKCS12-Schlüssel und Signaturprüfung gegen Zertifikats-SHA256 `40e6b73383a29f9ca792595b369329e2ab8f9165f49eec69b4eb57a8ffe26fe1`, echte Android-Visuellprüfung und datenerhaltender Update-Test. Keine updatefähige APK ohne diese Nachweise behaupten.
 - Abschnitt 17 bleibt maßgeblich: ausschließlich drei Nutzerdesigns, sechs Original-PNGs und bestehende Daten/Legacy-IDs unangetastet. Nächster Schritt: CI-Ergebnis und Öffnungs-/Okklusionsqualität prüfen, keine Designlabor-Expansion.
+
+
+### 0.3.3-dev22 / Build 35 — PNG-Paargeometrie absichern (23.11.2026)
+
+- Implementierung und Versionsbump [f5da4741](https://github.com/shayohekmat-wq/Zimt-Lab-2/commit/f5da47419391c90070626fce266d4727f2e3676a): `verifyOriginalBucketPngs` prüft nach erfolgreicher Dekodierung zusätzlich, dass die Original-PNGs jedes der drei REAR/FRONT-Paare identische Pixelabmessungen besitzen. Abweichende Canvasgrößen brechen den Build mit einer verständlichen Fehlermeldung ab, statt unbemerkt unterschiedliche Layer-Geometrie zuzulassen. `versionCode=35`, `versionName=0.3.3-dev22`.
+- Die sechs Originalgrafiken, Design-IDs, Room-Schema, Texte, Notizen, Skizzen und Legacy-Resolver wurden durch diese Änderung nicht verändert. Es wurden keine Designs hinzugefügt.
+- [ ] CI/Gradle-Test für Build 35 und dessen tatsächliche Ausführung noch verifizieren. Gleich große Quelldateien beweisen allein keine visuelle Kantenregistrierung, korrekte Papier-Okklusion oder gelungene Animation.
+- [ ] Original-PKCS12-Schlüssel weiterhin nicht nachgewiesen; ohne Vergleich der Signatur gegen das bisherige Zertifikat SHA256 `40e6b73383a29f9ca792595b369329e2ab8f9165f49eec69b4eb57a8ffe26fe1` keine installierbare Update-APK freigeben. Reale Geräte-/Update-Datenprüfung bleibt offen.
+- Nächster Schritt: CI-Fehler gegebenenfalls beheben, dann ausschließlich Öffnungsnähte, Papierverdeckung, Haptik und reale Animationen der drei Nutzer-Eimer qualitätsprüfen. Abschnitt 17 hat weiterhin absoluten Vorrang.

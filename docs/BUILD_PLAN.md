@@ -328,3 +328,12 @@ Nutzer meldete per Screenshots, dass Flechtkorb korrekt wirkt, Holzkübel und Zi
 - Implementierung `5490cf32`: Die drei unveränderten Nutzer-PNG-Paare bleiben geometrisch deckungsgleich; nur der Papierflug erhält pro Öffnung eigene Start-/Endhöhen und eine leichte Verkleinerung während des Einsinkens. Keine Änderungen an Eimer-IDs, Room-Schema oder gespeicherten Inhalten. Die Anpassung ist **nicht visuell am Android-Gerät abgenommen** und behebt keine Quell-PNG-Naht.
 - Versionsbump `ab135adf`: `versionCode=22`, `versionName=0.3.3-dev9`. GitHub CI auf Abschluss und unsigned Release prüfen.
 - Signierblocker: Der ursprüngliche private PKCS12-Schlüssel ist in dieser Laufzeit bislang nicht verfügbar; nur Passwortdatei gefunden. Keine Ersatzsignatur erzeugen. Nächster Zyklus zuerst Artefakt und Original-Key-Verfügbarkeit prüfen; danach ausschließlich die drei Eimer, Zettel-Okklusion und Quellgrafik-Nähte verbessern. Keine Designlabor-Erweiterungen.
+
+
+### 0.3.3-dev12 / Build 25 — Katalog-Scope-Härtung (23.11.2026)
+
+- [x] `75ea522b`: Aktiver `illustratedBucketAssets`-Katalog enthält ausschließlich `user-wicker-01`, `user-wood-01`, `user-zinc-01` mit den sechs unveränderten Original-PNG-Ressourcen. Historische `illustrated-*`-IDs bleiben über separaten Legacy-Resolver ladbar; keine Datenbankmigration.
+- [x] `05707a91`: `versionCode=25`, `versionName=0.3.3-dev12`.
+- [ ] GitHub-CI für Build 25 vollständig prüfen; bislang keine Freigabe als installierbares Update. Signatur mit Originalzertifikat und echte Android-Screenshotprüfung ausstehend.
+- [ ] Die aktuell ausdrücklich vom Nutzer gewünschte stärkere REAR-Anhebung bei Holz (7,5 %) und Zink (14 %) ist noch visuell zu validieren. Kein Skalieren, keine neuen Eimer. Rück-/Vorderkante bei Papierbewegung und Einwurf/Auswurf auf dem Gerät prüfen.
+- [ ] Vor jeder Update-Freigabe Original-Zertifikat SHA256 `40e6b73383a29f9ca792595b369329e2ab8f9165f49eec69b4eb57a8ffe26fe1`, Paket-ID, VersionCode und Datenbestandsschutz prüfen. Unsigned-Artefakte sind keine Updates.

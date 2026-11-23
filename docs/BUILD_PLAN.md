@@ -386,3 +386,12 @@ Nutzer meldete per Screenshots, dass Flechtkorb korrekt wirkt, Holzkübel und Zi
 - [ ] CI und Unit-Tests für Build 31 abschließend prüfen. Echte visuelle Android-Abnahme, Papier-Okklusion und Bestandsdaten-Update weiterhin offen.
 - [ ] Signierblocker: privater ursprünglicher PKCS12-Schlüssel `Eimer-Liste-Update-Schluessel.p12` nicht in der zugänglichen Library-Suche gefunden. Passwortdatei allein genügt nicht; keine Ersatzsignatur und keine Debug-/UNSIGNED-Datei als Update.
 - **Weiterhin strikt:** nur Flechtkorb, Holzkübel und Zinkeimer im aktiven Designlabor, sechs unveränderte Nutzer-PNGs, stabile IDs und unverändertes Room-Schema. Nächster Zyklus zuerst CI/Originalsignatur prüfen und anschließend visuelle Öffnungs-/Papierqualität auf realen Android-Screenshots; keine Designlabor-Expansion.
+
+
+### 0.3.3-dev19 / Build 32 — bodennaher Rotationsanker (23.11.2026)
+
+- Vorheriger Build 31, GitHub Actions Run `45170644377`: Build-Job **success** (am 23.11.2026 geprüft). Das bestätigt CI, nicht die visuelle Android-Abnahme oder Originalsignatur.
+- Implementierung `43d8baf5`: Der bestehende gemeinsame Rotations-Layer der drei Nutzer-Eimer erhält `TransformOrigin(0.5f, 0.88f)` statt der impliziten Mittelpunktrotation. Dadurch kippt der vollständige Eimer mitsamt beiden exakt registrierten PNG-Layern und Papier um einen bodennahen Drehpunkt. Die separate PNG-Geometrie bleibt unangetastet; keine neuen Designs, keine Datenbank-/ID-Änderungen.
+- Versionsbump `ff3e431e`: `versionCode=32`, `versionName=0.3.3-dev19`. CI für diesen neuen Commit und echte Geräteprüfung stehen noch aus; vor CI-Erfolg keine Freigabe.
+- Blocker weiterhin: privater Original-PKCS12-Schlüssel nicht verfügbar. Signatur mit bisherigem Zertifikat SHA256 `40e6b73383a29f9ca792595b369329e2ab8f9165f49eec69b4eb57a8ffe26fe1` nicht nachgewiesen; **keine** unsigned/debug/anders signierte APK als Update ausgeben.
+- Nächste Prioritäten: CI-Abschluss, visuelle Überprüfung der Eimeröffnung und tatsächlichen Zettelverdeckung sowie datenerhaltender Update-Test. Ausschließlich `user-wicker-01`, `user-wood-01`, `user-zinc-01`; Abschnitt 17 hat Vorrang.

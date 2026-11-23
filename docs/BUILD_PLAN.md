@@ -404,3 +404,11 @@ Nutzer meldete per Screenshots, dass Flechtkorb korrekt wirkt, Holzkübel und Zi
 - [ ] CI-Erfolg für Build 33 und tatsächliche Ausführung des neuen Guards bestätigen. Kein CI-Erfolg oder signiertes Artefakt für diese Version vorab behaupten.
 - [ ] Unverändert ausstehend: originale PKCS12-Signatur mit Zertifikatsfingerprint `40e6b73383a29f9ca792595b369329e2ab8f9165f49eec69b4eb57a8ffe26fe1`, visuelle Android-Prüfung, Öffnungsnähte, Papier-Okklusion, Bestandsdaten-Update.
 - Scope-Freeze Abschnitt 17 weiterhin verbindlich; keine neuen Designs, Galerien oder Datenmigrationen.
+
+
+### 0.3.3-dev21 / Build 34 — vollständige PNG-Dekodierung vor dem Build (23.11.2026)
+
+- Commit `0855c10b`: Der bestehende `verifyOriginalBucketPngs`-Guard prüft nun zusätzlich zum PNG-Dateikopf, ob die Bilddaten aller sechs Originaldateien per `ImageIO.read` vollständig dekodierbar sind und die dekodierten Dimensionen dem IHDR entsprechen. Die Dateien werden nur gelesen, weder skaliert noch verändert. `versionCode=34`, `versionName=0.3.3-dev21`.
+- [ ] CI-/Gradle-Erfolg dieser Änderung noch nicht bestätigt; ein Commit ist kein bestandener Build. Insbesondere muss geprüft werden, dass die neue Bilddekodierung in der Android-CI-Gradle-JVM funktioniert.
+- [ ] Unverändert offen: Original-PKCS12-Schlüssel und Signaturprüfung gegen Zertifikats-SHA256 `40e6b73383a29f9ca792595b369329e2ab8f9165f49eec69b4eb57a8ffe26fe1`, echte Android-Visuellprüfung und datenerhaltender Update-Test. Keine updatefähige APK ohne diese Nachweise behaupten.
+- Abschnitt 17 bleibt maßgeblich: ausschließlich drei Nutzerdesigns, sechs Original-PNGs und bestehende Daten/Legacy-IDs unangetastet. Nächster Schritt: CI-Ergebnis und Öffnungs-/Okklusionsqualität prüfen, keine Designlabor-Expansion.

@@ -18,6 +18,24 @@ class DesignLabCatalogTest {
         }
     }
 
+    @Test fun visualProfilesHaveValidAnchorsAndStableIds() {
+        labDesigns.forEach { design ->
+            val profile = visualProfile(design)
+            assertEquals(design.id, profile.designId)
+            assertTrue(profile.openingLeft >= 0f)
+            assertTrue(profile.openingRight <= 1f)
+            assertTrue(profile.openingLeft < profile.openingRight)
+            assertTrue(profile.openingY in 0f..1f)
+            assertTrue(profile.labelY in 0f..1f)
+        }
+    }
+
+    @Test fun lowPolyOpeningAnchorsReflectDifferentConstructions() {
+        val openings = labDesigns.filter { it.style == 4 }
+            .map { visualProfile(it).openingY }
+        assertTrue(openings.toSet().size >= 3)
+    }
+
     @Test fun stableDesignLookupNeverAcceptsUnknownId() {
         labDesigns.forEach { assertEquals(it, findLabDesign(it.id)) }
         assertNull(findLabDesign(null))

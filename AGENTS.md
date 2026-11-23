@@ -18,3 +18,7 @@
 
 ## Projektkontext
 **Lab 2 Eimer-Liste:** bestehende Kotlin/Compose/Room-Architektur, API26 laut bisherigem Audit, separat installierbar. Schütze Notizen, stabile IDs, Soft Delete/Undo, animierte Papier-/Eimer-Gesten und persistente Daten über Updates. Keine ungetestete Room-Migration oder Signaturänderung. Maßgeblicher Arbeitsbranch: `development/integrated-milestone`. Eigenständige Module später in ZIMT integrierbar.
+
+
+## Engineering Legibility Protocol 1.0
+Verbindlich ergänzend zur Development Doctrine: [ELP 1.0](docs/ENGINEERING_LEGIBILITY_PROTOCOL.md). Bei jeder relevanten Änderung verständliche Verantwortlichkeiten, explizite Datenwirkungen und nachvollziehbare Übergaben sicherstellen. Bestehende Dokumente und Nachweise nutzen; konkrete Probleme in der kanonischen Queue priorisieren. Keine separate Aufräumphase, keine zusätzlichen pauschalen Gates; Doctrine 7.0 und ihre Sicherheits- und Fortsetzungsregeln bleiben unverändert maßgeblich.

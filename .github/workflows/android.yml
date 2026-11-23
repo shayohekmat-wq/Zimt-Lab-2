@@ -7,6 +7,10 @@ on:
     branches: [main]
   workflow_dispatch:
 
+concurrency:
+  group: android-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name != 'workflow_dispatch' }}
+
 permissions:
   contents: read
 
@@ -40,6 +44,14 @@ jobs:
           gradle-version: '9.6.0'
       - name: Compile debug and unit tests (isolated Room schema generation)
         run: gradle --no-daemon :app:assembleDebug :app:testDebugUnitTest
+      - name: Upload JUnit reports even on test failure
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: eimerliste-unit-test-reports
+          path: app/build/test-results/testDebugUnitTest/**/*.xml
+          if-no-files-found: ignore
+          retention-days: 14
       - name: Compile release after debug (avoid concurrent KSP schema writes)
         if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
         run: gradle --no-daemon :app:assembleRelease

@@ -14,6 +14,17 @@ These instructions apply to autonomous runs and interactive development of Zimt-
 - Only release an APK after verifying build, applicationId, versionCode, update signature, and safe data retention. Never commit private signing keys or secrets.
 - If blocked by a real limit, leave a precise checkpoint: implemented files/commits, verified tests, known defects, next concrete action. Do not claim the milestone is complete.
 
+
+## Mandatory execution architecture: implement first, release last
+1. **Environment preflight before feature work.** Determine whether a persistent repository checkout, Android SDK, JDK, Gradle, device/emulator, CI, signing materials and artifact retrieval are actually available. Record which capabilities are verified, not merely assumed. Prefer a cohesive development environment; if the current environment cannot build, continue all independent implementation work rather than stopping.
+2. **Single integrated milestone.** Enumerate the complete acceptance checklist and dependencies; implement all feasible tasks in a coherent working tree before starting expensive builds, releases, or delivery operations. Do not treat one-file GitHub commits as milestones. Avoid starting long-running jobs while meaningful independent implementation work remains.
+3. **Explicit development/release separation.** Make all source edits on `development/integrated-milestone`, specifying that branch explicitly in every GitHub write. Never push feature changes to `main`. Do not open a PR or dispatch release CI until the integrated milestone is implementation-complete and has passed the checks possible without a full build. The workflow must not trigger release builds on ordinary pushes.
+4. **Verification gate.** After integration, run targeted static/unit checks, then the full Android build and tests; resolve failures, rerun, and verify the generated APK, application ID, strictly increasing versionCode, original signing certificate and non-destructive upgrade. A build is evidence of compilation, not proof of correct UX; device checks remain required where applicable.
+5. **No false completion or premature reporting.** If a hard environment/time limit prevents the deliverable, leave a reproducible checkpoint listing missing capabilities, exact code state, unverified behaviors and next action. A status update is not a substitute for implementation.
+6. **Cross-project default.** Apply this architecture to every software project: persistent working tree + complete vertical-slice implementation + gated build/test + verified release. Project-specific user requirements override these defaults.
+
+**Release gate:** All agreed milestone tasks implemented → integration review → tests/build → signed upgrade verification → artifact delivery. Never reverse this order merely to produce visible activity.
+
 ## Product-specific constraints
 - Honor the three-design scope freeze (§17 of docs/BUILD_PLAN.md). Preserve original user PNGs, matching REAR/FRONT coordinates, stable bucket IDs, existing notes/drawings, and non-destructive storage.
 - For note gestures, prevent accidental ignition from drag, scrolling, cancellation, multitouch, and lifecycle changes. Verify soft-delete and Undo before release.

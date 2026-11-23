@@ -117,7 +117,7 @@ object BucketArtworkCatalog {
 
     /** Legacy ids remain readable and writable, preserving existing preferences across updates. */
     fun isKnownDesignId(id: String): Boolean =
-        findLabDesign(id) != null || premium.containsKey(id) || studyMaterial(id) != null || id == WICKER_REFERENCE_ID
+        findLabDesign(id) != null || premium.containsKey(id) || studyMaterial(id) != null || id == WICKER_REFERENCE_ID || findIllustratedBucket(id) != null
 
     fun releasedDesigns(): List<BucketArtworkSpec> = premium.values.filter { it.released }
 

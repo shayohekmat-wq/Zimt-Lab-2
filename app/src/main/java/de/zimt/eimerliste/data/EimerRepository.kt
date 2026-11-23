@@ -46,6 +46,20 @@ class EimerRepository(private val dao: EimerDao) {
             }
         }
 
+    /** Soft-delete only; no hard deletion is performed by this workflow. */
+    suspend fun burnNote(noteId: String): Long = withContext(Dispatchers.IO) {
+        require(noteId.isNotBlank()) { "Ungültige Notiz." }
+        val deletedAt = System.currentTimeMillis()
+        check(dao.softDeleteNote(noteId, deletedAt) == 1) { "Notiz nicht mehr verfügbar." }
+        deletedAt
+    }
+
+    suspend fun undoBurn(noteId: String, deletedAt: Long) = withContext(Dispatchers.IO) {
+        check(dao.restoreNote(noteId, deletedAt, System.currentTimeMillis()) == 1) {
+            "Die Notiz konnte nicht wiederhergestellt werden."
+        }
+    }
+
     suspend fun createNote(bucketId: String, text: String, drawingPayload: String? = null): String = withContext(Dispatchers.IO) {
         require(NoteRules.canSubmit(text, drawingPayload)) { "Der Zettel ist leer, die Skizze ungültig oder der Text zu lang." }
         val now = System.currentTimeMillis()

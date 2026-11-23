@@ -300,10 +300,12 @@ fun DesignLab(
         )
         Spacer(Modifier.height(12.dp))
         // A genuine, usable selection gallery. Technical studies are explicitly marked.
-        var gallerySelected by remember { mutableStateOf(WICKER_REFERENCE_ID) }
+        var gallerySelected by remember { mutableStateOf(humanArtistBuckets.first().id) }
         var galleryTarget by remember { mutableStateOf<String?>(null) }
         var galleryConfirm by remember { mutableStateOf(false) }
-        val galleryItems = illustratedBucketAssets.map {
+        val galleryItems = humanArtistBuckets.map {
+            Triple(it.id, it.title, "KENNEY · MENSCHLICHES 3D · CC0")
+        } + illustratedBucketAssets.map {
             Triple(it.id, it.title, "ORIGINAL · GETRENNTE GRAFIKLAGEN")
         } + listOf(
             Triple(WICKER_REFERENCE_ID, "Geflochtener Picknickkorb", "ORIGINAL · REFERENZGRAFIK"),
@@ -313,7 +315,7 @@ fun DesignLab(
         )
         var galleryPaper by remember { mutableFloatStateOf(1f) }
         var galleryPlaying by remember { mutableStateOf(false) }
-        var showStudies by remember { mutableStateOf(false) }
+        var galleryCategory by remember { mutableStateOf("human") }
         LaunchedEffect(galleryPlaying) {
             if (galleryPlaying) {
                 for (frame in 0..30) {
@@ -332,15 +334,30 @@ fun DesignLab(
             color = Ink.Brass, fontSize = 12.sp, fontWeight = FontWeight.Bold)
         Text("Wähle ein Motiv. Die große Vorschau zeigt die echte Darstellung, die auch auf deinem Eimer erscheint.",
             color = Ink.Muted, fontSize = 12.sp)
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            FilterChip(selected = !showStudies, onClick = { showStudies = false },
-                label = { Text("Originalgrafiken") })
-            FilterChip(selected = showStudies, onClick = { showStudies = true },
-                label = { Text("Materialstudien") })
+        Row(horizontalArrangement = Arrangement.spacedBy(5.dp)) {
+            FilterChip(selected = galleryCategory == "human",
+                onClick = {
+                    galleryCategory = "human"
+                    gallerySelected = humanArtistBuckets.first().id
+                }, label = { Text("Von Künstlern") })
+            FilterChip(selected = galleryCategory == "original",
+                onClick = {
+                    galleryCategory = "original"
+                    gallerySelected = WICKER_REFERENCE_ID
+                }, label = { Text("Archiv") })
+            FilterChip(selected = galleryCategory == "study",
+                onClick = {
+                    galleryCategory = "study"
+                    gallerySelected = BucketArtworkCatalog.studyId(LayeredMaterialStudy.WALNUT)
+                }, label = { Text("Studien") })
         }
         galleryItems.filter { item ->
-            if (showStudies) BucketArtworkCatalog.studyMaterial(item.first) != null
-            else BucketArtworkCatalog.studyMaterial(item.first) == null
+            when (galleryCategory) {
+                "human" -> findHumanArtistBucket(item.first) != null
+                "study" -> BucketArtworkCatalog.studyMaterial(item.first) != null
+                else -> findHumanArtistBucket(item.first) == null &&
+                    BucketArtworkCatalog.studyMaterial(item.first) == null
+            }
         }.chunked(2).forEach { group ->
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 group.forEach { item ->
@@ -360,7 +377,10 @@ fun DesignLab(
                             .padding(7.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        if (findIllustratedBucket(item.first) != null) {
+                        if (findHumanArtistBucket(item.first) != null) {
+                            HumanArtistBucketArtwork(findHumanArtistBucket(item.first)!!,
+                                Modifier.fillMaxWidth().height(135.dp))
+                        } else if (findIllustratedBucket(item.first) != null) {
                             LayeredIllustratedBucket(findIllustratedBucket(item.first)!!, item.second, 1f,
                                 Modifier.fillMaxWidth().height(135.dp))
                         } else if (item.first == WICKER_REFERENCE_ID) {
@@ -386,7 +406,10 @@ fun DesignLab(
         Text("GROSSE LIVE-VORSCHAU", color = Ink.Brass,
             fontSize = 11.sp, fontWeight = FontWeight.Bold)
         val galleryName = buckets.firstOrNull { it.id == galleryTarget }?.name ?: "Mein Eimer"
-        if (findIllustratedBucket(gallerySelected) != null) {
+        if (findHumanArtistBucket(gallerySelected) != null) {
+            HumanArtistBucketArtwork(findHumanArtistBucket(gallerySelected)!!,
+                Modifier.fillMaxWidth().height(225.dp))
+        } else if (findIllustratedBucket(gallerySelected) != null) {
             LayeredIllustratedBucket(findIllustratedBucket(gallerySelected)!!, galleryName, galleryPaper,
                 Modifier.fillMaxWidth().height(225.dp))
         } else if (gallerySelected == WICKER_REFERENCE_ID) {
@@ -397,12 +420,17 @@ fun DesignLab(
                     Modifier.fillMaxWidth().height(225.dp))
             }
         }
+        if (findHumanArtistBucket(gallerySelected) == null) {
         Text("Papierbewegung prüfen", color = Ink.Muted, fontSize = 11.sp)
         Slider(value = galleryPaper, onValueChange = { galleryPaper = it },
             valueRange = 0f..1f)
         OutlinedButton(onClick = { galleryPlaying = true }, enabled = !galleryPlaying,
             modifier = Modifier.fillMaxWidth()) {
             Text(if (galleryPlaying) "Animation läuft …" else "Einwurf und Auswurf abspielen")
+        }
+        } else {
+            Text("Echtes Künstler-3D-Asset. Noch keine getrennten Papier-Masken.",
+                color = Ink.Muted, fontSize = 11.sp)
         }
         Text("Auf welchen Eimer anwenden?", color = Ink.Paper, fontSize = 13.sp)
         buckets.forEach { bucket ->
@@ -421,7 +449,8 @@ fun DesignLab(
         }
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             OutlinedButton(onClick = {
-                gallerySelected = WICKER_REFERENCE_ID
+                gallerySelected = humanArtistBuckets.first().id
+                galleryCategory = "human"
                 galleryTarget = null
                 galleryConfirm = false
             }, modifier = Modifier.weight(1f)) { Text("Abbrechen") }

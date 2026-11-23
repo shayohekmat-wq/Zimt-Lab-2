@@ -277,6 +277,7 @@ fun LabBucketArtwork(design: LabDesign, title: String, modifier: Modifier = Modi
 fun DesignLab(
     buckets: List<BucketEntity>,
     onApplied: (String, String) -> Unit,
+    onReset: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
     var activeStyle by remember { mutableIntStateOf(0) }
@@ -334,8 +335,26 @@ fun DesignLab(
                     .background(if(target==bucket.id) Ink.BrassDark.copy(alpha=.35f)
                         else Color.Transparent),color=Ink.Paper)
             }
-            Button(onClick={target?.let { onApplied(it,design.id);chosen=null }},
-                enabled=target!=null,modifier=Modifier.fillMaxWidth()) { Text("Übernehmen") }
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedButton(
+                    onClick = {
+                        target?.let(onReset)
+                        chosen = null
+                        target = null
+                    },
+                    enabled = target != null,
+                    modifier = Modifier.weight(1f)
+                ) { Text("Original") }
+                Button(
+                    onClick = {
+                        target?.let { onApplied(it, design.id) }
+                        chosen = null
+                        target = null
+                    },
+                    enabled = target != null,
+                    modifier = Modifier.weight(1f)
+                ) { Text("Übernehmen") }
+            }
         }
     }
 }

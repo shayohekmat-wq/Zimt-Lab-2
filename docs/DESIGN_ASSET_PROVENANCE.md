@@ -42,3 +42,17 @@ Pro konkreter **Datei** dokumentieren:
 
 ## Technisches Gate
 Keine Grafik als auswählbares finales Eimerdesign anbieten, bevor der Zettel hinter der Vorderwand verschwinden kann, die Öffnung plausibel ist, der Name lesbar bleibt, das Objekt auf kleinen Android-Displays funktioniert und die Nutzungsrechte geklärt sind. Alte Design-IDs und Bestandsdaten bleiben erhalten.
+
+## Tatsächlich integrierte digitale Künstlerassets — 23.11.2026
+
+**Urheber/Studio:** Kenney (von Menschen gestaltete 3D-Game-Art-Modelle). **Originale Lizenz:** CC0 1.0, kommerziell verwendbar, Namensnennung nicht verpflichtend. Offizielle Quellen: https://kenney.nl/assets/food-kit , https://kenney.nl/support und https://kenney.nl/assets/furniture-kit , https://kenney.nl/assets/pirate-kit . **Redistribution/konkrete Dateien:** https://github.com/Hidencod/tge-assets (GitHub-Projekt mit Kenney-GLB-Modellen und aus diesen gerenderten 192x192-WebP-Thumbnails). Import-Quellcode: `tools/import_human_assets.py`; Originaldateien wurden automatisch unverändert in der Bildkomposition als PNG neu kodiert und nach `app/src/main/res/drawable-nodpi/` committed.
+
+| Stable App ID | Originales Artist-Asset | Direkte Quelldatei | App-Datei |
+| --- | --- | --- | --- |
+| human-kenney-open-box | Kenney Furniture Kit, open cardboard box | https://github.com/Hidencod/tge-assets/blob/main/packs/furniture-kit/thumbs/cardboardboxopen.webp | kenney_human_open_box.png |
+| human-kenney-barrel | Kenney Food Kit, barrel | https://github.com/Hidencod/tge-assets/blob/main/packs/food-kit/thumbs/barrel.webp | kenney_human_barrel.png |
+| human-kenney-pot | Kenney Food Kit, pot | https://github.com/Hidencod/tge-assets/blob/main/packs/food-kit/thumbs/pot.webp | kenney_human_pot.png |
+| human-kenney-chest | Kenney Pirate Kit, chest | https://github.com/Hidencod/tge-assets/blob/main/packs/pirate-kit/thumbs/chest.webp | kenney_human_pirate_chest.png |
+| human-kenney-crate | Kenney Pirate Kit, crate | https://github.com/Hidencod/tge-assets/blob/main/packs/pirate-kit/thumbs/crate.webp | kenney_human_crate.png |
+
+**Wichtige ehrliche Einschränkung:** Diese fünf Bilder sind **echte gerenderte 3D-Modellvorschauen von Kenney-Assets**, keine eigens für Eimer-Liste gestalteten hochauflösenden Premiumgrafiken. Sie sind lediglich 192×192 Pixel groß und **keine pixelgenau getrennten REAR/FRONT-Ebenen**. Daher derzeit nur als statische Künstler-Grafikoptionen auswählbar; die Galerie zeigt für sie bewusst keine irreführende Papiermasken-Vorschau. Die Truhen/Kisten sind nicht zwingend offene Behälter. Für die endgültige 100%-Abnahme müssen aus den originalen GLB-Dateien echte hochauflösende gemeinsame Render-Passes erzeugt werden. Die früheren selbst gezeichneten Vektor-Experimente sind im Archiv, nicht als menschliche Künstlergrafiken gekennzeichnet.

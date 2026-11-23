@@ -422,6 +422,26 @@ fun EimerApp(vm: EimerViewModel = viewModel()) {
                     onLiftNote = { movingNote = it },
                     onLiftHaptic = { haptics.performHapticFeedback(HapticFeedbackType.GestureThresholdActivate) },
                     onWarningHaptic = { haptics.performHapticFeedback(HapticFeedbackType.SegmentTick) },
+                    onIgnite = { note ->
+                        scope.launch {
+                            try {
+                                val deletedAt = vm.burnNote(note.id)
+                                haptics.performHapticFeedback(HapticFeedbackType.Confirm)
+                                val result = snackbar.showSnackbar(
+                                    message = "Zettel verbrannt.",
+                                    actionLabel = "Rückgängig",
+                                    withDismissAction = true,
+                                    duration = SnackbarDuration.Long
+                                )
+                                if (result == SnackbarResult.ActionPerformed) {
+                                    vm.undoBurn(note.id, deletedAt)
+                                    haptics.performHapticFeedback(HapticFeedbackType.Confirm)
+                                }
+                            } catch (error: Exception) {
+                                snackbar.showSnackbar(error.message ?: "Verbrennen fehlgeschlagen.")
+                            }
+                        }
+                    },
                     onRandom = {
                         scope.launch {
                             try {
@@ -971,6 +991,7 @@ private fun BucketContents(
     onLiftNote: (NoteEntity) -> Unit,
     onLiftHaptic: () -> Unit,
     onWarningHaptic: () -> Unit,
+    onIgnite: (NoteEntity) -> Unit,
     onRandom: () -> Unit
 ) {
     Column(Modifier.fillMaxWidth().padding(horizontal=20.dp).heightIn(min=260.dp,max=650.dp)) {
@@ -1023,28 +1044,35 @@ private fun BucketContents(
                                         }
                                         if (releasedEarly == null) {
                                             onLiftHaptic()
-                                            val releasedBeforeWarning = kotlinx.coroutines.withTimeoutOrNull(
+                                            val beforeWarning = kotlinx.coroutines.withTimeoutOrNull(
                                                 NoteHoldTiming.WARNING_MS - NoteHoldTiming.LIFT_MS
                                             ) { tryAwaitRelease() }
-                                            val releasedNormally = if (releasedBeforeWarning != null) {
-                                                releasedBeforeWarning
+                                            if (beforeWarning != null) {
+                                                if (beforeWarning) onLiftNote(note)
                                             } else {
                                                 warningActive = true
                                                 onWarningHaptic()
-                                                val afterFirstPulse = kotlinx.coroutines.withTimeoutOrNull(180L) {
+                                                val beforeSecondPulse = kotlinx.coroutines.withTimeoutOrNull(180L) {
                                                     tryAwaitRelease()
                                                 }
-                                                if (afterFirstPulse != null) {
-                                                    afterFirstPulse
+                                                if (beforeSecondPulse != null) {
+                                                    warningActive = false
+                                                    if (beforeSecondPulse) onLiftNote(note)
                                                 } else {
                                                     onWarningHaptic()
-                                                    tryAwaitRelease()
+                                                    val beforeIgnition = kotlinx.coroutines.withTimeoutOrNull(
+                                                        NoteHoldTiming.IGNITION_MS - NoteHoldTiming.WARNING_MS - 180L
+                                                    ) { tryAwaitRelease() }
+                                                    warningActive = false
+                                                    if (beforeIgnition == null) {
+                                                        // Ignite only after a continuously held gesture.
+                                                        onIgnite(note)
+                                                        tryAwaitRelease()
+                                                    } else if (beforeIgnition) {
+                                                        onLiftNote(note)
+                                                    }
                                                 }
                                             }
-                                            // Cancelled gestures never open a destination picker.
-                                            // Ignition remains disabled until reversible deletion exists.
-                                            warningActive = false
-                                            if (releasedNormally) onLiftNote(note)
                                         } else {
                                             warningActive = false
                                         }

@@ -321,3 +321,10 @@ Nutzer meldete per Screenshots, dass Flechtkorb korrekt wirkt, Holzkübel und Zi
 - [ ] GitHub-CI und lokale Originalsignatur für Build 21 abschließend prüfen.
 - [ ] Visuelle Prüfung der ursprünglichen Nahtprobleme auf einem echten Android-Gerät weiterhin offen. **Identische Koordinaten garantieren keine nahtfreie Grafik, wenn die Quelldateien unterschiedlich gezeichnet wurden.** Nicht als vollständig repariert behaupten.
 - [ ] Weitere Arbeit ausschließlich an den drei Nutzergrafiken, Papier-Okklusion, Animation und Zuverlässigkeit; keine Designlabor-Expansion.
+
+### 0.3.3-dev9 / Build 22 — Papierflug an drei Nutzeröffnungen angepasst (23.11.2026)
+
+- Vorheriger Run `45109479063` für dev8/Build 21 **CI success**; unsigned Release-Artefakt `14789106052` vorhanden. Originalsignatur und installierbare APK für Build 21 in diesem Zyklus **nicht nachgewiesen**; niemals unsigned/debug als Update verteilen.
+- Implementierung `5490cf32`: Die drei unveränderten Nutzer-PNG-Paare bleiben geometrisch deckungsgleich; nur der Papierflug erhält pro Öffnung eigene Start-/Endhöhen und eine leichte Verkleinerung während des Einsinkens. Keine Änderungen an Eimer-IDs, Room-Schema oder gespeicherten Inhalten. Die Anpassung ist **nicht visuell am Android-Gerät abgenommen** und behebt keine Quell-PNG-Naht.
+- Versionsbump `ab135adf`: `versionCode=22`, `versionName=0.3.3-dev9`. GitHub CI auf Abschluss und unsigned Release prüfen.
+- Signierblocker: Der ursprüngliche private PKCS12-Schlüssel ist in dieser Laufzeit bislang nicht verfügbar; nur Passwortdatei gefunden. Keine Ersatzsignatur erzeugen. Nächster Zyklus zuerst Artefakt und Original-Key-Verfügbarkeit prüfen; danach ausschließlich die drei Eimer, Zettel-Okklusion und Quellgrafik-Nähte verbessern. Keine Designlabor-Erweiterungen.

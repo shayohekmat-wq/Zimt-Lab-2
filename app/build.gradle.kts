@@ -1,3 +1,8 @@
+import java.io.BufferedInputStream
+import java.io.DataInputStream
+import java.nio.ByteBuffer
+import java.util.zip.CRC32
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.plugin.compose")
@@ -12,8 +17,8 @@ android {
         applicationId = "de.zimt.eimerliste"
         minSdk = 26
         targetSdk = 36
-        versionCode = 37
-        versionName = "0.3.3-dev24"
+        versionCode = 38
+        versionName = "0.3.3-dev25"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
@@ -81,8 +86,8 @@ val verifyOriginalBucketPngs = tasks.register("verifyOriginalBucketPngs") {
             check(String(header, 12, 4, Charsets.US_ASCII) == "IHDR") {
                 "Missing PNG IHDR: $name"
             }
-            val width = java.nio.ByteBuffer.wrap(header, 16, 4).int
-            val height = java.nio.ByteBuffer.wrap(header, 20, 4).int
+            val width = ByteBuffer.wrap(header, 16, 4).int
+            val height = ByteBuffer.wrap(header, 20, 4).int
             check(width > 0 && height > 0) { "Invalid PNG dimensions: $name" }
             // Decode each user PNG to detect damaged image data, without rewriting it.
             val decoded = javax.imageio.ImageIO.read(file)
@@ -91,7 +96,7 @@ val verifyOriginalBucketPngs = tasks.register("verifyOriginalBucketPngs") {
             }
             // Validate every PNG chunk CRC, including IDAT and IEND. ImageIO
             // may decode images even when a chunk checksum is corrupted.
-            java.io.DataInputStream(java.io.BufferedInputStream(file.inputStream())).use { input ->
+            DataInputStream(BufferedInputStream(file.inputStream())).use { input ->
                 val signature = ByteArray(8)
                 input.readFully(signature)
                 check(signature.contentEquals(pngSignature)) { "Invalid PNG signature: $name" }
@@ -114,7 +119,7 @@ val verifyOriginalBucketPngs = tasks.register("verifyOriginalBucketPngs") {
                     if (type == "IDAT") sawIdat = true
                     if (type == "IEND") check(sawIdat) { "PNG has no image data: $name" }
                     chunkIndex++
-                    val crc = java.util.zip.CRC32()
+                    val crc = CRC32()
                     crc.update(chunkType)
                     val buffer = ByteArray(8192)
                     var remaining = chunkLength

@@ -74,9 +74,19 @@ fun LayeredIllustratedBucket(
         // Both original PNGs share one viewport and the exact same Fit transform.
         // Never independently scale or translate a layer: this breaks the rim
         // geometry and can expose a false seam when the artwork is composited.
+        // Start from the original, unscaled, pixel-aligned PNG viewport.
+        // User-requested correction: move ONLY the interior/rear artwork UP.
+        // No scaling, no horizontal shift, no changes to the front or wicker.
+        val rearLift = when (asset.id) {
+            "user-wood-01" -> .012f  // subtle lift: 1.2% of shared viewport height
+            "user-zinc-01" -> .045f  // stronger lift: 4.5%
+            else -> 0f
+        }
         Image(painterResource(asset.rear), contentDescription = null,
             contentScale = androidx.compose.ui.layout.ContentScale.Fit,
-            modifier = Modifier.fillMaxSize())
+            modifier = Modifier.fillMaxSize().graphicsLayer {
+                translationY = -size.height * rearLift
+            })
         // Paper starts above the rim and descends behind the opaque front.
         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
             Box(

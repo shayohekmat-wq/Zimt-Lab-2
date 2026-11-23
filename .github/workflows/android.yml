@@ -49,6 +49,11 @@ jobs:
           test -s AGENTS.md
           test -s docs/DESIGN_PRINCIPLES.md
           test -s docs/DESIGN_QA.md
+          test -s docs/PERFORMANCE_BUDGET.md
+          test -s docs/COMPATIBILITY_MATRIX.md
+          test -s docs/ADAPTIVE_MOTION.md
+          grep -q "UNVERIFIED" docs/COMPATIBILITY_MATRIX.md
+          grep -q "Priority classes" docs/ADAPTIVE_MOTION.md
           grep -q 'Animation-maximalist' AGENTS.md
           grep -q 'MOT-01' docs/DESIGN_QA.md
           echo "Design QA contract present; visual/device acceptance requires separate evidence"

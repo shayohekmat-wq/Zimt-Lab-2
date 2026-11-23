@@ -1,9 +1,9 @@
-name: Eimer-Liste Android CI and optional signed release
+name: Eimer-Liste manually gated Android release
 
 on:
-  push:
-    branches: [main]
+  workflow_dispatch:
   pull_request:
+    branches: [main]
 
 permissions:
   contents: read

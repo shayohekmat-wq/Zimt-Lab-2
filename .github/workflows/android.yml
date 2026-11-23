@@ -76,10 +76,10 @@ jobs:
           if-no-files-found: ignore
           retention-days: 14
       - name: Compile release after debug (avoid concurrent KSP schema writes)
-        if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
+        if: (github.event_name == 'push' && github.ref == 'refs/heads/development/integrated-milestone') || (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main')
         run: gradle --no-daemon :app:assembleRelease
       - name: Verify release package and monotonically increasing version
-        if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
+        if: (github.event_name == 'push' && github.ref == 'refs/heads/development/integrated-milestone') || (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main')
         shell: bash
         run: |
           set -euo pipefail
@@ -95,14 +95,14 @@ jobs:
           test "$VERSION" -gt 38
           echo "Release manifest verified: $PACKAGE versionCode=$VERSION"
       - name: Prepare offline signing tool
-        if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
+        if: (github.event_name == 'push' && github.ref == 'refs/heads/development/integrated-milestone') || (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main')
         shell: bash
         run: |
           mkdir -p signing-tool
           cp "$ANDROID_HOME/build-tools/37.0.0/lib/apksigner.jar" signing-tool/apksigner.jar
           test -s signing-tool/apksigner.jar
       - name: Upload unsigned release APK
-        if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
+        if: (github.event_name == 'push' && github.ref == 'refs/heads/development/integrated-milestone') || (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main')
         uses: actions/upload-artifact@v4
         with:
           name: eimerliste-UNSIGNED-release-for-private-signing
@@ -141,7 +141,7 @@ jobs:
           if-no-files-found: error
           retention-days: 60
       - name: Upload offline signing tool
-        if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
+        if: (github.event_name == 'push' && github.ref == 'refs/heads/development/integrated-milestone') || (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main')
         uses: actions/upload-artifact@v4
         with:
           name: apksigner-for-private-release

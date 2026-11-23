@@ -342,10 +342,43 @@ fun DesignLab(
                 modifier = Modifier.fillMaxWidth()
             )
             Text(
-                "Zettelbewegung testen: Die Vorderwand verdeckt den Zettel beim Eintauchen. " +
-                    "Der Test verändert keine gespeicherten Eimer.",
+                "Die Vorschau verändert keine gespeicherten Eimer. Du kannst diese " +
+                    "Materialstudie jetzt auch testweise einem echten Eimer zuweisen.",
                 color = Ink.Muted, fontSize = 12.sp
             )
+            var studyTarget by remember { mutableStateOf<String?>(null) }
+            if (buckets.isNotEmpty()) {
+                Text("Materialstudie testweise anwenden auf:", color = Ink.Paper,
+                    fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                buckets.forEach { bucket ->
+                    val selected = studyTarget == bucket.id
+                    Row(
+                        Modifier.fillMaxWidth()
+                            .padding(vertical = 2.dp)
+                            .border(
+                                if (selected) 2.dp else 1.dp,
+                                if (selected) Ink.Brass else Ink.Muted.copy(alpha = .4f),
+                                RoundedCornerShape(5.dp)
+                            )
+                            .clickable { studyTarget = bucket.id }
+                            .padding(10.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(if (selected) "● " else "○ ", color = Ink.Brass)
+                        Text(bucket.name, color = Ink.Paper)
+                    }
+                }
+                Button(
+                    onClick = {
+                        studyTarget?.let { onApplied(it, BucketArtworkCatalog.studyId(materialStudy)) }
+                        studyTarget = null
+                    },
+                    enabled = studyTarget != null,
+                    modifier = Modifier.fillMaxWidth()
+                ) { Text("Testdesign übernehmen") }
+                Text("Jederzeit über Originaldesign wiederherstellen rückgängig machen.",
+                    color = Ink.Muted, fontSize = 11.sp)
+            }
         }
         Spacer(Modifier.height(12.dp))
         Text("VON MENSCHEN GESTALTET", color = Ink.Brass, fontSize = 12.sp,

@@ -259,8 +259,13 @@ fun PaperSketchEditor(
                     modifier = Modifier.fillMaxSize()
                 )
             }
+            // Keep text-mode access permanently visible, even on narrow Android screens.
             Row(
-                Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+            Row(
+                Modifier.weight(1f).horizontalScroll(rememberScrollState()),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
@@ -292,7 +297,8 @@ fun PaperSketchEditor(
                             .background(Ink.Paper, CircleShape))
                     }
                 }
-                Spacer(Modifier.width(6.dp))
+            }
+                Spacer(Modifier.width(8.dp))
                 // Same warm paper circle as the pencil button in the text editor.
                 // Keep this beside the ink and width controls, not on a separate toolbar row.
                 Box(

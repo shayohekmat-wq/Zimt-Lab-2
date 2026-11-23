@@ -457,3 +457,28 @@ Nutzer meldete per Screenshots, dass Flechtkorb korrekt wirkt, Holzkübel und Zi
 - Commit `71c5c507`: `versionCode=39`, `versionName=0.3.3-dev26`.
 - **Noch offen:** CI-Ergebnis für Build 39, Originalsignatur einer Build-39-APK, visuelle Android-Abnahme von Papier-Okklusion und Eimeröffnung sowie Installation über vorhandene App mit echten Daten. Keine Update-Freigabe ohne diese getrennten Nachweise.
 - Scope-Freeze Abschnitt 17 unverändert: nur drei Nutzer-PNG-Designs; keine Erweiterungen.
+
+
+## 19. Notiz-Gesten: Anheben, Umlegen, Verbrennen — neuer Auftrag (23.11.2026)
+
+**Neue Nutzeranweisung mit Vorrang; Abschnitt 17 bleibt für das Designlabor eingefroren.** Diese Funktion betrifft ausschließlich vorhandene Notizen in den drei Nutzer-Eimern, keine neuen Eimerdesigns.
+
+### Verbindliche UX-Spezifikation
+- **0–699 ms:** normale Berührung; kurzer Tap öffnet weiterhin die Notiz.
+- **700 ms:** Notiz wird angehoben, schwebt mit Schatten und sanftem Papier-Federimpuls. Beim Ziehen wird der Brand-Countdown für diese Geste unwiderruflich deaktiviert.
+- **Drag:** Zielkorb anhand tatsächlicher Bildschirmgrenzen bestimmen; dessen Öffnung dezent hervorheben. Beim Loslassen über einem anderen Korb Notiz mit bestehender ID, Text und Zeichnung atomar umzuordnen; Einwurf zwischen REAR und FRONT animieren. Ohne gültiges Ziel zurückfedern; keine Datenänderung.
+- **1500 ms stationär:** subtil unregelmäßiges Wackeln, kompatible kurze Haptikimpulse, erste kleine Glut an der Ecke. Beim Loslassen sofort abbrechen.
+- **2000 ms stationär:** Zündung; Papier mit unregelmäßiger fortschreitender Glutkante, einrollender Papierkante, transparenter Ausbrennmaske für Text UND Zeichnung, vereinzelter Asche und dezentem Rauch. Ziel 1,5–2 s, skalierbar für ältere Android-Geräte und reduzierte Animation.
+- **Datenschutz und Verlässlichkeit:** Verbrennen ist destruktiv: erst nach eindeutig erreichter Zündung eine rückgängig machbare Löschung anbieten; vor Ablauf einer Undo-Frist nicht endgültig entfernen. Rotation, App-Abbruch, Doppeltaps und parallele Gesten dürfen keinen ungewollten Verlust verursachen. Eine neue Notiz-ID beim Verschieben ist verboten.
+- **Haptik:** kurzer Impuls beim Anheben, diskrete Warnpulse ab 1,5 s, präziser Zündimpuls bei 2 s, sanftes Klopfen bei erfolgreichem Korbtreffer; auf Geräten ohne einzelne Effektunterstützung funktionaler Fallback.
+- **Scope:** sechs Original-PNGs, IDs `user-wicker-01`, `user-wood-01`, `user-zinc-01`, alle Legacy-Daten und Designlabor-Scope-Freeze bleiben unberührt.
+
+### Umsetzung in überprüfbaren Schritten
+1. [x] Reine Zeit-/Abbruchlogik `NoteHoldTiming.kt` mit exakten Grenzwerten und Unit-Tests angelegt (Commits `62c357f7`, `b24324bc`). **Noch keine UI-Anbindung**; keine Behauptung, dass Drag/Feuer schon funktionieren.
+2. [ ] `BucketContents` und Hauptansicht: Pointer-Gesten mit Bewegungs-Slop, Accessibility-Alternativen und haptischen Stufen integrieren; Drag über BottomSheet/MainGrid koordinieren.
+3. [ ] ViewModel/Repository: atomare Zuordnung vorhandener Notiz zu anderem Eimer; kein Reinsert und keine Schema-Destruktion. Instrumentierte Tests mit bestehenden Notizen/Skizzen.
+4. [ ] Rendering: Papierflug/Okklusion, Warnwackeln und GPU-freundliche Ausbrennmaske; Motion- und Low-End-Tests.
+5. [ ] Undo-Pfad für Verbrennung, Abbruch/Rotation/Mehrfachinteraktionen und tatsächlichen Datenerhalt testen.
+6. [ ] VersionCode erhöhen, Android CI/Unit-/Instrumented-Tests, private Original-PKCS12-Signierung nur außerhalb GitHub; Fingerprint `40e6b73383a29f9ca792595b369329e2ab8f9165f49eec69b4eb57a8ffe26fe1` und APK-Identität prüfen; erst dann Update-APK freigeben.
+
+**Aktueller Status:** Grundlagen implementiert und committed; weder vollständige Funktion noch installierbare neue APK fertig.

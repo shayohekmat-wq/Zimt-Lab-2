@@ -482,3 +482,13 @@ Nutzer meldete per Screenshots, dass Flechtkorb korrekt wirkt, Holzkübel und Zi
 6. [ ] VersionCode erhöhen, Android CI/Unit-/Instrumented-Tests, private Original-PKCS12-Signierung nur außerhalb GitHub; Fingerprint `40e6b73383a29f9ca792595b369329e2ab8f9165f49eec69b4eb57a8ffe26fe1` und APK-Identität prüfen; erst dann Update-APK freigeben.
 
 **Aktueller Status:** Grundlagen implementiert und committed; weder vollständige Funktion noch installierbare neue APK fertig.
+
+
+### 0.3.3-dev27 / Build 40 — atomarer Notiztransfer als Grundlage
+- Commit `0ebb3eb1`: Ein einziges bedingtes SQL-UPDATE ändert nur `notes.bucketId` und `updatedAt`. Vorhandene Notiz-ID, Text, Zeichnung, Erstellungszeit und andere Metadaten bleiben unberührt. Ein fehlender/gelöschter Zieleimer oder eine bereits verschobene/gelöschte Notiz wird abgewiesen; keine Schemaänderung.
+- Commits `9cb1346f`, `07e61d1b`: Repository und ViewModel stellen `moveNote(noteId, sourceBucketId, destinationBucketId)` bereit. Gleicher Quell-/Zieleimer wird abgewiesen.
+- Commit `d43fa45e`: `versionCode=40`, `versionName=0.3.3-dev27`.
+- [ ] CI und Tests für Build 40 prüfen; die DAO-Änderung ist noch nicht durch einen Android-Room-Test verifiziert.
+- [ ] UI-Geste, tatsächliche Drop-Zielerkennung, animierte Notiz und Verbrennung mit Undo sind **nicht** implementiert. Die pure `NoteHoldTiming`-Logik ist noch nicht an Pointer-Events angeschlossen.
+- [ ] Vor Update-Auslieferung Originalsignatur, Paketkennung, Versionscode und Bestandsdaten-Installation verifizieren. Keine fertige APK für Build 40 behaupten.
+- Designlabor-Scope-Freeze aus Abschnitt 17 bleibt unangetastet.

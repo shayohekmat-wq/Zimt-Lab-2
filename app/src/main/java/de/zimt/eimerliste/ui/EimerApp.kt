@@ -422,6 +422,7 @@ fun EimerApp(vm: EimerViewModel = viewModel()) {
                     onLiftNote = { movingNote = it },
                     onLiftHaptic = { haptics.performHapticFeedback(HapticFeedbackType.GestureThresholdActivate) },
                     onWarningHaptic = { haptics.performHapticFeedback(HapticFeedbackType.SegmentTick) },
+                    onIgnitionHaptic = { haptics.performHapticFeedback(HapticFeedbackType.LongPress) },
                     onIgnite = { note ->
                         scope.launch {
                             try {
@@ -991,6 +992,7 @@ private fun BucketContents(
     onLiftNote: (NoteEntity) -> Unit,
     onLiftHaptic: () -> Unit,
     onWarningHaptic: () -> Unit,
+    onIgnitionHaptic: () -> Unit,
     onIgnite: (NoteEntity) -> Unit,
     onRandom: () -> Unit
 ) {
@@ -1075,6 +1077,7 @@ private fun BucketContents(
                                                     warningActive = false
                                                     if (beforeIgnition == null) {
                                                         // Ignite only after a continuously held gesture.
+                                                        onIgnitionHaptic()
                                                         burningActive = true
                                                         kotlinx.coroutines.delay(1250L)
                                                         onIgnite(note)

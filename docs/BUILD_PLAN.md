@@ -103,3 +103,13 @@ Wir wollen **viele außergewöhnlich schöne, wirklich unterschiedliche und voll
 - **Keine unverdiente Abschlussmeldung:** ✨ ausschließlich bei vollständig fertiggestelltem, qualitätsgeprüftem neuen Designlabor.
 - **ZIMT-Integration sicherstellen:** Renderer und Designkatalog modular und aus der Lab-App übernehmbar halten.
 - **Versionen nicht durch Planänderungen erhöhen.** Build und APK erst als erfolgreich bezeichnen, wenn die relevanten Prüfungen tatsächlich vorliegen.
+
+## 7. Dauerhafte Semantik von „Weiter machen“ – Entwicklungszyklus UND Planpflege
+
+**Verbindliche Nutzeranweisung:** Jedes „Weiter machen“ bedeutet ab sofort zwei untrennbare Arbeitsaufträge:
+1. **Tatsächlich entwickeln:** Den nächsten substanziellen Schritt des aktiven Designlabor-Ziels im Repository umsetzen, testen und soweit möglich bauen; keine reine Planantwort oder kosmetische Ersatzleistung.
+2. **Build-Plan synchronisieren:** In demselben Zyklus diese Datei `docs/BUILD_PLAN.md` aktualisieren: nachweislich erledigte Aufgaben abhaken, tatsächlichen CI-/Teststatus eintragen, offene Blocker benennen und den nächsten großen, zusammenhängenden Schritt präzisieren.
+
+**Zielschutz:** Der Plan darf bei jedem Zyklus konkreter werden, aber niemals durch neue Nebenideen, Versionsnummern, Mikrotasks oder alte Prototypen vom Hauptziel abweichen: eine hochwertige, vielfältige, kuratierte und vollständig nutzbare Eimer-Designgalerie mit echten Assets, korrektem Papier-Layering, lizenzierter menschlicher Digitalgrafik, KI- und Eigendesigns, Datenerhalt und späterer ZIMT-Integration. Änderungen der Priorität müssen an diesem Ziel gemessen werden; widersprüchliche alte Anweisungen werden archiviert, nicht als paralleler Masterplan fortgeführt.
+
+**Wahrheitsregel:** Häkchen nur bei implementiertem und nachweislich geprüftem Umfang; Quellcode-Commit, CI-Erfolg, Gerätetest, visuelle Qualität und originalsignierte APK getrennt ausweisen. Keine bloßen Plan-Commits als Entwicklungsfortschritt zählen. Die Planaktualisierung ist Bestandteil jedes echten Builds, nicht sein Ersatz.

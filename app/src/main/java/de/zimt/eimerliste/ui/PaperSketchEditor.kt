@@ -201,11 +201,7 @@ fun PaperSketchEditor(
                 color = Ink.Paper, fontFamily = FontFamily.Serif,
                 fontWeight = FontWeight.Bold, fontSize = 25.sp
             )
-            Text(
-                "Text und Skizze dürfen zusammen auf einem Zettel wohnen.",
-                color = Ink.Muted, fontSize = 12.sp,
-                modifier = Modifier.padding(bottom = 8.dp)
-            )
+            Spacer(Modifier.height(8.dp))
             PaperSheet(Modifier.fillMaxWidth().weight(1f)
                 .onGloballyPositioned {
                     paperHeightPx = it.size.height.toFloat()

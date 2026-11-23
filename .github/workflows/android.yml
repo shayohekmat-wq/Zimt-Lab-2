@@ -53,6 +53,10 @@ jobs:
           test -s docs/COMPATIBILITY_MATRIX.md
           test -s docs/ADAPTIVE_MOTION.md
           grep -q "UNVERIFIED" docs/COMPATIBILITY_MATRIX.md
+          test -s docs/DEVELOPMENT_DOCTRINE.md
+          test -s docs/ACTIVE_SCOPE.md
+          grep -q 'No blanket feature freeze' docs/DEVELOPMENT_DOCTRINE.md
+          grep -q 'exactly three user-original' docs/ACTIVE_SCOPE.md
           test -s docs/MOTION_FIRST_PLAN.md
           test -s docs/MOTO_G6_REFERENCE.md
           grep -q "Moto-G6-first" docs/MOTION_FIRST_PLAN.md

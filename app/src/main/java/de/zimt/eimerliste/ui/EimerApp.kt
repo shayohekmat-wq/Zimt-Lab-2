@@ -418,7 +418,10 @@ fun EimerApp(vm: EimerViewModel = viewModel()) {
                     bucket = visibleBucket,
                     notes = if (visibleBucket.id == selectedId) notes else emptyList(),
                     onNote = { openNote = it },
-                    onLiftNote = { movingNote = it },
+                    onLiftNote = {
+                        haptics.performHapticFeedback(HapticFeedbackType.GestureThresholdActivate)
+                        movingNote = it
+                    },
                     onRandom = {
                         scope.launch {
                             try {

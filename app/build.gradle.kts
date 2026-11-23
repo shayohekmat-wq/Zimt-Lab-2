@@ -12,8 +12,8 @@ android {
         applicationId = "de.zimt.eimerliste"
         minSdk = 26
         targetSdk = 36
-        versionCode = 36
-        versionName = "0.3.3-dev23"
+        versionCode = 37
+        versionName = "0.3.3-dev24"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
@@ -96,6 +96,8 @@ val verifyOriginalBucketPngs = tasks.register("verifyOriginalBucketPngs") {
                 input.readFully(signature)
                 check(signature.contentEquals(pngSignature)) { "Invalid PNG signature: $name" }
                 var sawIend = false
+                var chunkIndex = 0
+                var sawIdat = false
                 while (!sawIend) {
                     val chunkLength = input.readInt().toLong() and 0xffffffffL
                     check(chunkLength <= file.length() && chunkLength <= 256L * 1024 * 1024) {
@@ -103,6 +105,15 @@ val verifyOriginalBucketPngs = tasks.register("verifyOriginalBucketPngs") {
                     }
                     val chunkType = ByteArray(4)
                     input.readFully(chunkType)
+                    val type = String(chunkType, Charsets.US_ASCII)
+                    if (chunkIndex == 0) {
+                        check(type == "IHDR" && chunkLength == 13L) { "Invalid first PNG IHDR chunk: $name" }
+                    } else {
+                        check(type != "IHDR") { "Duplicate PNG IHDR chunk: $name" }
+                    }
+                    if (type == "IDAT") sawIdat = true
+                    if (type == "IEND") check(sawIdat) { "PNG has no image data: $name" }
+                    chunkIndex++
                     val crc = java.util.zip.CRC32()
                     crc.update(chunkType)
                     val buffer = ByteArray(8192)
@@ -117,7 +128,7 @@ val verifyOriginalBucketPngs = tasks.register("verifyOriginalBucketPngs") {
                     check(crc.value == expected) {
                         "PNG chunk checksum mismatch in $name: ${String(chunkType, Charsets.US_ASCII)}"
                     }
-                    if (chunkType.contentEquals("IEND".toByteArray(Charsets.US_ASCII))) {
+                    if (type == "IEND") {
                         check(chunkLength == 0L) { "Invalid PNG IEND length: $name" }
                         sawIend = true
                     }

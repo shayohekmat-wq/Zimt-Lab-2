@@ -303,7 +303,9 @@ fun DesignLab(
         var gallerySelected by remember { mutableStateOf(WICKER_REFERENCE_ID) }
         var galleryTarget by remember { mutableStateOf<String?>(null) }
         var galleryConfirm by remember { mutableStateOf(false) }
-        val galleryItems = listOf(
+        val galleryItems = illustratedBucketAssets.map {
+            Triple(it.id, it.title, "ORIGINAL · GETRENNTE GRAFIKLAGEN")
+        } + listOf(
             Triple(WICKER_REFERENCE_ID, "Geflochtener Picknickkorb", "ORIGINAL · REFERENZGRAFIK"),
             Triple(BucketArtworkCatalog.studyId(LayeredMaterialStudy.WALNUT), "Walnuss", "TECHNISCHE MATERIALSTUDIE"),
             Triple(BucketArtworkCatalog.studyId(LayeredMaterialStudy.ZINC), "Zink", "TECHNISCHE MATERIALSTUDIE"),
@@ -332,7 +334,10 @@ fun DesignLab(
                             .padding(7.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        if (item.first == WICKER_REFERENCE_ID) {
+                        if (findIllustratedBucket(item.first) != null) {
+                            LayeredIllustratedBucket(findIllustratedBucket(item.first)!!, item.second, 1f,
+                                Modifier.fillMaxWidth().height(135.dp))
+                        } else if (item.first == WICKER_REFERENCE_ID) {
                             WickerReferenceBucket(item.second, 1f,
                                 Modifier.fillMaxWidth().height(135.dp))
                         } else {
@@ -355,7 +360,10 @@ fun DesignLab(
         Text("GROSSE LIVE-VORSCHAU", color = Ink.Brass,
             fontSize = 11.sp, fontWeight = FontWeight.Bold)
         val galleryName = buckets.firstOrNull { it.id == galleryTarget }?.name ?: "Mein Eimer"
-        if (gallerySelected == WICKER_REFERENCE_ID) {
+        if (findIllustratedBucket(gallerySelected) != null) {
+            LayeredIllustratedBucket(findIllustratedBucket(gallerySelected)!!, galleryName, 1f,
+                Modifier.fillMaxWidth().height(225.dp))
+        } else if (gallerySelected == WICKER_REFERENCE_ID) {
             WickerReferenceBucket(galleryName, 1f, Modifier.fillMaxWidth().height(225.dp))
         } else {
             BucketArtworkCatalog.studyMaterial(gallerySelected)?.let { study ->

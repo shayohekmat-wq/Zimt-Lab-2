@@ -203,3 +203,8 @@ Wir wollen **viele außergewöhnlich schöne, wirklich unterschiedliche und voll
 **Wahrheitsgemäße 50-%-Bewertung:** Eine neue Galerie und funktionaler Layer-Renderer sind substantiell; die Grafikqualität erfüllt aber noch **nicht** das verbindliche Premium-Asset-Gate aus Abschnitt 11. Die vier Entwürfe dürfen wegen gemeinsamer Silhouette **nicht** als vier eigenständige Premiumdesigns gezählt werden. Somit 50 % noch **nicht nachgewiesen**. Es wäre unredlich, den Build als fertige Hälfte zu deklarieren.
 
 **Nächste zwingende Schritte:** Unterschiedliche Silhouetten und tatsächlich hochwertige individuelle Grafikassets; verifizierte digitale Designer-Assets samt Lizenzen; KI-Unikate; visuelle Gerätetests; reale Android-CI- und Signaturprüfung. Den erreichten Prozentwert erst nach überprüfbarer Qualitätsabnahme freigeben.
+
+### Ergänzung: individuelle Ornamente und CI-Fehlerbehebung
+- [x] Vier Frontgrafiken zusätzlich mit motivspezifischen Elementen differenziert: Kupfernieten/-streben, Porzellanornamente, Waldblätter/-ranken und Sternmotive. Weiterhin dieselbe Grundsilhouette; **nicht als vier vollständig unabhängige Premiumassets deklarieren**.
+- [x] Ersten realen CI-Kompilierfehler in `LayeredIllustratedBucket.kt` diagnostiziert (`maxHeight` im verschachtelten Scope) und mit lokal gespeicherter `vesselHeight`-Dimension behoben (Commit `0d8096afdda4262760f35eb23779f1063e352d12`). Aktuelle Nachfolge-CI-Ergebnisse stehen noch aus.
+- [ ] Vor 50-%-Freigabe: erfolgreicher finaler CI-Run, visuelle Screenshots, stärkere Silhouettenvielfalt, echte Premiumtexturen, Lizenzprüfung und Gerätetest. Keine originalsignierte APK ohne Signaturprüfung.

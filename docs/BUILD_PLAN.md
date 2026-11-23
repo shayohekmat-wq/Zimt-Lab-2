@@ -511,3 +511,14 @@ Nutzer meldete per Screenshots, dass Flechtkorb korrekt wirkt, Holzkübel und Zi
 - [ ] CI/Kotlin-Kompilierung, Gesture-Cancel/Scroll-Tests, reale Vibration und Release-Verhalten verifizieren.
 - [ ] Echte Papier-Drag-Animation, 1,5-s-Wackeln, 2-s-Feueranimation und Undo folgen vor finaler Freigabe. Originalsignatur und Bestandsdaten-Update ebenfalls offen.
 - Abschnitt 17: Designlabor bleibt auf genau drei Nutzer-Eimer eingefroren; Original-PNGs und Legacy-Daten unverändert.
+
+
+### 0.3.3-dev30 / Build 43 — sichtbare Warnung und reversibler Löschpfad
+- `0e2c5c21`, `21549330`: In der tatsächlichen Notizenliste beginnt bei 1,5 s Press eine sehr kleine, abwechselnde Rotation (±1,1°) mit leicht erhöhtem Schatten; die bereits implementierten zwei kurzen Haptikimpulse begleiten das Wackeln. Bei Release wird die sichtbare Warnung zurückgesetzt. Android-Visuellprüfung steht aus.
+- `a4966832`: Room-DAO bietet Soft-Delete (`deletedAt`) und timestamp-gebundene Wiederherstellung an. Die vorhandene Tabelle wird genutzt, keine Migration und kein physisches Löschen.
+- `2da5061d`, `a2031ccc`: Repository und ViewModel bieten `burnNote` und `undoBurn` als zukünftige sichere Verbrennungsoperationen an. **Noch nicht an die UI gebunden**; die Notiz wird beim 2-s-Halten derzeit nicht gelöscht.
+- `4caff3f3`: Version 0.3.3-dev30, versionCode 43.
+- [ ] CI-Kompilierung und Unit-/Gerätetests; Performance der Compose-Warnanimation auf älteren Android-Geräten.
+- [ ] Exakte 2-s-Zündung mit sichtbarer, schöner Papiermaske und zuverlässiger Undo-Snackbar implementieren, erst dann `burnNote` aufrufen. Reale Drag-and-drop-Interaktion und Okklusion fehlen ebenfalls.
+- [ ] PKCS12-Originalsignierung und Datenbestandsschutz bei Upgrade vor APK-Freigabe nachweisen.
+- Scope-Freeze Abschnitt 17 bleibt unverändert; kein neues Designlabor-Asset.

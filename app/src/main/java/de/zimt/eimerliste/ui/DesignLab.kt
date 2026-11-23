@@ -287,495 +287,112 @@ fun DesignLab(
     onReset: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    var activeStyle by remember { mutableIntStateOf(0) }
-    var showExperiments by remember { mutableStateOf(false) }
-    var chosen by remember { mutableStateOf<LabDesign?>(null) }
+    // Scope freeze: exactly three original user-provided front/rear PNG pairs.
+    val designs = illustratedBucketAssets.filter { it.id.startsWith("user-") }
+    var selected by remember { mutableStateOf(designs.first().id) }
     var target by remember { mutableStateOf<String?>(null) }
+    var confirm by remember { mutableStateOf(false) }
+    var paperProgress by remember { mutableFloatStateOf(1f) }
+    var playing by remember { mutableStateOf(false) }
+    LaunchedEffect(playing) {
+        if (playing) {
+            for (step in 0..36) {
+                paperProgress = step / 36f
+                kotlinx.coroutines.delay(19L)
+            }
+            kotlinx.coroutines.delay(250L)
+            for (step in 36 downTo 0) {
+                paperProgress = step / 36f
+                kotlinx.coroutines.delay(19L)
+            }
+            paperProgress = 1f
+            playing = false
+        }
+    }
     Column(modifier.padding(12.dp)) {
-        Text("Designlabor",fontSize=22.sp,fontWeight=FontWeight.Bold,color=Ink.Paper)
-        Spacer(Modifier.height(8.dp))
-        Text(
-            "Eine gute Eimerform braucht eine echte Öffnung, Materialtiefe und Platz für deine Zettel.",
-            color = Ink.Muted, fontSize = 12.sp
-        )
-        Spacer(Modifier.height(12.dp))
-        // A genuine, usable selection gallery. Technical studies are explicitly marked.
-        var gallerySelected by remember { mutableStateOf(humanArtistBuckets.first().id) }
-        var galleryTarget by remember { mutableStateOf<String?>(null) }
-        var galleryConfirm by remember { mutableStateOf(false) }
-        val galleryItems = humanArtistBuckets.map {
-            Triple(it.id, it.title, "KENNEY · MENSCHLICHES 3D · CC0")
-        } + illustratedBucketAssets.map {
-            Triple(it.id, it.title, "ORIGINAL · GETRENNTE GRAFIKLAGEN")
-        } + listOf(
-            Triple(WICKER_REFERENCE_ID, "Geflochtener Picknickkorb", "ORIGINAL · REFERENZGRAFIK"),
-            Triple(BucketArtworkCatalog.studyId(LayeredMaterialStudy.WALNUT), "Walnuss", "TECHNISCHE MATERIALSTUDIE"),
-            Triple(BucketArtworkCatalog.studyId(LayeredMaterialStudy.ZINC), "Zink", "TECHNISCHE MATERIALSTUDIE"),
-            Triple(BucketArtworkCatalog.studyId(LayeredMaterialStudy.ENAMEL), "Emaille", "TECHNISCHE MATERIALSTUDIE")
-        )
-        var galleryPaper by remember { mutableFloatStateOf(1f) }
-        var galleryPlaying by remember { mutableStateOf(false) }
-        var galleryCategory by remember { mutableStateOf("human") }
-        LaunchedEffect(galleryPlaying) {
-            if (galleryPlaying) {
-                for (frame in 0..30) {
-                    galleryPaper = frame / 30f
-                    kotlinx.coroutines.delay(20L)
-                }
-                for (frame in 30 downTo 0) {
-                    galleryPaper = frame / 30f
-                    kotlinx.coroutines.delay(20L)
-                }
-                galleryPaper = 1f
-                galleryPlaying = false
-            }
-        }
-        Text("GESTALTUNGEN ANSEHEN & AUSPROBIEREN",
-            color = Ink.Brass, fontSize = 12.sp, fontWeight = FontWeight.Bold)
-        Text("Wähle ein Motiv. Die große Vorschau zeigt die echte Darstellung, die auch auf deinem Eimer erscheint.",
+        Text("Designlabor", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = Ink.Paper)
+        Spacer(Modifier.height(7.dp))
+        Text("Drei Originale · deine Grafiken · zwei echte Bildebenen",
             color = Ink.Muted, fontSize = 12.sp)
-        Row(horizontalArrangement = Arrangement.spacedBy(5.dp)) {
-            FilterChip(selected = galleryCategory == "human",
-                onClick = {
-                    galleryCategory = "human"
-                    gallerySelected = humanArtistBuckets.first().id
-                }, label = { Text("Von Künstlern") })
-            FilterChip(selected = galleryCategory == "original",
-                onClick = {
-                    galleryCategory = "original"
-                    gallerySelected = WICKER_REFERENCE_ID
-                }, label = { Text("Archiv") })
-            FilterChip(selected = galleryCategory == "study",
-                onClick = {
-                    galleryCategory = "study"
-                    gallerySelected = BucketArtworkCatalog.studyId(LayeredMaterialStudy.WALNUT)
-                }, label = { Text("Studien") })
-        }
-        galleryItems.filter { item ->
-            when (galleryCategory) {
-                "human" -> findHumanArtistBucket(item.first) != null
-                "study" -> BucketArtworkCatalog.studyMaterial(item.first) != null
-                else -> findHumanArtistBucket(item.first) == null &&
-                    BucketArtworkCatalog.studyMaterial(item.first) == null
-            }
-        }.chunked(2).forEach { group ->
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                group.forEach { item ->
-                    val selected = gallerySelected == item.first
-                    Column(
-                        Modifier.weight(1f).padding(vertical = 6.dp)
-                            .border(if (selected) 2.dp else 1.dp,
-                                if (selected) Ink.Brass else Ink.Muted.copy(alpha = .4f),
-                                RoundedCornerShape(9.dp))
-                            .background(if (selected) Ink.BrassDark.copy(alpha = .15f)
-                                else Ink.Walnut, RoundedCornerShape(9.dp))
-                            .clickable {
-                                gallerySelected = item.first
-                                galleryConfirm = false
-                            }
-                            .semantics { contentDescription = item.second + ", " + item.third }
-                            .padding(7.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        if (findHumanArtistBucket(item.first) != null) {
-                            HumanArtistBucketArtwork(findHumanArtistBucket(item.first)!!,
-                                Modifier.fillMaxWidth().height(135.dp))
-                        } else if (findIllustratedBucket(item.first) != null) {
-                            LayeredIllustratedBucket(findIllustratedBucket(item.first)!!, item.second, 1f,
-                                Modifier.fillMaxWidth().height(135.dp))
-                        } else if (item.first == WICKER_REFERENCE_ID) {
-                            WickerReferenceBucket(item.second, 1f,
-                                Modifier.fillMaxWidth().height(135.dp))
-                        } else {
-                            val study = BucketArtworkCatalog.studyMaterial(item.first)
-                            if (study != null) LayeredBucketPrototype(
-                                title = item.second, paperProgress = 1f,
-                                material = study, modifier = Modifier.fillMaxWidth().height(135.dp))
-                        }
-                        Text(item.second, color = Ink.Paper, fontSize = 12.sp,
-                            fontWeight = FontWeight.Bold, maxLines = 2)
-                        Text(item.third, color = Ink.Muted, fontSize = 9.sp, maxLines = 2,
-                            textAlign = TextAlign.Center)
-                        if (selected) Text("AUSGEWÄHLT", color = Ink.Brass, fontSize = 10.sp)
-                    }
-                }
-                repeat(2 - group.size) { Spacer(Modifier.weight(1f)) }
-            }
-        }
-        Spacer(Modifier.height(8.dp))
-        Text("GROSSE LIVE-VORSCHAU", color = Ink.Brass,
-            fontSize = 11.sp, fontWeight = FontWeight.Bold)
-        val galleryName = buckets.firstOrNull { it.id == galleryTarget }?.name ?: "Mein Eimer"
-        if (findHumanArtistBucket(gallerySelected) != null) {
-            HumanArtistBucketArtwork(findHumanArtistBucket(gallerySelected)!!,
-                Modifier.fillMaxWidth().height(225.dp))
-        } else if (findIllustratedBucket(gallerySelected) != null) {
-            LayeredIllustratedBucket(findIllustratedBucket(gallerySelected)!!, galleryName, galleryPaper,
-                Modifier.fillMaxWidth().height(225.dp))
-        } else if (gallerySelected == WICKER_REFERENCE_ID) {
-            WickerReferenceBucket(galleryName, galleryPaper, Modifier.fillMaxWidth().height(225.dp))
-        } else {
-            BucketArtworkCatalog.studyMaterial(gallerySelected)?.let { study ->
-                LayeredBucketPrototype(galleryName, galleryPaper, study,
-                    Modifier.fillMaxWidth().height(225.dp))
-            }
-        }
-        if (findHumanArtistBucket(gallerySelected) == null) {
-        Text("Papierbewegung prüfen", color = Ink.Muted, fontSize = 11.sp)
-        Slider(value = galleryPaper, onValueChange = { galleryPaper = it },
-            valueRange = 0f..1f)
-        OutlinedButton(onClick = { galleryPlaying = true }, enabled = !galleryPlaying,
-            modifier = Modifier.fillMaxWidth()) {
-            Text(if (galleryPlaying) "Animation läuft …" else "Einwurf und Auswurf abspielen")
-        }
-        } else {
-            Text("Echtes Künstler-3D-Asset. Noch keine getrennten Papier-Masken.",
-                color = Ink.Muted, fontSize = 11.sp)
-        }
-        Text("Auf welchen Eimer anwenden?", color = Ink.Paper, fontSize = 13.sp)
-        buckets.forEach { bucket ->
-            val selected = galleryTarget == bucket.id
-            Row(Modifier.fillMaxWidth().padding(vertical = 3.dp)
-                .border(if (selected) 2.dp else 1.dp,
-                    if (selected) Ink.Brass else Ink.Muted.copy(alpha = .4f),
-                    RoundedCornerShape(6.dp))
-                .clickable { galleryTarget = bucket.id; galleryConfirm = false }
-                .padding(11.dp), verticalAlignment = Alignment.CenterVertically) {
-                Text(if (selected) "●" else "○", color = Ink.Brass)
-                Spacer(Modifier.width(10.dp))
-                Text(bucket.name, color = Ink.Paper, modifier = Modifier.weight(1f))
-                if (selected) Text("ZIEL", color = Ink.Brass, fontSize = 10.sp)
-            }
-        }
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            OutlinedButton(onClick = {
-                gallerySelected = humanArtistBuckets.first().id
-                galleryCategory = "human"
-                galleryTarget = null
-                galleryConfirm = false
-            }, modifier = Modifier.weight(1f)) { Text("Abbrechen") }
-            Button(onClick = { galleryConfirm = true }, enabled = galleryTarget != null,
-                modifier = Modifier.weight(1f)) { Text("Übernehmen") }
-        }
-        if (galleryConfirm && galleryTarget != null) {
-            AlertDialog(
-                onDismissRequest = { galleryConfirm = false },
-                title = { Text("Design übernehmen?") },
-                text = { Text("Nur die Gestaltung wird geändert. Deine Zettel und Zeichnungen bleiben erhalten.") },
-                confirmButton = {
-                    TextButton(onClick = {
-                        galleryTarget?.let { onApplied(it, gallerySelected) }
-                        galleryConfirm = false
-                    }) { Text("Design anwenden") }
-                },
-                dismissButton = {
-                    TextButton(onClick = { galleryConfirm = false }) { Text("Zurück") }
-                }
-            )
-        }
-        Spacer(Modifier.height(22.dp))
-        Text("WEITERE REFERENZEN UND EXPERIMENTE",
-            color = Ink.Muted, fontSize = 11.sp, fontWeight = FontWeight.Bold)
-        Text("NEU · EIGENSTÄNDIGE ORIGINALENTWÜRFE",
-            color = Ink.Brass, fontSize = 12.sp, fontWeight = FontWeight.Bold)
-        Text("Picknickkorb · handkonstruierte Flechtgrafik mit Henkel, Innenraum und eigener Vorderwand.",
-            color = Ink.Paper, fontSize = 12.sp)
-        var wickerTarget by remember { mutableStateOf<String?>(null) }
-        var wickerDepth by remember { mutableFloatStateOf(0f) }
-        // Real, reversible in-gallery paper motion, not a static screenshot.
-        var wickerPlaying by remember { mutableStateOf(false) }
-        LaunchedEffect(wickerPlaying) {
-            if (wickerPlaying) {
-                for (step in 0..24) {
-                    wickerDepth = step / 24f
-                    kotlinx.coroutines.delay(24L)
-                }
-                for (step in 24 downTo 0) {
-                    wickerDepth = step / 24f
-                    kotlinx.coroutines.delay(24L)
-                }
-                wickerPlaying = false
-            }
-        }
-        WickerReferenceBucket(
-            title = buckets.firstOrNull { it.id == wickerTarget }?.name ?: "Mein Picknickkorb",
-            paperProgress = wickerDepth,
-            modifier = Modifier.fillMaxWidth().height(250.dp)
-        )
-        OutlinedButton(
-            onClick = { wickerPlaying = true },
-            enabled = !wickerPlaying,
-            modifier = Modifier.fillMaxWidth()
-        ) { Text(if (wickerPlaying) "Papier bewegt sich …" else "Einwurf und Auswurf vorführen") }
-        Text("Zettel-Einwurf ausprobieren", color = Ink.Muted, fontSize = 11.sp)
-        Slider(value = wickerDepth, onValueChange = { wickerDepth = it },
-            valueRange = 0f..1f, modifier = Modifier.fillMaxWidth())
-        Text("Eimer auswählen", color = Ink.Paper, fontSize = 12.sp)
-        buckets.forEach { bucket ->
-            val selected = wickerTarget == bucket.id
+        Spacer(Modifier.height(12.dp))
+        designs.forEach { design ->
+            val active = selected == design.id
             Row(
-                Modifier.fillMaxWidth().padding(vertical = 3.dp)
-                    .border(if (selected) 2.dp else 1.dp,
-                        if (selected) Ink.Brass else Ink.Muted.copy(alpha = .4f),
-                        RoundedCornerShape(5.dp))
-                    .clickable { wickerTarget = bucket.id }
-                    .padding(12.dp),
+                Modifier.fillMaxWidth().padding(vertical = 5.dp)
+                    .border(if (active) 2.dp else 1.dp,
+                        if (active) Ink.Brass else Ink.Muted.copy(alpha = .35f),
+                        RoundedCornerShape(8.dp))
+                    .background(if (active) Ink.BrassDark.copy(alpha = .18f) else Ink.Walnut,
+                        RoundedCornerShape(8.dp))
+                    .clickable {
+                        selected = design.id
+                        paperProgress = 1f
+                        confirm = false
+                    }
+                    .semantics { contentDescription = "${design.title} auswählen" }
+                    .padding(8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(if (selected) "●  " else "○  ", color = Ink.Brass)
-                Text(bucket.name, color = Ink.Paper)
-            }
-        }
-        Button(
-            onClick = {
-                wickerTarget?.let { onApplied(it, WICKER_REFERENCE_ID) }
-            },
-            enabled = wickerTarget != null,
-            modifier = Modifier.fillMaxWidth()
-        ) { Text("Picknickkorb übernehmen") }
-        Text("Eigenes Vektor-Original, keine externe Grafik. Noch keine fertig kuratierte Galerie.",
-            color = Ink.Muted, fontSize = 11.sp)
-        Spacer(Modifier.height(18.dp))
-        // This interactive engineering proof is deliberately not selectable as premium art.
-        var showLayerProof by remember { mutableStateOf(false) }
-        var paperDepth by remember { mutableFloatStateOf(0f) }
-        var materialStudy by remember { mutableStateOf(LayeredMaterialStudy.WALNUT) }
-        OutlinedButton(
-            onClick = { showLayerProof = !showLayerProof },
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text(if (showLayerProof) "Ebenentest schließen" else "Ebenentest: Zettel im Eimer")
-        }
-        if (showLayerProof) {
-            Text("TECHNISCHER PROTOTYP · KEIN FERTIGES DESIGN",
-                color = Ink.Brass, fontSize = 11.sp, fontWeight = FontWeight.Bold)
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                LayeredMaterialStudy.entries.forEach { study ->
-                    val selected = materialStudy == study
-                    OutlinedButton(
-                        onClick = { materialStudy = study },
-                        modifier = Modifier.weight(1f),
-                        border = androidx.compose.foundation.BorderStroke(
-                            if (selected) 2.dp else 1.dp,
-                            if (selected) Ink.Brass else Ink.Muted.copy(alpha = .45f)
-                        ),
-                        contentPadding = PaddingValues(horizontal = 3.dp, vertical = 7.dp)
-                    ) {
-                        Text(study.displayName, fontSize = 11.sp,
-                            color = if (selected) Ink.Brass else Ink.Paper)
-                    }
+                LayeredIllustratedBucket(design, "", 1f, Modifier.size(105.dp))
+                Spacer(Modifier.width(12.dp))
+                Column(Modifier.weight(1f)) {
+                    Text(design.title, color = Ink.Paper, fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold)
+                    Text("Original-PNG · Innenraum + Vorderwand",
+                        color = Ink.Muted, fontSize = 11.sp)
                 }
-            }
-            LayeredBucketPrototype(
-                title = "Papier-Test",
-                paperProgress = paperDepth,
-                material = materialStudy,
-                modifier = Modifier.fillMaxWidth().height(210.dp)
-            )
-            Slider(
-                value = paperDepth,
-                onValueChange = { paperDepth = it },
-                valueRange = 0f..1f,
-                modifier = Modifier.fillMaxWidth()
-            )
-            Text(
-                "Die Vorschau verändert keine gespeicherten Eimer. Du kannst diese " +
-                    "Materialstudie jetzt auch testweise einem echten Eimer zuweisen.",
-                color = Ink.Muted, fontSize = 12.sp
-            )
-            var studyTarget by remember { mutableStateOf<String?>(null) }
-            if (buckets.isNotEmpty()) {
-                Text("Materialstudie testweise anwenden auf:", color = Ink.Paper,
-                    fontSize = 12.sp, fontWeight = FontWeight.Bold)
-                buckets.forEach { bucket ->
-                    val selected = studyTarget == bucket.id
-                    Row(
-                        Modifier.fillMaxWidth()
-                            .padding(vertical = 2.dp)
-                            .border(
-                                if (selected) 2.dp else 1.dp,
-                                if (selected) Ink.Brass else Ink.Muted.copy(alpha = .4f),
-                                RoundedCornerShape(5.dp)
-                            )
-                            .clickable { studyTarget = bucket.id }
-                            .padding(10.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(if (selected) "● " else "○ ", color = Ink.Brass)
-                        Text(bucket.name, color = Ink.Paper)
-                    }
-                }
-                Button(
-                    onClick = {
-                        studyTarget?.let { onApplied(it, BucketArtworkCatalog.studyId(materialStudy)) }
-                        studyTarget = null
-                    },
-                    enabled = studyTarget != null,
-                    modifier = Modifier.fillMaxWidth()
-                ) { Text("Testdesign übernehmen") }
-                Text("Jederzeit über Originaldesign wiederherstellen rückgängig machen.",
-                    color = Ink.Muted, fontSize = 11.sp)
+                Text(if (active) "●" else "○", color = Ink.Brass, fontSize = 20.sp)
             }
         }
         Spacer(Modifier.height(12.dp))
-        Text("VON MENSCHEN GESTALTET", color = Ink.Brass, fontSize = 12.sp,
+        Text("LIVE-VORSCHAU", color = Ink.Brass, fontSize = 12.sp,
             fontWeight = FontWeight.Bold)
-        Text("Digitale PNG-, SVG-, Sprite- und 3D-Grafiken von Designern. Die geprüfte Sammlung entsteht gerade.",
-            color = Ink.Paper, fontSize = 12.sp)
-        Spacer(Modifier.height(10.dp))
-        Text("BILDGENERIERTE UNIKATE", color = Ink.Brass, fontSize = 12.sp,
-            fontWeight = FontWeight.Bold)
-        Text("Eigenständige, freigestellte Objekte mit funktionierender Öffnung. Noch keine freigegebenen Motive.",
-            color = Ink.Paper, fontSize = 12.sp)
-        Spacer(Modifier.height(14.dp))
-        Spacer(Modifier.height(10.dp))
-        var resetPickerVisible by remember { mutableStateOf(false) }
-        var pendingReset by remember { mutableStateOf<String?>(null) }
-        OutlinedButton(
-            onClick = { resetPickerVisible = !resetPickerVisible },
-            modifier = Modifier.fillMaxWidth()
-        ) { Text(if (resetPickerVisible) "Originaldesigns schließen" else "Originaldesign wiederherstellen") }
-        if (resetPickerVisible) {
-            Text("Nur die Gestaltung wird zurückgesetzt. Alle Zettel bleiben erhalten.",
-                color = Ink.Muted, fontSize = 12.sp)
-            buckets.forEach { bucket ->
-                Row(Modifier.fillMaxWidth().padding(vertical = 3.dp),
-                    verticalAlignment = Alignment.CenterVertically) {
-                    Text(bucket.name, modifier = Modifier.weight(1f), color = Ink.Paper,
-                        fontSize = 12.sp, maxLines = 2)
-                    OutlinedButton(onClick = { pendingReset = bucket.id }) {
-                        Text("Zurücksetzen")
-                    }
-                }
-            }
+        val asset = designs.first { it.id == selected }
+        LayeredIllustratedBucket(asset, "", paperProgress,
+            Modifier.fillMaxWidth().height(260.dp))
+        Text("Zettel zwischen Innenraum und Vorderwand",
+            color = Ink.Muted, fontSize = 11.sp)
+        Slider(value = paperProgress, onValueChange = { paperProgress = it },
+            valueRange = 0f..1f)
+        OutlinedButton(onClick = { playing = true }, enabled = !playing,
+            modifier = Modifier.fillMaxWidth()) {
+            Text(if (playing) "Animation läuft …" else "Einwurf und Auswurf abspielen")
         }
-        pendingReset?.let { resetId ->
-            val resetName = buckets.firstOrNull { it.id == resetId }?.name ?: "diesen Eimer"
-            androidx.compose.material3.AlertDialog(
-                onDismissRequest = { pendingReset = null },
-                title = { Text("Originaldesign wiederherstellen?") },
-                text = { Text("Nur die Gestaltung von „$resetName“ wird zurückgesetzt. Alle Zettel bleiben erhalten.") },
-                confirmButton = {
-                    androidx.compose.material3.TextButton(onClick = {
-                        onReset(resetId)
-                        pendingReset = null
-                    }) { Text("Design zurücksetzen") }
-                },
-                dismissButton = {
-                    androidx.compose.material3.TextButton(onClick = { pendingReset = null }) {
-                        Text("Abbrechen")
-                    }
-                }
-            )
+        Spacer(Modifier.height(12.dp))
+        Text("Für welchen Eimer?", color = Ink.Paper, fontSize = 14.sp)
+        if (buckets.isEmpty()) {
+            Text("Erstelle zuerst einen Eimer.", color = Ink.Muted)
+        }
+        buckets.forEach { bucket ->
+            val active = target == bucket.id
+            Row(Modifier.fillMaxWidth().padding(vertical = 3.dp)
+                .border(if (active) 2.dp else 1.dp,
+                    if (active) Ink.Brass else Ink.Muted.copy(alpha = .35f),
+                    RoundedCornerShape(6.dp))
+                .clickable { target = bucket.id; confirm = false }
+                .padding(12.dp),
+                verticalAlignment = Alignment.CenterVertically) {
+                Text(if (active) "●" else "○", color = Ink.Brass)
+                Spacer(Modifier.width(10.dp))
+                Text(bucket.name, color = Ink.Paper, modifier = Modifier.weight(1f))
+            }
         }
         Spacer(Modifier.height(8.dp))
-        OutlinedButton(onClick = {
-            showExperiments = !showExperiments
-            chosen = null
-            target = null
-        }, modifier = Modifier.fillMaxWidth()) {
-            Text(if (showExperiments) "Experimente ausblenden" else "Unfertige Stil-Experimente ansehen")
-        }
-        if (showExperiments) {
-            Text("ENTWÜRFE · NICHT QUALITÄTSGEPRÜFT", color = Ink.Muted,
-                fontSize = 11.sp, fontWeight = FontWeight.Bold)
-            Spacer(Modifier.height(6.dp))
-            styles.chunked(4).forEachIndexed { row, group ->
-                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                    group.forEachIndexed { idx, name ->
-                        val index = row * 4 + idx
-                        Text(name, modifier = Modifier.weight(1f)
-                            .background(if (activeStyle == index) Ink.BrassDark else Ink.Walnut,
-                                RoundedCornerShape(5.dp))
-                            .clickable { activeStyle = index; chosen = null; target = null }
-                            .padding(vertical = 9.dp, horizontal = 2.dp)
-                            .semantics { contentDescription = "Stil $name auswählen" },
-                            color = Ink.Paper, fontSize = 10.sp, textAlign = TextAlign.Center)
-                    }
-                }
-                Spacer(Modifier.height(5.dp))
-            }
-            val shown = labDesigns.filter { it.style == activeStyle }
-            shown.chunked(3).forEach { row ->
-                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    row.forEach { design ->
-                        Column(Modifier.weight(1f).padding(vertical = 4.dp)
-                            .border(if (chosen == design) 2.dp else 1.dp,
-                                if (chosen == design) Ink.Brass else Ink.Muted.copy(alpha = .4f),
-                                RoundedCornerShape(6.dp))
-                            .clickable { chosen = design; target = null }
-                            .semantics { contentDescription = "${design.name} Entwurf auswählen" },
-                            horizontalAlignment = Alignment.CenterHorizontally) {
-                            LabBucketArtwork(design, "", Modifier.fillMaxWidth().aspectRatio(1f))
-                            Text(design.name, color = Ink.Paper, fontSize = 11.sp, maxLines = 1)
-                        }
-                    }
-                    repeat(3 - row.size) { Spacer(Modifier.weight(1f)) }
-                }
-            }
-        }
-        chosen?.let { design ->
-            Spacer(Modifier.height(8.dp))
-            Text("Vorschau", color=Ink.Paper, fontSize=13.sp)
-            LabBucketArtwork(design, buckets.firstOrNull { it.id == target }?.name ?: "Mein Eimer", Modifier.fillMaxWidth().height(156.dp))
-            Text("Für welchen Eimer?",color=Ink.Paper,fontSize=13.sp)
-            if (buckets.isEmpty()) {
-                Text("Lege zuerst einen Eimer an, um ein Design anzuwenden.",
-                    color = Ink.Muted, fontSize = 12.sp)
-            }
-            buckets.forEach { bucket ->
-                val isSelected = target == bucket.id
-                Row(
-                    Modifier.fillMaxWidth()
-                        .padding(vertical = 3.dp)
-                        .border(
-                            if (isSelected) 2.dp else 1.dp,
-                            if (isSelected) Ink.Brass else Ink.Muted.copy(alpha = .35f),
-                            RoundedCornerShape(5.dp)
-                        )
-                        .background(
-                            if (isSelected) Ink.BrassDark.copy(alpha = .35f) else Color.Transparent,
-                            RoundedCornerShape(5.dp)
-                        )
-                        .clickable { target = bucket.id }
-                        .semantics {
-                            contentDescription = if (isSelected)
-                                "${bucket.name}, als Zieleimer ausgewählt"
-                            else "${bucket.name}, als Zieleimer auswählen"
-                        }
-                        .padding(horizontal = 12.dp, vertical = 11.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(if (isSelected) "●" else "○", color = Ink.Brass,
-                        modifier = Modifier.padding(end = 9.dp))
-                    Text(bucket.name, color = Ink.Paper,
-                        fontSize = 13.sp, modifier = Modifier.weight(1f))
-                    if (isSelected) Text("AUSGEWÄHLT", color = Ink.Brass,
-                        fontSize = 10.sp, fontWeight = FontWeight.Bold)
-                }
-            }
-            Text(
-                "Die Vorschau ändert noch nichts. Erst Übernehmen speichert die Auswahl.",
-                color = Ink.Muted, fontSize = 11.sp
-            )
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedButton(
-                    onClick = {
-                        chosen = null
-                        target = null
-                    },
-                    modifier = Modifier.weight(1f)
-                ) { Text("Abbrechen") }
-                Button(
-                    onClick = {
-                        target?.let { onApplied(it, design.id) }
-                        chosen = null
-                        target = null
-                    },
-                    enabled = target != null,
-                    modifier = Modifier.weight(1f)
-                ) { Text("Übernehmen") }
-            }
+        Button(onClick = { confirm = true }, enabled = target != null,
+            modifier = Modifier.fillMaxWidth()) { Text("Design übernehmen") }
+        if (confirm && target != null) {
+            AlertDialog(onDismissRequest = { confirm = false },
+                title = { Text("Design übernehmen?") },
+                text = { Text("Nur die Grafik wird geändert. Alle Zettel und Zeichnungen bleiben erhalten.") },
+                confirmButton = {
+                    TextButton(onClick = {
+                        target?.let { onApplied(it, selected) }
+                        confirm = false
+                    }) { Text("Übernehmen") }
+                },
+                dismissButton = {
+                    TextButton(onClick = { confirm = false }) { Text("Abbrechen") }
+                })
         }
     }
 }

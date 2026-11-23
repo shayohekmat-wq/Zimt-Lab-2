@@ -38,3 +38,21 @@ Native Jetpack Compose: UI-Logik und Geometrie getrennt, ressourcenschonende sta
 
 ## Spätere Integration
 Kein direktes Teilen einer internen App-Datenbank zwischen zwei Paketkennungen. ZIMT importiert versionierte Datensätze mit deduplizierender ID-Zuordnung. Authentitäts-/Mitgliedschaftswechsel und Zeichnungsformat werden bewusst modelliert.
+
+## Current source map (verified paths, not a claim of feature correctness)
+- `settings.gradle.kts`: single Android app module `:app`.
+- `app/build.gradle.kts`: SDK/version, Compose, KSP/Room and `verifyOriginalBucketPngs` task.
+- `app/src/main/java/de/zimt/eimerliste/ui/EimerApp.kt`: main Compose UI, note gestures and current burn visuals; review pointer coordinate spaces, state ownership and cancellation when editing.
+- `app/src/main/java/de/zimt/eimerliste/ui/NoteHoldTiming.kt`: pure hold timing/ignition policy.
+- `app/src/test/java/de/zimt/eimerliste/ui/NoteHoldTimingTest.kt`: timing boundary and disarm tests.
+- `app/src/main/res/drawable-nodpi/`: six immutable original REAR/FRONT bucket PNGs.
+- `.github/workflows/android.yml`: actual CI trigger and release steps; inspect current branch before assuming main matches.
+- `docs/BUILD_PLAN.md` §17: three-design freeze overrides §§1–16; §19: active gesture/burn specification.
+- `docs/ACCEPTANCE_CRITERIA.md`: current verification matrix; `docs/DEVELOPMENT_STATUS.md`: evidence/checkpoint; `docs/RELEASE_CHECKLIST.md`: release gate.
+
+## Working commands
+```sh
+gradle --no-daemon :app:assembleDebug :app:testDebugUnitTest
+gradle --no-daemon :app:assembleRelease
+```
+Run debug compilation and tests after coherent changes. Release compilation and signing are gated separately. A successful compilation is not evidence of correct Android touch behavior.

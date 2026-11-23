@@ -78,6 +78,14 @@ fun LayeredIllustratedBucket(
     }
     BoxWithConstraints(modifier, contentAlignment = Alignment.Center) {
         val vesselHeight = maxHeight
+        val vesselWidth = maxWidth
+        // Slight sideways drift follows the opening, without moving either PNG layer.
+        val drift = when (asset.id) {
+            "user-wicker-01" -> -.025f
+            "user-wood-01" -> .018f
+            "user-zinc-01" -> -.012f
+            else -> 0f
+        }
         // Both original PNG layers use precisely the same Fit viewport.
         // Do not translate or scale either layer independently: doing so changes
         // the opening geometry and breaks the authored front/rear alignment.
@@ -88,9 +96,12 @@ fun LayeredIllustratedBucket(
         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
             Box(
                 Modifier.fillMaxWidth(.18f).fillMaxHeight(.15f)
-                    .offset(y = vesselHeight * (mouthStart + mouthTravel * eased))
+                    .offset(
+                        x = vesselWidth * drift * eased * (1f - eased),
+                        y = vesselHeight * (mouthStart + mouthTravel * eased)
+                    )
                     .graphicsLayer {
-                        rotationZ = -9f + 15f * eased
+                        rotationZ = -9f + 15f * eased + 3f * kotlin.math.sin(eased * kotlin.math.PI.toFloat())
                         scaleX = 1f - .18f * eased
                         scaleY = 1f - .18f * eased
                         // Fully hide the note at the bottom, including transparent front openings.

@@ -288,49 +288,72 @@ fun DesignLab(
     modifier: Modifier = Modifier
 ) {
     var activeStyle by remember { mutableIntStateOf(0) }
+    var showExperiments by remember { mutableStateOf(false) }
     var chosen by remember { mutableStateOf<LabDesign?>(null) }
     var target by remember { mutableStateOf<String?>(null) }
     Column(modifier.padding(12.dp)) {
         Text("Designlabor",fontSize=22.sp,fontWeight=FontWeight.Bold,color=Ink.Paper)
         Spacer(Modifier.height(8.dp))
-        // Eight style tabs; selection stays inside the existing scrollable bucket grid.
-        styles.chunked(4).forEachIndexed { row, group ->
-            Row(horizontalArrangement=Arrangement.spacedBy(4.dp)) {
-                group.forEachIndexed { idx, name ->
-                    val index=row*4+idx
-                    Text(name,modifier=Modifier.weight(1f)
-                        .background(if(activeStyle==index) Ink.BrassDark else Ink.Walnut,
-                            RoundedCornerShape(5.dp))
-                        .clickable { activeStyle=index;chosen=null }
-                        .padding(vertical=9.dp,horizontal=2.dp)
-                        .semantics { contentDescription="Stil $name auswählen" },
-                        color=Ink.Paper,fontSize=10.sp,textAlign=TextAlign.Center)
-                }
-            }
-            Spacer(Modifier.height(5.dp))
+        Text(
+            "Eine gute Eimerform braucht eine echte Öffnung, Materialtiefe und Platz für deine Zettel.",
+            color = Ink.Muted, fontSize = 12.sp
+        )
+        Spacer(Modifier.height(12.dp))
+        Text("VON MENSCHEN GESTALTET", color = Ink.Brass, fontSize = 12.sp,
+            fontWeight = FontWeight.Bold)
+        Text("Handgezeichnete, modellierte und fotografierte Einzelstücke. Die geprüfte Sammlung entsteht gerade.",
+            color = Ink.Paper, fontSize = 12.sp)
+        Spacer(Modifier.height(10.dp))
+        Text("BILDGENERIERTE UNIKATE", color = Ink.Brass, fontSize = 12.sp,
+            fontWeight = FontWeight.Bold)
+        Text("Eigenständige, freigestellte Objekte mit funktionierender Öffnung. Noch keine freigegebenen Motive.",
+            color = Ink.Paper, fontSize = 12.sp)
+        Spacer(Modifier.height(14.dp))
+        OutlinedButton(onClick = {
+            showExperiments = !showExperiments
+            chosen = null
+            target = null
+        }, modifier = Modifier.fillMaxWidth()) {
+            Text(if (showExperiments) "Experimente ausblenden" else "Unfertige Stil-Experimente ansehen")
         }
-        val shown = labDesigns.filter { it.style==activeStyle }
-        shown.chunked(3).forEach { row ->
-            Row(horizontalArrangement=Arrangement.spacedBy(6.dp)) {
-                row.forEach { design ->
-                    Column(Modifier.weight(1f).padding(vertical=4.dp)
-                        .border(if(chosen==design) 2.dp else 1.dp,
-                            if(chosen==design) Ink.Brass else Ink.Muted.copy(alpha=.4f),
-                            RoundedCornerShape(6.dp))
-                        .clickable { chosen=design;target=null }
-                        .semantics { contentDescription="${design.name} auswählen" },
-                        horizontalAlignment=Alignment.CenterHorizontally) {
-                        LabBucketArtwork(design,"",Modifier.fillMaxWidth().aspectRatio(1f))
-                        Text(design.name,color=Ink.Paper,fontSize=11.sp,maxLines=1)
+        if (showExperiments) {
+            Text("ENTWÜRFE · NICHT QUALITÄTSGEPRÜFT", color = Ink.Muted,
+                fontSize = 11.sp, fontWeight = FontWeight.Bold)
+            Spacer(Modifier.height(6.dp))
+            styles.chunked(4).forEachIndexed { row, group ->
+                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                    group.forEachIndexed { idx, name ->
+                        val index = row * 4 + idx
+                        Text(name, modifier = Modifier.weight(1f)
+                            .background(if (activeStyle == index) Ink.BrassDark else Ink.Walnut,
+                                RoundedCornerShape(5.dp))
+                            .clickable { activeStyle = index; chosen = null; target = null }
+                            .padding(vertical = 9.dp, horizontal = 2.dp)
+                            .semantics { contentDescription = "Stil $name auswählen" },
+                            color = Ink.Paper, fontSize = 10.sp, textAlign = TextAlign.Center)
                     }
                 }
-                repeat(3-row.size) { Spacer(Modifier.weight(1f)) }
+                Spacer(Modifier.height(5.dp))
+            }
+            val shown = labDesigns.filter { it.style == activeStyle }
+            shown.chunked(3).forEach { row ->
+                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    row.forEach { design ->
+                        Column(Modifier.weight(1f).padding(vertical = 4.dp)
+                            .border(if (chosen == design) 2.dp else 1.dp,
+                                if (chosen == design) Ink.Brass else Ink.Muted.copy(alpha = .4f),
+                                RoundedCornerShape(6.dp))
+                            .clickable { chosen = design; target = null }
+                            .semantics { contentDescription = "${design.name} Entwurf auswählen" },
+                            horizontalAlignment = Alignment.CenterHorizontally) {
+                            LabBucketArtwork(design, "", Modifier.fillMaxWidth().aspectRatio(1f))
+                            Text(design.name, color = Ink.Paper, fontSize = 11.sp, maxLines = 1)
+                        }
+                    }
+                    repeat(3 - row.size) { Spacer(Modifier.weight(1f)) }
+                }
             }
         }
-        Text("Von Menschen gestaltet · in Vorbereitung", color=Ink.Muted, fontSize=12.sp)
-        Text("Bildgeneriert · in Vorbereitung", color=Ink.Muted, fontSize=12.sp)
-        // Unusable raw photographs and text-only placeholders are intentionally
-        // excluded from the usable design picker until properly prepared assets exist.
         chosen?.let { design ->
             Spacer(Modifier.height(8.dp))
             Text("Vorschau", color=Ink.Paper, fontSize=13.sp)

@@ -101,7 +101,7 @@ class BucketArtworkCatalogTest {
         assertEquals(.5f, artwork.paperPath.position(.5f).first, .0001f)
     }
     @Test fun allIllustratedDesignsHaveUniqueStableIdsAndLayerResources() {
-        assertTrue(illustratedBucketAssets.size >= 6)
+        assertEquals(listOf("user-wicker-01", "user-wood-01", "user-zinc-01"), illustratedBucketAssets.map { it.id })
         assertEquals(illustratedBucketAssets.size,
             illustratedBucketAssets.map { it.id }.toSet().size)
         illustratedBucketAssets.forEach { asset ->

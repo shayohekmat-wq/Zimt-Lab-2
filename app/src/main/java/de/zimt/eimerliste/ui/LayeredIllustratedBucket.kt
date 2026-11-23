@@ -60,7 +60,7 @@ fun LayeredIllustratedBucket(
     paperProgress: Float,
     modifier: Modifier = Modifier
 ) {
-    val t = paperProgress.coerceIn(0f, 1f)
+    val t = if (paperProgress.isFinite()) paperProgress.coerceIn(0f, 1f) else 0f
     // Smooth the insertion/extraction at both ends; reverse progress uses the same path.
     val eased = t * t * (3f - 2f * t)
     // Artwork shares a viewport; only the paper flight is design-specific.

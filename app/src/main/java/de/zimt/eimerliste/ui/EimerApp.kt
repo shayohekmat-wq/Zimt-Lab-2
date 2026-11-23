@@ -12,7 +12,6 @@ import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
-import androidx.compose.ui.input.pointer.awaitPointerEvent
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.positionChanged
 import androidx.compose.ui.platform.LocalViewConfiguration
@@ -94,7 +93,7 @@ fun EimerApp(vm: EimerViewModel = viewModel()) {
         // A draft and its folded version are never deleted until the destination write succeeds.
         var draft by rememberSaveable { mutableStateOf("") }
         var drawing by rememberSaveable { mutableStateOf<String?>(null) }
-        var sketchOpen by remember { mutableStateOf(false) }
+        var sketchOpen by rememberSaveable { mutableStateOf(false) }
         var focusTextOnReturn by remember { mutableStateOf(false) }
         var heldBucketId by remember { mutableStateOf<String?>(null) }
         var pendingPaper by rememberSaveable { mutableStateOf<String?>(null) }
@@ -1109,7 +1108,7 @@ private fun BucketContents(
                                             val event = if (nextDeadline == null) {
                                                 awaitPointerEvent(PointerEventPass.Main)
                                             } else {
-                                                kotlinx.coroutines.withTimeoutOrNull(
+                                                withTimeoutOrNull(
                                                     (nextDeadline - elapsed).coerceAtLeast(1L)
                                                 ) { awaitPointerEvent(PointerEventPass.Main) }
                                             }
@@ -1168,7 +1167,6 @@ private fun BucketContents(
                                                 // Once ignition is confirmed, the reversible data operation
                                                 // is not owned by the visual animation's coroutine.
                                                 if (gesture.mayCommitBurn()) onIgnite(note)
-                                                kotlinx.coroutines.delay(1250L)
                                             }
                                             else -> Unit
                                         }

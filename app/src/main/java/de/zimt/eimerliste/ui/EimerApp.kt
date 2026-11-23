@@ -261,6 +261,7 @@ fun EimerApp(vm: EimerViewModel = viewModel()) {
                                 layeredStudy = BucketArtworkCatalog.studyMaterial(designSelections[bucket.id]),
                                 isWickerReference = designSelections[bucket.id] == WICKER_REFERENCE_ID,
                                 illustratedAsset = findIllustratedBucket(designSelections[bucket.id]),
+                                humanAsset = findHumanArtistBucket(designSelections[bucket.id]),
                                 count = countsByBucket[bucket.id] ?: 0,
                                 highlighted = hoveredBucket == bucket.id ||
                                     heldBucketId == bucket.id || ejectingBucketId == bucket.id,
@@ -528,6 +529,7 @@ private fun BucketTile(
     layeredStudy: LayeredMaterialStudy?,
     isWickerReference: Boolean,
     illustratedAsset: IllustratedBucketAsset?,
+    humanAsset: HumanArtistBucket?,
     count: Int,
     highlighted: Boolean,
     isHeld: Boolean,
@@ -640,7 +642,9 @@ private fun BucketTile(
                     scaleY = 1f - .042f * impact.value
                     transformOrigin = TransformOrigin(.5f, .84f)
                 }
-            if (illustratedAsset != null) {
+            if (humanAsset != null) {
+                HumanArtistBucketArtwork(humanAsset, artworkModifier)
+            } else if (illustratedAsset != null) {
                 LayeredIllustratedBucket(
                     asset = illustratedAsset,
                     title = bucket.name,

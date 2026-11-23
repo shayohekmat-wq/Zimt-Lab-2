@@ -309,6 +309,27 @@ fun DesignLab(
         Text("Eigenständige, freigestellte Objekte mit funktionierender Öffnung. Noch keine freigegebenen Motive.",
             color = Ink.Paper, fontSize = 12.sp)
         Spacer(Modifier.height(14.dp))
+        Spacer(Modifier.height(10.dp))
+        var resetPickerVisible by remember { mutableStateOf(false) }
+        OutlinedButton(
+            onClick = { resetPickerVisible = !resetPickerVisible },
+            modifier = Modifier.fillMaxWidth()
+        ) { Text(if (resetPickerVisible) "Originaldesigns schließen" else "Originaldesign wiederherstellen") }
+        if (resetPickerVisible) {
+            Text("Nur die Gestaltung wird zurückgesetzt. Alle Zettel bleiben erhalten.",
+                color = Ink.Muted, fontSize = 12.sp)
+            buckets.forEach { bucket ->
+                Row(Modifier.fillMaxWidth().padding(vertical = 3.dp),
+                    verticalAlignment = Alignment.CenterVertically) {
+                    Text(bucket.name, modifier = Modifier.weight(1f), color = Ink.Paper,
+                        fontSize = 12.sp, maxLines = 2)
+                    OutlinedButton(onClick = { onReset(bucket.id) }) {
+                        Text("Zurücksetzen")
+                    }
+                }
+            }
+        }
+        Spacer(Modifier.height(8.dp))
         OutlinedButton(onClick = {
             showExperiments = !showExperiments
             chosen = null

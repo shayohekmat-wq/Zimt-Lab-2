@@ -1011,19 +1011,23 @@ private fun BucketContents(
                                             val releasedBeforeWarning = kotlinx.coroutines.withTimeoutOrNull(
                                                 NoteHoldTiming.WARNING_MS - NoteHoldTiming.LIFT_MS
                                             ) { tryAwaitRelease() }
-                                            if (releasedBeforeWarning == null) {
+                                            val releasedNormally = if (releasedBeforeWarning != null) {
+                                                releasedBeforeWarning
+                                            } else {
                                                 onWarningHaptic()
-                                                val releasedBeforeSecondPulse = kotlinx.coroutines.withTimeoutOrNull(180L) {
+                                                val afterFirstPulse = kotlinx.coroutines.withTimeoutOrNull(180L) {
                                                     tryAwaitRelease()
                                                 }
-                                                if (releasedBeforeSecondPulse == null) {
+                                                if (afterFirstPulse != null) {
+                                                    afterFirstPulse
+                                                } else {
                                                     onWarningHaptic()
                                                     tryAwaitRelease()
                                                 }
                                             }
-                                            // Do not burn or delete anything until the reversible
-                                            // ignition/undo implementation is actually available.
-                                            onLiftNote(note)
+                                            // Cancelled gestures never open a destination picker.
+                                            // Ignition remains disabled until reversible deletion exists.
+                                            if (releasedNormally) onLiftNote(note)
                                         }
                                     }
                                 )

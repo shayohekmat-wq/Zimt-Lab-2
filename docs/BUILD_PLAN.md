@@ -4,23 +4,23 @@
 ## Entscheidung des Nutzers: keine festen acht Stilrichtungen
 Die ursprünglich festgelegten Familien Comic, 3D, Pixel Art, Aquarell, Low Poly, Knetoptik, Kupferstich und CharmingX4 sind **nur Inspirationsquellen, keine Abnahmebedingung**. Die bisherige Forderung „8 × 6“ ist aufgehoben. Keine künstliche Zahl oder Stilquote erzwingen. **Entscheidend ist eine vielfältige, kohärent kuratierte Auswahl wirklich neu entworfener, hochwertiger und technisch funktionierender Eimer.** Jeder Eimer benötigt eine erkennbare eigene Silhouette, Konstruktion, Materialidee und gestalterische Identität; Umfärbungen und marginale Variationen zählen nicht als neue Designs. Die früheren Ziele 48/24/12/84 sind Planungsgrößen, keine Liefergarantie oder Qualitätsmetrik.
 
-## Verbindliche Ergänzung · Referenzeimer UND menschliche Grafiken parallel (23.11.2026)
-Der Nutzer erlaubt ausdrücklich, zunächst **einen außergewöhnlich hochwertigen, technisch vollständigen Referenzeimer** zu konstruieren. **Parallel dazu müssen bei jedem geeigneten Designfortschritt konkrete von Menschen geschaffene Grafiken als prüfbare Kandidaten mitgeliefert werden.** Die Recherche menschlicher Grafiken darf nicht auf einen späten Projektmeilenstein verschoben werden.
+## Verbindliche Klarstellung · Von Menschen DESIGNTE digitale Grafikassets (23.11.2026)
+**Korrektur des Nutzers:** Mit „von Menschen gemacht“ sind **digitale Grafikdateien von menschlichen Künstlern/Designern** gemeint – professionell gestaltete transparente PNGs, SVGs, Sprite-Assets, 2D-Illustrationen, UI-Objektgrafiken, manuell modellierte und gerenderte 3D-Assets, Game-Art-Packs usw. **Nicht** speziell historische Korbillustrationen und **nicht** Fotografien menschlich gefertigter Körbe. Diese früheren Vorschläge waren eine Fehlinterpretation und werden nicht als bevorzugte Beschaffungsrichtung fortgeführt.
 
-### Zwei parallele Arbeitsstränge
-**A · Referenzobjekt:** Originaldesign mit eigenständiger Silhouette, Materialität, Öffnung, vorderer und hinterer Ebene, funktionierendem Papierwurf und lesbarem Namensschild. Nach visueller und technischer Prüfung dient das Rendering-System als Qualitätsreferenz, nicht als Vorlage für lauter ähnliche Eimer.
+### Parallele Pflichtstränge
+- **Referenzeimer:** ein außergewöhnlich hochwertiger, vollständig neu konstruierter und in der App funktionierender Eimer mit korrekter Öffnung, Vorder-/Rückebene, Papier-Okklusion und Animation.
+- **Human-designed Asset-Sourcing:** in jedem Designzyklus passende, wirklich von Menschen entworfene **digitale Grafikassets** identifizieren, prüfen, mit anklickbarem Original-Link und Lizenz dokumentieren und, soweit sinnvoll, technisch integrieren. Keine KI-generierten oder KI-assistierten Bilder in dieser Rubrik. Eine „No AI“-Selbstauskunft ist ein Indiz, keine absolute Garantie.
+- Auswahl nach gestalterischer Qualität und App-Tauglichkeit, nicht nach dem Wort „Korb“ im Titel. Auch Schachteln, Papierkörbe, Kisten, Töpfe, Gefäße oder eigens entworfene Behälter sind geeignet, sofern die Interaktion mit Zetteln funktioniert.
 
-**B · Menschliche Grafik-Kandidaten:** Pro Designzyklus geeignete konkrete Originaldateien/Urheber recherchieren und mit anklickbarem Original-Link, Schöpfer, Entstehungsjahr (soweit bekannt), eindeutiger Lizenzangabe und technischer Eignungsprüfung vorstellen. Kandidaten werden erst nach Einzelfall-Lizenzprüfung, Freistellung/Segmentierung, Ebenentrennung und Funktionsprüfung in der App als verfügbar gekennzeichnet. Menschlich hergestellte Gegenstände auf Fotos und von Menschen gezeichnete Illustrationen getrennt beschreiben. Ein KI-bearbeitetes oder KI-generiertes Bild darf nicht als menschliche Originalgrafik ausgegeben werden.
+### Konkrete digitale Asset-Quellen (Recherchekandidaten, nicht als integriert behaupten)
+- [Kenney – Game Assets All-in-1](https://kenney.itch.io/kenney-game-assets): menschlich gestaltete 2D-Sprites, PNG/SVG, 3D-Modelle; Anbieter kennzeichnet das Paket als ohne generative KI, Lizenz CC0. Geeignete **einzelne Behälter-/Objektassets erst im Pack auswählen und prüfen**. Kein blindes Übernehmen ganzer Pakete.
+- [Kenney – offizielle Lizenzinformationen](https://kenney.nl/support): kommerzielle Nutzung der Assetseiten-Pakete unter CC0 bestätigt; Datei-Lizenz mitführen.
+- [Gelidus Canimons – Vegetable Asset](https://gelidus-canimons.itch.io/vegetable-asset): laut Autor 100 % handgemalt, keine KI; PNGs plus Krita-/Photoshop-Dateien, enthält ein „vegetable basket“. Kostenpflichtiges Paket; Nutzung/Modifikation in kommerziellen Projekten laut Anbieter erlaubt, Rohdatei-Weiterverkauf verboten. Als mögliche illustrative Einzelgrafik prüfen, nicht als fertig integrierte Grafik.
+- [itch.io – Game Assets, No AI](https://itch.io/game-assets/newest/tag-free-asset/tag-no-ai): Suchquelle für manuell gestaltete Sprites, PNGs, 3D- und UI-Assets. Jede konkrete Datei, Lizenz und Urheberschaft separat prüfen.
 
-### Erste konkrete Recherchequellen (Kandidaten, keine schon integrierten Assets)
-- Wikimedia Commons: [Basket 1.png – historische Illustration aus Encyclopaedia Britannica 1911](https://commons.wikimedia.org/wiki/File:Basket_1.png). Die Dateiseite weist Public Domain aus. **Eignung:** gut als grafische Stil- und Formreferenz; echte Eimeröffnung und Vorder-/Rückebenen müssen separat aufbereitet werden.
-- Wikimedia Commons: [Drawings of baskets](https://commons.wikimedia.org/wiki/Category:Drawings_of_baskets) – historische und museale Originalzeichnungen, z. B. *Zoar Apple Basket* und *Shaker Basket*. **Eignung:** unterschiedliche Silhouetten und Konstruktionen; Rechte für jede konkrete Datei einzeln prüfen.
-- Wikimedia Commons: [Engravings of baskets](https://commons.wikimedia.org/wiki/Category:Engravings_of_baskets) – menschlich geschaffene Druckgrafiken. **Eignung:** Liniengrafik und eigenständige Vintage-Optik; häufig Hintergrundbereinigung und Kolorierungsentscheidung nötig.
-- Wikimedia Commons: [Decorated baskets](https://commons.wikimedia.org/wiki/Category:Decorated_baskets) – Fotografien realer, von Menschen gefertigter Körbe. **Eignung:** Material- und Silhouettenreferenz; Foto-Urheberrechte und Rechte am Motiv separat prüfen, Freistellung erforderlich.
-
-### Verbindliche Übergabe pro Kandidat
-`Quelle | Künstler/Urheber | Lizenzstatus | Dateiformat/Auflösung | Hintergrund-Freistellung | Öffnungs-/Vorderwand-Geometrie | mobile Lesbarkeit | Integrationsstatus`.
-Ein bloßer Suchtreffer oder eine hübsche Fotografie gilt **nicht** als integrierbares Eimerdesign. Ziel sind tatsächlich verwendbare, technisch aufbereitete Einzelgrafiken, ohne künstliche Stilquoten.
+### Pflichtprüfung pro Grafik
+`Künstler/Studio | Original-Dateilink | Nachweis Nicht-KI | Lizenz und kommerzielle Nutzung | Dateiformat und Auflösung | Transparenz | Bildqualität bei Handygröße | Öffnung/Layer/Maskierung | Attribution | Integrationsstatus`.
+Kein bloßes Web-Suchbild und keine einzelne Foto-/Zeichnungsreferenz als bereits integriertes Design ausgeben. Menschlich gestaltete Grafiken und generierte Unikate bleiben strikt getrennte Galerien.
 
 ## Konkreter nächster Entwicklungszyklus · ausführbarer Arbeitsauftrag
 **Priorität: Redesign implementieren, nicht nur dokumentieren.** Die vorhandene 0.3.3-dev4-Codebasis enthält noch prozedurale Entwürfe und keine freigegebene hochwertige Asset-Sammlung. Neue Versionsnummern sind keine Qualitätsbeweise. Diese Liste wird pro überprüftem Arbeitsergebnis aktualisiert.

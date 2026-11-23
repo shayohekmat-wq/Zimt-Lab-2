@@ -238,3 +238,21 @@ Wir wollen **viele außergewöhnlich schöne, wirklich unterschiedliche und voll
 **Neue technische Richtungen:** Blender/GLB/FBX-Render-Passes, transparente PNG-Layer und echte 3D-Texturen statt programmatischer Android-Vektorgrafiken. Dokumentiere für jedes Asset Autor, Originalquelle, konkreten Lizenztext, erforderliche Attribution, Dateiformat, Integrationspfad und tatsächliche Verwendung in docs/DESIGN_ASSET_PROVENANCE.md. Prüfe Android-Build, Galerie und Hauptgitter visuell, sichere vorhandene Eimer/Zettel/Zeichnungen, signiere nur mit bisherigem Schlüssel.
 
 **Status bei Eintrag:** Recherchekandidaten identifiziert; noch kein menschliches Asset tatsächlich in der App integriert. Dieser Abschnitt hat Vorrang vor älteren 50%-Quoten und allen bisherigen selbstprogrammierten Designstudien. Automationsauftrag entsprechend aktualisiert.
+
+## 15. Nutzerpriorität umgesetzt: echte menschliche Game-Art statt XML-Experimente
+
+**Verbindliche neue Priorität (23.11.2026):** Nutzer lehnt aktuelle selbst konstruierte XML-Designs ausdrücklich ab. Im nächsten Build müssen tatsächlich recherchierte digitale Künstlergrafiken **in der App enthalten** sein; nicht nur Quellen oder eine Aufgabenliste. Andere neue Techniken vor weiteren XML-Vektoren priorisieren.
+
+**Tatsächlich erledigt:**
+- [x] Fünf **echte Kenney-CC0-Game-Art-Modellvorschauen** als Binär-PNG in `app/src/main/res/drawable-nodpi/kenney_human_*.png` eingecheckt; Download durch `tools/import_human_assets.py` und erfolgreiche Import-Action `45101733924`, Commit `f0d64d9f`. Keine generierten Dummies oder XML-Neuzeichnungen.
+- [x] `HumanArtistBuckets.kt`: eigener Compose-Bildrenderer mit fünf stabilen IDs; tatsächlich importierte Künstlergrafiken statt programmiertem Ersatz.
+- [x] `DesignLab.kt`: neue Hauptkategorie **Von Künstlern** als Startansicht, tatsächliche Bildvorschauen, Zieleimer-Auswahl, Anwenden. Bisherige XML-Vektoren nur im Archiv, technische Studien getrennt.
+- [x] `EimerApp.kt`: echte Künstlerbilder auch im Hauptgitter auf zugewiesenen Eimern gerendert, nicht nur Galerie-Links.
+- [x] `BucketArtworkCatalog.kt`: stabile IDs für bestehende und neue Auswahl, kein Verlust bestehender Zettel/Zeichnungen.
+- [x] `docs/DESIGN_ASSET_PROVENANCE.md`: Urheber, CC0-Rechte, direkte Quelldateien, Limitierungen, Originalpakete dokumentiert.
+- [x] Tests für fünf stabile neue Design-IDs ergänzt.
+- [ ] Finaler Android-CI-Run des Gesamtstands, Screenshot-/Geräteabnahme und Update-Signatur müssen noch überprüft werden.
+
+**Qualitätsgrenze und Einschränkung:** Kenney-Thumbnails sind authentische **192×192-Renderings von menschlich gestalteten 3D-Modellen**. Noch keine hochauflösenden individuellen Premium-Eimer und keine separaten REAR/FRONT-Renderpasses. Diese neuen Motive sind als **statische** Grafiken integriert; Papier-Okklusion wird für sie nicht vorgetäuscht. Der Nutzerwunsch, echte menschliche Künstlergrafiken im Build zu haben, ist auf Quellcode- und Asset-Ebene umgesetzt; Build erst nach CI als verifiziert bezeichnen. 100-%-Premiumdesignlabor weiterhin nicht erreicht.
+
+**Nächster technischer Schwerpunkt:** Original-GLB-Modelle mit gemeinsamer Kamera, Licht und Geometrie in getrennte hochauflösende REAR/FRONT-RGBA-Passes rendern, echte Öffnung für Zettel prüfen, anschließend mehrere höherwertige menschliche Designer-Assets recherchieren und einbauen. Keine weiteren generischen XML-Farbvarianten.

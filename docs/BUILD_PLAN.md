@@ -522,3 +522,15 @@ Nutzer meldete per Screenshots, dass Flechtkorb korrekt wirkt, Holzkübel und Zi
 - [ ] Exakte 2-s-Zündung mit sichtbarer, schöner Papiermaske und zuverlässiger Undo-Snackbar implementieren, erst dann `burnNote` aufrufen. Reale Drag-and-drop-Interaktion und Okklusion fehlen ebenfalls.
 - [ ] PKCS12-Originalsignierung und Datenbestandsschutz bei Upgrade vor APK-Freigabe nachweisen.
 - Scope-Freeze Abschnitt 17 bleibt unverändert; kein neues Designlabor-Asset.
+
+
+### 0.3.3-dev31 / Build 44 — 2-s-Zündung und Undo erstmals an die UI angeschlossen
+- `5a986520`: Press-Intervall 700 ms (Lift-Haptik), 1500 ms (Wackeln + Warnimpuls), 1680 ms (zweiter Warnimpuls), 2000 ms (Zündung). Release vor 2000 ms öffnet die Umlegeauswahl; Abbruch öffnet sie nicht. Ab 2000 ms wird kein Umlege-Dialog mehr ausgelöst.
+- `de11be58`: Erste visuelle Burn-Übergangsanimation: Papier verblasst und fällt über 1250 ms zusammen, danach erfolgt ein reversibles `burnNote` mit Snackbar-Aktion `Rückgängig`. Das ist **nur ein Prototyp**: noch keine realistische Glutkante, Papierkrümmung, Asche oder Rauch.
+- `969342e2`: versionCode 44, versionName 0.3.3-dev31.
+- **Sicherheit:** Die Datenbank nutzt Soft-Delete und behält Text, Skizze und ID; Undo verwendet den konkreten Löschzeitstempel. Ohne Undo bleibt der Datensatz verborgen, wird aber nicht physisch gelöscht.
+- **Kritisch offen:** Fingerbewegung und Slop zuverlässig disarmen; Multi-Touch, Rotation, App-Abbruch und Animation-Cancellation testen. Die Coroutine-basierte 1250-ms-Animation ist noch nicht als transaktionaler, langlebiger Burn-Job abgesichert.
+- [ ] CI-Kompilierung, tatsächliche Android-Haptik, Snackbar/Undo und Datenbestand-Tests verifizieren.
+- [ ] Vollständige freie Drag-and-drop-Geste mit Overlay, realen Korbgrenzen und REAR/FRONT-Okklusion.
+- [ ] Hochwertige echte Papier-Verbrennungsanimation, Performance-/Accessibility-Abnahme und Originalsignatur-APK.
+- Der Designlabor-Scope-Freeze aus Abschnitt 17 bleibt unverändert.

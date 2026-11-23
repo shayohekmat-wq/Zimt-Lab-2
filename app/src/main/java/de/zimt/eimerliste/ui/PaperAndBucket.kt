@@ -73,6 +73,12 @@ fun PaperSheet(modifier: Modifier = Modifier, content: @Composable BoxScope.() -
     }
 }
 
+/** Shared, right-way-up return/enter glyph for both paper editing modes. */
+@Composable
+fun PaperSubmitGlyph() {
+    Text("↵", color = Ink.InkBlack, fontSize = 29.sp, fontWeight = FontWeight.Bold)
+}
+
 @Composable
 fun WoodBackdrop(modifier: Modifier = Modifier) {
     Canvas(modifier.background(Brush.verticalGradient(listOf(Ink.Night, Ink.Walnut, Ink.Night)))) {

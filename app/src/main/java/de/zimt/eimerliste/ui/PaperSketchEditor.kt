@@ -348,7 +348,7 @@ fun PaperSketchEditor(
                     },
                     enabled = !leaving,
                     colors = ButtonDefaults.buttonColors(containerColor = Ink.Brass, contentColor = Ink.InkBlack)
-                ) { Icon(Icons.AutoMirrored.Filled.Send, contentDescription = "Skizze übernehmen", tint = Ink.InkBlack) }
+                ) { PaperSubmitGlyph() }
             }
         }
     }

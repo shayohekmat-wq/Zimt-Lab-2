@@ -20,12 +20,47 @@ data class ArtworkOpening(
     }
 }
 
+/**
+ * Normalized paper trajectory. Coordinates stay independent of image resolution,
+ * so a paper animation can be reused by authored PNG/SVG and 3D-rendered assets.
+ */
+data class ArtworkPaperPath(
+    val startX: Float,
+    val startY: Float,
+    val endX: Float,
+    val endY: Float
+) {
+    init {
+        require(startX in 0f..1f && startY in 0f..1f)
+        require(endX in 0f..1f && endY in 0f..1f)
+    }
+
+    fun position(progress: Float): Pair<Float, Float> {
+        val t = progress.coerceIn(0f, 1f)
+        return (startX + (endX - startX) * t) to
+            (startY + (endY - startY) * t)
+    }
+}
+
+/** Paint order is enforced independently of asset origin. */
+enum class ArtworkLayer { REAR, PAPER, FRONT, LABEL }
+val BUCKET_PAINT_ORDER = listOf(
+    ArtworkLayer.REAR, ArtworkLayer.PAPER, ArtworkLayer.FRONT, ArtworkLayer.LABEL
+)
+
 data class BucketArtworkSpec(
     val id: String,
     val displayName: String,
     val origin: ArtworkOrigin,
     val opening: ArtworkOpening,
     val labelY: Float,
+    /** Coordinates used by both incoming and outgoing folded-paper animation. */
+    val paperPath: ArtworkPaperPath = ArtworkPaperPath(
+        startX = (opening.left + opening.right) / 2f,
+        startY = opening.top,
+        endX = (opening.left + opening.right) / 2f,
+        endY = opening.bottom
+    ),
     val backLayerResource: String? = null,
     val frontLayerResource: String? = null,
     val openingMaskResource: String? = null,
@@ -36,6 +71,7 @@ data class BucketArtworkSpec(
     init {
         require(id.isNotBlank() && displayName.isNotBlank())
         require(labelY in 0f..1f)
+        require(paperPath.startY <= opening.bottom && paperPath.endY >= opening.top)
         require(backLayerResource == null || backLayerResource.isNotBlank())
         require(frontLayerResource == null || frontLayerResource.isNotBlank())
         require(openingMaskResource == null || openingMaskResource.isNotBlank())

@@ -24,3 +24,6 @@ Keep original assets unchanged; REAR → PAPER → FRONT with identical geometry
 4. No release claim without original certificate, higher versionCode and real update-data verification.
 
 See `docs/DEVELOPMENT_DOCTRINE.md`, `docs/ARCHITECTURE.md`, `docs/DEVELOPMENT_STATUS.md` and `docs/RELEASE_AND_DATA.md`. Historical `docs/BUILD_PLAN.md` is retained for provenance; its old expansion sections are not active instructions.
+
+## Doctrine 7.0 — Scope und Akzeptanzabdeckung
+Die bestehende Produktdefinition und ausdrückliche Nutzerentscheidungen gelten weiter; die Reihenfolge ist keine numerische Funktionsbegrenzung. `docs/WORK_QUEUE.md` bildet vorläufig AC-L2-001 bis AC-L2-008 ab. Nach jedem Slice aktuelle UI-/Daten-/Gesten-/Designkriterien gegen Code und Nachweise abgleichen und fehlende Aufgaben ergänzen. Historische Kataloggrenzen nur entsprechend aktueller ausdrücklicher Produktentscheidungen interpretieren; nicht als pauschalen Feature-Freeze.

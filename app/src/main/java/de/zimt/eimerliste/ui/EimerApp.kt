@@ -1098,6 +1098,7 @@ private fun BucketContents(
                                     val startedAt = down.uptimeMillis
                                     var lastPosition = start
                                     val originalBounds = noteBounds
+                                    val pressSafety = NotePressSafety().apply { down(startedAt) }
                                     var lifted = false
                                     var moved = false
                                     var warned = false
@@ -1122,14 +1123,15 @@ private fun BucketContents(
                                         }
                                         if (event == null) {
                                             val now = android.os.SystemClock.uptimeMillis() - startedAt
-                                            if (!lifted && now >= NoteHoldTiming.LIFT_MS) {
+                                            val phase = pressSafety.advance(android.os.SystemClock.uptimeMillis())
+                                            if (!lifted && phase == NotePressSafety.Phase.LIFTED) {
                                                 lifted = true
                                                 onLiftHaptic()
-                                            } else if (!moved && !warned && now >= NoteHoldTiming.WARNING_MS) {
+                                            } else if (!moved && !warned && phase == NotePressSafety.Phase.WARNING) {
                                                 warned = true
                                                 warningActive = true
                                                 onWarningHaptic()
-                                            } else if (!moved && now >= NoteHoldTiming.IGNITION_MS) {
+                                            } else if (!moved && phase == NotePressSafety.Phase.IGNITED && pressSafety.mayCommitBurn()) {
                                                 ignited = true
                                                 warningActive = false
                                                 onIgnitionHaptic()
@@ -1139,14 +1141,17 @@ private fun BucketContents(
                                             val pointer = event.changes.firstOrNull { it.id == down.id }
                                             if (pointer == null || event.changes.size > 1 ||
                                                 event.changes.any { it.isConsumed && it.id != down.id }) {
+                                                pressSafety.cancel()
                                                 cancelled = true
                                             } else if (!pointer.pressed) {
+                                                pressSafety.release()
                                                 released = true
                                                 if (!pointer.previousPressed) cancelled = true
                                             } else {
                                                 lastPosition = pointer.position
                                                 val delta = lastPosition - start
                                                 if (delta.getDistance() > touchSlop) {
+                                                    pressSafety.move(beyondSlop = true)
                                                     if (!lifted) {
                                                         // Let the parent LazyColumn scroll naturally.
                                                         cancelled = true
@@ -1170,9 +1175,9 @@ private fun BucketContents(
                                             else -> onNote(note)
                                         }
                                     }
-                                    if (ignited) {
+                                    if (ignited && pressSafety.mayCommitBurn()) {
                                         kotlinx.coroutines.delay(1250L)
-                                        onIgnite(note)
+                                        if (pressSafety.mayCommitBurn()) onIgnite(note)
                                     }
                                     dragging = false
                                     noteDrag = Offset.Zero

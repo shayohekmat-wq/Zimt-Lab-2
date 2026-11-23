@@ -299,6 +299,113 @@ fun DesignLab(
             color = Ink.Muted, fontSize = 12.sp
         )
         Spacer(Modifier.height(12.dp))
+        // A genuine, usable selection gallery. Technical studies are explicitly marked.
+        var gallerySelected by remember { mutableStateOf(WICKER_REFERENCE_ID) }
+        var galleryTarget by remember { mutableStateOf<String?>(null) }
+        var galleryConfirm by remember { mutableStateOf(false) }
+        val galleryItems = listOf(
+            Triple(WICKER_REFERENCE_ID, "Geflochtener Picknickkorb", "ORIGINAL · REFERENZGRAFIK"),
+            Triple(BucketArtworkCatalog.studyId(LayeredMaterialStudy.WALNUT), "Walnuss", "TECHNISCHE MATERIALSTUDIE"),
+            Triple(BucketArtworkCatalog.studyId(LayeredMaterialStudy.ZINC), "Zink", "TECHNISCHE MATERIALSTUDIE"),
+            Triple(BucketArtworkCatalog.studyId(LayeredMaterialStudy.ENAMEL), "Emaille", "TECHNISCHE MATERIALSTUDIE")
+        )
+        Text("GESTALTUNGEN ANSEHEN & AUSPROBIEREN",
+            color = Ink.Brass, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+        Text("Wähle ein Motiv. Die große Vorschau zeigt die echte Darstellung, die auch auf deinem Eimer erscheint.",
+            color = Ink.Muted, fontSize = 12.sp)
+        galleryItems.chunked(2).forEach { group ->
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                group.forEach { item ->
+                    val selected = gallerySelected == item.first
+                    Column(
+                        Modifier.weight(1f).padding(vertical = 6.dp)
+                            .border(if (selected) 2.dp else 1.dp,
+                                if (selected) Ink.Brass else Ink.Muted.copy(alpha = .4f),
+                                RoundedCornerShape(9.dp))
+                            .background(if (selected) Ink.BrassDark.copy(alpha = .15f)
+                                else Ink.Walnut, RoundedCornerShape(9.dp))
+                            .clickable {
+                                gallerySelected = item.first
+                                galleryConfirm = false
+                            }
+                            .semantics { contentDescription = item.second + ", " + item.third }
+                            .padding(7.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        if (item.first == WICKER_REFERENCE_ID) {
+                            WickerReferenceBucket(item.second, 1f,
+                                Modifier.fillMaxWidth().height(135.dp))
+                        } else {
+                            val study = BucketArtworkCatalog.studyMaterial(item.first)
+                            if (study != null) LayeredBucketPrototype(
+                                title = item.second, paperProgress = 1f,
+                                material = study, modifier = Modifier.fillMaxWidth().height(135.dp))
+                        }
+                        Text(item.second, color = Ink.Paper, fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold, maxLines = 2)
+                        Text(item.third, color = Ink.Muted, fontSize = 9.sp, maxLines = 2,
+                            textAlign = TextAlign.Center)
+                        if (selected) Text("AUSGEWÄHLT", color = Ink.Brass, fontSize = 10.sp)
+                    }
+                }
+                repeat(2 - group.size) { Spacer(Modifier.weight(1f)) }
+            }
+        }
+        Spacer(Modifier.height(8.dp))
+        Text("GROSSE LIVE-VORSCHAU", color = Ink.Brass,
+            fontSize = 11.sp, fontWeight = FontWeight.Bold)
+        val galleryName = buckets.firstOrNull { it.id == galleryTarget }?.name ?: "Mein Eimer"
+        if (gallerySelected == WICKER_REFERENCE_ID) {
+            WickerReferenceBucket(galleryName, 1f, Modifier.fillMaxWidth().height(225.dp))
+        } else {
+            BucketArtworkCatalog.studyMaterial(gallerySelected)?.let { study ->
+                LayeredBucketPrototype(galleryName, 1f, study,
+                    Modifier.fillMaxWidth().height(225.dp))
+            }
+        }
+        Text("Auf welchen Eimer anwenden?", color = Ink.Paper, fontSize = 13.sp)
+        buckets.forEach { bucket ->
+            val selected = galleryTarget == bucket.id
+            Row(Modifier.fillMaxWidth().padding(vertical = 3.dp)
+                .border(if (selected) 2.dp else 1.dp,
+                    if (selected) Ink.Brass else Ink.Muted.copy(alpha = .4f),
+                    RoundedCornerShape(6.dp))
+                .clickable { galleryTarget = bucket.id; galleryConfirm = false }
+                .padding(11.dp), verticalAlignment = Alignment.CenterVertically) {
+                Text(if (selected) "●" else "○", color = Ink.Brass)
+                Spacer(Modifier.width(10.dp))
+                Text(bucket.name, color = Ink.Paper, modifier = Modifier.weight(1f))
+                if (selected) Text("ZIEL", color = Ink.Brass, fontSize = 10.sp)
+            }
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            OutlinedButton(onClick = {
+                gallerySelected = WICKER_REFERENCE_ID
+                galleryTarget = null
+                galleryConfirm = false
+            }, modifier = Modifier.weight(1f)) { Text("Abbrechen") }
+            Button(onClick = { galleryConfirm = true }, enabled = galleryTarget != null,
+                modifier = Modifier.weight(1f)) { Text("Übernehmen") }
+        }
+        if (galleryConfirm && galleryTarget != null) {
+            AlertDialog(
+                onDismissRequest = { galleryConfirm = false },
+                title = { Text("Design übernehmen?") },
+                text = { Text("Nur die Gestaltung wird geändert. Deine Zettel und Zeichnungen bleiben erhalten.") },
+                confirmButton = {
+                    TextButton(onClick = {
+                        galleryTarget?.let { onApplied(it, gallerySelected) }
+                        galleryConfirm = false
+                    }) { Text("Design anwenden") }
+                },
+                dismissButton = {
+                    TextButton(onClick = { galleryConfirm = false }) { Text("Zurück") }
+                }
+            )
+        }
+        Spacer(Modifier.height(22.dp))
+        Text("WEITERE REFERENZEN UND EXPERIMENTE",
+            color = Ink.Muted, fontSize = 11.sp, fontWeight = FontWeight.Bold)
         Text("NEU · EIGENSTÄNDIGE ORIGINALENTWÜRFE",
             color = Ink.Brass, fontSize = 12.sp, fontWeight = FontWeight.Bold)
         Text("Picknickkorb · handkonstruierte Flechtgrafik mit Henkel, Innenraum und eigener Vorderwand.",

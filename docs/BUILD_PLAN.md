@@ -1,3 +1,33 @@
+# VERBINDLICHER MASTERPLAN · DESIGNLABOR REDESIGN
+**Aktualisiert: 23. November 2026 · ersetzt bei Widerspruch ältere Designlabor-Ziele in diesem Dokument.**
+
+## Entscheidung des Nutzers: keine festen acht Stilrichtungen
+Die ursprünglich festgelegten Familien Comic, 3D, Pixel Art, Aquarell, Low Poly, Knetoptik, Kupferstich und CharmingX4 sind **nur Inspirationsquellen, keine Abnahmebedingung**. Die bisherige Forderung „8 × 6“ ist aufgehoben. Keine künstliche Zahl oder Stilquote erzwingen. **Entscheidend ist eine vielfältige, kohärent kuratierte Auswahl wirklich neu entworfener, hochwertiger und technisch funktionierender Eimer.** Jeder Eimer benötigt eine erkennbare eigene Silhouette, Konstruktion, Materialidee und gestalterische Identität; Umfärbungen und marginale Variationen zählen nicht als neue Designs. Die früheren Ziele 48/24/12/84 sind Planungsgrößen, keine Liefergarantie oder Qualitätsmetrik.
+
+## P0 · Qualitätssprung statt kosmetischer Patches
+1. **Design- und Asset-Pipeline neu aufbauen.** Bestehende primitive Compose-Canvas-Prototypen sind als Experimente gekennzeichnet und dürfen nicht als fertige Galerie erscheinen. Für die endgültigen Designs echte Originalillustrationen, transparente gerenderte Einzelobjekte, sorgfältig gestaltete Vektoren oder andere geeignete Techniken einsetzen; keine Textplatzhalter oder Contact-Sheet-Ausschnitte.
+2. **Ein herausragendes Referenzobjekt tatsächlich integrieren.** Ein Eimer mit überzeugender Silhouette, eigenständigem Material, glaubwürdigen Details, Schatten und lesbarem Etikett; auf dem Zieltelefon prüfen. Erst danach weitere Varianten produzieren. Design-Review mit klaren Kriterien, kein automatisches „10/10“.
+3. **Funktionierendes Layer-System:** rückwärtiger Eimerkörper / Öffnung / Papier / vordere Lippe und Vorderwand in korrekter Zeichenreihenfolge. Öffnungsmaske und geometrische Anker je Asset; Notiz beim Einwurf und beim Herausfallen korrekt verdecken, ohne Artefakte oder Z-Order-Fehler. Labels bleiben lesbar.
+4. **Designlabor als sinnvolles Produkt gestalten:** visuell kuratierte Galerie, Vorschau mit realem Eimernamen, klare Auswahl und Rücknahme, sinnvolle Gruppierung/Filter nur bei echtem Mehrwert, verständliche Zustände für Entwürfe und verfügbare Motive, keine überladene Tab-Wüste. Animations- und Haptikfeedback sparsam, hochwertig und barrierearm.
+5. **Reale Sammlungen getrennt ausweisen:** „Von Menschen gestaltet“ nur mit überprüfter menschlicher Urheberschaft, Originalquelle, Nutzungsrecht für App-Verteilung und Attribution; „Bildgeneriert“ nur mit tatsächlich generierten, integrierten Einzelassets. Nichts als verfügbar markieren, bevor das Objekt nutzbar und getestet ist.
+6. **Performance und Sicherheit:** keine permanenten Render-Loops; Speicherbedarf und Skalierung auf älteren Android-Geräten prüfen, minSdk 26 beachten. IDs stabil halten; bestehende Zuordnungen nicht löschen. Datenbank/Notizen/Zeichnungen unverändert erhalten. Spätere Integration in ZIMT über austauschbare Asset-/Render-/UI-Module und dokumentierte Schnittstellen.
+
+## Arbeitsreihenfolge und Abnahme
+- **Meilenstein A – technische Rendering-Grundlage:** nachweisbar korrektes Papier-Okklusionssystem, wiederverwendbare Asset-Schnittstelle und mindestens ein echter visueller Test. Kein „fertig“, wenn nur ein Designplan geschrieben wurde.
+- **Meilenstein B – erstes kuratiertes Referenzobjekt:** tatsächlich eingebunden, überzeugende Originalgrafik, funktioniert bei Einwurf/Entnahme, inklusive Name und Animation; auf kleinen und großen Displays begutachtet.
+- **Meilenstein C – Designlabor-Redesign:** nutzbare Galerie und Vorschau mit konsistenter Interaktion; Originaldesign wiederherstellbar; Experimente separat.
+- **Meilenstein D – diverse hochwertige Kollektion:** Stück für Stück eigenständige Formen und Materialien. Anzahl ergibt sich aus Qualitätsprüfung, nicht aus einer fixen Stil-Matrix. Menschliche und bildgenerierte Assets getrennt und korrekt dokumentiert.
+- **Meilenstein E – Releasequalität:** echte Geräte- und Update-Regression, Haptik, Motion-Reduction, TalkBack, FPS, RAM, Bestandsdaten, Kompatibilität und ZIMT-Modulgrenzen.
+
+## Release-Regeln
+Qualität vor Geschwindigkeit, aber **Zwischen-Builds sind ausdrücklich erlaubt**, wenn der tatsächliche Fortschritt und die offenen Probleme transparent benannt werden. Keine kosmetischen Mini-Commits als Ersatz für die Redesign-Meilensteine. Jeder als UPDATE ausgelieferte Build benötigt erfolgreiche CI, unveränderte `applicationId`, aufsteigenden `versionCode`, Originalsignatur und Schutz vorhandener Daten. Die installierbare, verifizierte Update-APK direkt im Chat bereitstellen, sofern technisch möglich; fehlende Signierung/Dateizugänglichkeit ehrlich als Blocker melden. Ein erfolgreicher GitHub-Workflow ist allein kein APK-Nachweis.
+
+## Definition von „fertig“
+Ein Design ist erst fertig, wenn es als Einzelobjekt überzeugt, **nicht** nur eine andere Farbe oder Formlinie besitzt, tatsächlich im Android-Build enthalten ist, auf dem Handy lesbar ist und sämtliche Papier-/Eimer-Interaktionen zuverlässig funktionieren. Unfertige Entwürfe niemals als fertige Sammlung bezeichnen.
+
+---
+## Historische Buildplanung (ältere Einträge; bei Widerspruch gilt der Masterplan oben)
+
 ## 23. November – Designlabor 0.3.0
 - Acht grafische Familien: Comic, 3D, Pixel Art, Aquarell, Low Poly, Knetoptik, Kupferstich, CharmingX4. Sechs katalogisierte Entwürfe je Stil (48 IDs).
 - Direkt unter den Eimern als Footer des bestehenden scrollbaren Gitters; Auswahl eines Entwurfs und Ziel-Eimers.

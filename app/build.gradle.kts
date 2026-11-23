@@ -12,8 +12,8 @@ android {
         applicationId = "de.zimt.eimerliste"
         minSdk = 26
         targetSdk = 36
-        versionCode = 33
-        versionName = "0.3.3-dev20"
+        versionCode = 34
+        versionName = "0.3.3-dev21"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
@@ -83,6 +83,11 @@ val verifyOriginalBucketPngs = tasks.register("verifyOriginalBucketPngs") {
             val width = java.nio.ByteBuffer.wrap(header, 16, 4).int
             val height = java.nio.ByteBuffer.wrap(header, 20, 4).int
             check(width > 0 && height > 0) { "Invalid PNG dimensions: $name" }
+            // Decode each user PNG to detect damaged image data, without rewriting it.
+            val decoded = javax.imageio.ImageIO.read(file)
+            check(decoded != null && decoded.width == width && decoded.height == height) {
+                "PNG pixel data cannot be decoded consistently: $name"
+            }
         }
     }
 }

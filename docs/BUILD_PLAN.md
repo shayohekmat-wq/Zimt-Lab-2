@@ -369,3 +369,11 @@ Nutzer meldete per Screenshots, dass Flechtkorb korrekt wirkt, Holzkübel und Zi
 - Commit `ee84c7d4`: versionCode 29 / versionName 0.3.3-dev16. CI result and original-key signature still require verification.
 - Blocker: original PKCS12 signing key not located in accessible Library search (password file exists). Do not sign with another key or publish unsigned/debug as an update. Device screenshots, seams and real paper occlusion remain unverified.
 - Scope freeze continues: only three user artwork pairs, no new gallery entries or design assets.
+
+
+### 0.3.3-dev17 / Build 30 — dezenter seitlicher Papierbogen (23.11.2026)
+- Vorheriger dev16-CI-Lauf `45151623250`: **success**; UNSIGNED-Release-Artefakt `14805864730` vorhanden, ausdrücklich **kein installierbares Update**.
+- `f7c2b67b`: Papier folgt nun beim Einwurf und Auswurf einem sehr kleinen, pro Originaleimer abgestimmten seitlichen Bogen mit sanftem Drehimpuls. REAR/FRONT-PNGs bleiben unverändert und deckungsgleich; kein neuer Designlabor-Inhalt. Die Bewegung ist noch nicht visuell auf Android abgenommen.
+- `358baf0a`: versionCode 30, versionName 0.3.3-dev17. CI-Resultat für Build 30 noch offen; bei nächstem Durchlauf zuerst prüfen.
+- Original-PKCS12-Schlüssel in aktueller Library-Suche nicht auffindbar; keine Ersatzsignatur, keine Debug-/Unsigned-APK als Update. Passwort allein genügt nicht.
+- Nächster Schritt: CI-Ergebnis und Papierbewegung an echten Screenshots prüfen, visuelle Öffnungsnähte sowie Persistenz auf Android testen. Scope-Freeze: nur `user-wicker-01`, `user-wood-01`, `user-zinc-01`.

@@ -35,7 +35,11 @@ val illustratedBucketAssets = listOf(
     IllustratedBucketAsset("illustrated-porcelain-01", "Porzellankrug",
         R.drawable.bucket_porcelain_rear, R.drawable.bucket_porcelain_front),
     IllustratedBucketAsset("illustrated-forest-01", "Waldkorb",
-        R.drawable.bucket_forest_rear, R.drawable.bucket_forest_front)
+        R.drawable.bucket_forest_rear, R.drawable.bucket_forest_front),
+    IllustratedBucketAsset("illustrated-clockwork-01", "Uhrwerkkorb",
+        R.drawable.bucket_clockwork_rear, R.drawable.bucket_clockwork_front),
+    IllustratedBucketAsset("illustrated-amethyst-01", "Amethysttruhe",
+        R.drawable.bucket_amethyst_rear, R.drawable.bucket_amethyst_front)
 )
 
 fun findIllustratedBucket(id: String?): IllustratedBucketAsset? =

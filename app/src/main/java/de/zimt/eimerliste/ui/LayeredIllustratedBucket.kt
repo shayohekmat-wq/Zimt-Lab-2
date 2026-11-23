@@ -53,6 +53,12 @@ IllustratedBucketAsset("illustrated-astral-01", "Astralgefäß",
 fun findIllustratedBucket(id: String?): IllustratedBucketAsset? =
     (illustratedBucketAssets + legacyIllustratedBucketAssets).firstOrNull { it.id == id }
 
+/** A short two-direction rock that settles at both ends of insertion and ejection. */
+internal fun bucketRockDegrees(progress: Float): Float {
+    val t = if (progress.isFinite()) progress.coerceIn(0f, 1f) else 0f
+    return (2.2f * kotlin.math.sin(2.0 * kotlin.math.PI * t) * kotlin.math.sin(kotlin.math.PI * t)).toFloat()
+}
+
 @Composable
 fun LayeredIllustratedBucket(
     asset: IllustratedBucketAsset,
@@ -76,7 +82,9 @@ fun LayeredIllustratedBucket(
         "user-zinc-01" -> .35f
         else -> .36f
     }
-    BoxWithConstraints(modifier, contentAlignment = Alignment.Center) {
+    // Move the complete vessel (both PNG layers and the paper) as one object.
+    // Never transform a single PNG independently: their authored registration must survive rocking.
+    BoxWithConstraints(modifier.graphicsLayer { rotationZ = bucketRockDegrees(t) }, contentAlignment = Alignment.Center) {
         val vesselHeight = maxHeight
         val vesselWidth = maxWidth
         // Slight sideways drift follows the opening, without moving either PNG layer.

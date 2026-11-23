@@ -377,3 +377,12 @@ Nutzer meldete per Screenshots, dass Flechtkorb korrekt wirkt, Holzkübel und Zi
 - `358baf0a`: versionCode 30, versionName 0.3.3-dev17. CI-Resultat für Build 30 noch offen; bei nächstem Durchlauf zuerst prüfen.
 - Original-PKCS12-Schlüssel in aktueller Library-Suche nicht auffindbar; keine Ersatzsignatur, keine Debug-/Unsigned-APK als Update. Passwort allein genügt nicht.
 - Nächster Schritt: CI-Ergebnis und Papierbewegung an echten Screenshots prüfen, visuelle Öffnungsnähte sowie Persistenz auf Android testen. Scope-Freeze: nur `user-wicker-01`, `user-wood-01`, `user-zinc-01`.
+
+
+### 0.3.3-dev18 / Build 31 — gemeinsames Eimer-Rütteln, Scope-Freeze (23.11.2026)
+- Vorheriger dev17-CI-Lauf [45161932040](https://github.com/shayohekmat-wq/Zimt-Lab-2/actions/runs/45161932040): **success**, UNSIGNED-Release-Artefakt `14811018301` vorhanden. Keine Originalsignatur verifiziert, daher kein Update auslieferbar.
+- Implementierung `498a47ef`: Während des Papierflugs schaukelt der **gesamte** Eimer mit beiden Original-PNG-Ebenen und Papier gemeinsam sehr leicht hin und her. Rotation ist an den Endpunkten null und auf maximal ca. 2,2 Grad begrenzt. REAR/FRONT erhalten niemals unterschiedliche Transformationen.
+- Regressionstest `f432a02a`: Ruhepositionen, Umkehrbarkeit, Vorzeichen, endliche Werte und Rotationsgrenze. Version `0.3.3-dev18`, versionCode `31` (`8e4806fa`).
+- [ ] CI und Unit-Tests für Build 31 abschließend prüfen. Echte visuelle Android-Abnahme, Papier-Okklusion und Bestandsdaten-Update weiterhin offen.
+- [ ] Signierblocker: privater ursprünglicher PKCS12-Schlüssel `Eimer-Liste-Update-Schluessel.p12` nicht in der zugänglichen Library-Suche gefunden. Passwortdatei allein genügt nicht; keine Ersatzsignatur und keine Debug-/UNSIGNED-Datei als Update.
+- **Weiterhin strikt:** nur Flechtkorb, Holzkübel und Zinkeimer im aktiven Designlabor, sechs unveränderte Nutzer-PNGs, stabile IDs und unverändertes Room-Schema. Nächster Zyklus zuerst CI/Originalsignatur prüfen und anschließend visuelle Öffnungs-/Papierqualität auf realen Android-Screenshots; keine Designlabor-Expansion.

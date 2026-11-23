@@ -118,4 +118,15 @@ class BucketArtworkCatalogTest {
         assertNull(findIllustratedBucket("lab-7-5"))
     }
 
+    @Test fun importedHumanArtistAssetsHaveStableDistinctIds() {
+        assertEquals(5, humanArtistBuckets.size)
+        assertEquals(5, humanArtistBuckets.map { it.id }.toSet().size)
+        humanArtistBuckets.forEach { asset ->
+            assertTrue(BucketArtworkCatalog.isKnownDesignId(asset.id))
+            assertEquals(asset, findHumanArtistBucket(asset.id))
+            assertTrue(asset.imageRes != 0)
+        }
+        assertNull(findHumanArtistBucket("illustrated-astral-01"))
+    }
+
 }

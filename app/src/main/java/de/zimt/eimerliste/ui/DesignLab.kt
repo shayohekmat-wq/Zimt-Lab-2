@@ -92,7 +92,11 @@ object BucketDesignPreferences {
     fun set(context: Context, bucketId: String, designId: String) {
         require(findLabDesign(designId) != null)
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
-            .putString(bucketId, designId).apply()\n    }\n    fun clear(context: Context, bucketId: String) {\n        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()\n            .remove(bucketId).apply()
+            .putString(bucketId, designId).apply()
+    }
+    fun clear(context: Context, bucketId: String) {
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
+            .remove(bucketId).apply()
     }
 }
 
@@ -315,11 +319,15 @@ fun DesignLab(
                 repeat(3-row.size) { Spacer(Modifier.weight(1f)) }
             }
         }
-        Text("Von Menschen gestaltet · in Vorbereitung", color=Ink.Muted, fontSize=12.sp)\n        Text("Bildgeneriert · in Vorbereitung", color=Ink.Muted, fontSize=12.sp)\n        // Unusable raw photographs and text-only placeholders are intentionally
+        Text("Von Menschen gestaltet · in Vorbereitung", color=Ink.Muted, fontSize=12.sp)
+        Text("Bildgeneriert · in Vorbereitung", color=Ink.Muted, fontSize=12.sp)
+        // Unusable raw photographs and text-only placeholders are intentionally
         // excluded from the usable design picker until properly prepared assets exist.
         chosen?.let { design ->
             Spacer(Modifier.height(8.dp))
-            Text("Vorschau", color=Ink.Paper, fontSize=13.sp)\n            LabBucketArtwork(design, buckets.firstOrNull { it.id == target }?.name ?: "Mein Eimer", Modifier.fillMaxWidth().height(156.dp))\n            Text("Für welchen Eimer?",color=Ink.Paper,fontSize=13.sp)
+            Text("Vorschau", color=Ink.Paper, fontSize=13.sp)
+            LabBucketArtwork(design, buckets.firstOrNull { it.id == target }?.name ?: "Mein Eimer", Modifier.fillMaxWidth().height(156.dp))
+            Text("Für welchen Eimer?",color=Ink.Paper,fontSize=13.sp)
             buckets.forEach { bucket ->
                 Text(bucket.name,modifier=Modifier.fillMaxWidth()
                     .clickable { target=bucket.id }.padding(9.dp)

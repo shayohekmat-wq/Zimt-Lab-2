@@ -400,22 +400,53 @@ fun DesignLab(
             Text("Vorschau", color=Ink.Paper, fontSize=13.sp)
             LabBucketArtwork(design, buckets.firstOrNull { it.id == target }?.name ?: "Mein Eimer", Modifier.fillMaxWidth().height(156.dp))
             Text("Für welchen Eimer?",color=Ink.Paper,fontSize=13.sp)
-            buckets.forEach { bucket ->
-                Text(bucket.name,modifier=Modifier.fillMaxWidth()
-                    .clickable { target=bucket.id }.padding(9.dp)
-                    .background(if(target==bucket.id) Ink.BrassDark.copy(alpha=.35f)
-                        else Color.Transparent),color=Ink.Paper)
+            if (buckets.isEmpty()) {
+                Text("Lege zuerst einen Eimer an, um ein Design anzuwenden.",
+                    color = Ink.Muted, fontSize = 12.sp)
             }
+            buckets.forEach { bucket ->
+                val isSelected = target == bucket.id
+                Row(
+                    Modifier.fillMaxWidth()
+                        .padding(vertical = 3.dp)
+                        .border(
+                            if (isSelected) 2.dp else 1.dp,
+                            if (isSelected) Ink.Brass else Ink.Muted.copy(alpha = .35f),
+                            RoundedCornerShape(5.dp)
+                        )
+                        .background(
+                            if (isSelected) Ink.BrassDark.copy(alpha = .35f) else Color.Transparent,
+                            RoundedCornerShape(5.dp)
+                        )
+                        .clickable { target = bucket.id }
+                        .semantics {
+                            contentDescription = if (isSelected)
+                                "${bucket.name}, als Zieleimer ausgewählt"
+                            else "${bucket.name}, als Zieleimer auswählen"
+                        }
+                        .padding(horizontal = 12.dp, vertical = 11.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(if (isSelected) "●" else "○", color = Ink.Brass,
+                        modifier = Modifier.padding(end = 9.dp))
+                    Text(bucket.name, color = Ink.Paper,
+                        fontSize = 13.sp, modifier = Modifier.weight(1f))
+                    if (isSelected) Text("AUSGEWÄHLT", color = Ink.Brass,
+                        fontSize = 10.sp, fontWeight = FontWeight.Bold)
+                }
+            }
+            Text(
+                "Die Vorschau ändert noch nichts. Erst Übernehmen speichert die Auswahl.",
+                color = Ink.Muted, fontSize = 11.sp
+            )
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedButton(
                     onClick = {
-                        target?.let(onReset)
                         chosen = null
                         target = null
                     },
-                    enabled = target != null,
                     modifier = Modifier.weight(1f)
-                ) { Text("Original") }
+                ) { Text("Abbrechen") }
                 Button(
                     onClick = {
                         target?.let { onApplied(it, design.id) }

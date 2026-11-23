@@ -425,13 +425,6 @@ fun EimerApp(vm: EimerViewModel = viewModel()) {
 @Composable
 private fun Header(onAdd: () -> Unit, bucketCount: Int) {
     Column(Modifier.fillMaxWidth().padding(start = 22.dp, end = 20.dp, top = 24.dp, bottom = 9.dp)) {
-        Text(
-            "",
-            letterSpacing = 1.55.sp,
-            fontSize = 9.sp,
-            color = Ink.Brass,
-            modifier = Modifier.padding(bottom = 4.dp)
-        )
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
             Column(Modifier.weight(1f)) {
                 Text(
@@ -441,13 +434,6 @@ private fun Header(onAdd: () -> Unit, bucketCount: Int) {
                     lineHeight = 36.sp,
                     fontWeight = FontWeight.Bold,
                     color = Ink.Paper
-                )
-                Spacer(Modifier.height(4.dp))
-                Text(
-                    "",
-                    fontSize = 12.sp,
-                    color = Ink.Muted,
-                    lineHeight = 16.sp
                 )
             }
             Spacer(Modifier.width(12.dp))
@@ -653,15 +639,6 @@ private fun PaperComposer(
         }
     }
     Column(modifier) {
-        if (!compact) {
-            Text(
-                "",
-                color = Ink.Muted,
-                fontSize = 10.sp,
-                letterSpacing = 1.2.sp,
-                modifier = Modifier.padding(start = 9.dp, bottom = 6.dp)
-            )
-        }
         PaperSheet(Modifier.fillMaxWidth().heightIn(min = if (compact) 81.dp else 95.dp)) {
             Row(
                 Modifier.fillMaxWidth().padding(start = 17.dp, end = 12.dp, top = 14.dp, bottom = 15.dp),
@@ -724,15 +701,6 @@ private fun PaperComposer(
                     PaperSubmitGlyph()
                 }
             }
-        }
-        if (!compact) {
-            Text(
-                if (drawing == null) ""
-                else "",
-                fontSize = 11.sp,
-                color = Ink.Muted,
-                modifier = Modifier.padding(start = 9.dp, top = 7.dp)
-            )
         }
     }
 }
@@ -883,8 +851,7 @@ private fun BucketContents(
         ) { Text("✦ Zufallszettel ziehen", color = Ink.BrassDark) }
         Spacer(Modifier.height(7.dp))
         if(notes.isEmpty()) {
-            Text("",
-                color=Ink.InkBlack,modifier=Modifier.padding(vertical=30.dp))
+            Text("Noch leer.", color=Ink.InkBlack, modifier=Modifier.padding(vertical=16.dp))
         } else {
             LazyColumn(
                 modifier=Modifier.fillMaxWidth().heightIn(max=510.dp),

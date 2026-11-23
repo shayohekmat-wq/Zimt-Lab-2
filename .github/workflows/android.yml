@@ -40,6 +40,21 @@ jobs:
         run: gradle --no-daemon :app:assembleDebug :app:testDebugUnitTest
       - name: Compile release after debug (avoid concurrent KSP schema writes)
         run: gradle --no-daemon :app:assembleRelease
+      - name: Verify release package and monotonically increasing version
+        shell: bash
+        run: |
+          set -euo pipefail
+          APK=$(find app/build/outputs/apk/release -name '*unsigned.apk' -print -quit)
+          test -s "$APK"
+          AAPT="$ANDROID_HOME/build-tools/37.0.0/aapt"
+          test -x "$AAPT"
+          BADGING=$("$AAPT" dump badging "$APK")
+          PACKAGE=$(printf '%s\\n' "$BADGING" | sed -n "s/^package: name='\\([^']*\\)'.*/\\1/p" | head -n 1)
+          VERSION=$(printf '%s\\n' "$BADGING" | sed -n "s/^package:.*versionCode='\\([0-9]*\\)'.*/\\1/p" | head -n 1)
+          test "$PACKAGE" = "de.zimt.eimerliste"
+          test -n "$VERSION"
+          test "$VERSION" -gt 38
+          echo "Release manifest verified: $PACKAGE versionCode=$VERSION"
       - name: Prepare offline signing tool
         shell: bash
         run: |

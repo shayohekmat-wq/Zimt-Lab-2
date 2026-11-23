@@ -100,4 +100,22 @@ class BucketArtworkCatalogTest {
         )
         assertEquals(.5f, artwork.paperPath.position(.5f).first, .0001f)
     }
+    @Test fun allIllustratedDesignsHaveUniqueStableIdsAndLayerResources() {
+        assertTrue(illustratedBucketAssets.size >= 6)
+        assertEquals(illustratedBucketAssets.size,
+            illustratedBucketAssets.map { it.id }.toSet().size)
+        illustratedBucketAssets.forEach { asset ->
+            assertTrue(BucketArtworkCatalog.isKnownDesignId(asset.id))
+            assertEquals(asset, findIllustratedBucket(asset.id))
+            assertTrue(asset.rear != asset.front)
+        }
+    }
+
+    @Test fun previousLegacySelectionAndWickerStayAvailable() {
+        assertTrue(BucketArtworkCatalog.isKnownDesignId(WICKER_REFERENCE_ID))
+        assertTrue(BucketArtworkCatalog.isKnownDesignId("lab-0-0"))
+        assertTrue(BucketArtworkCatalog.isKnownDesignId("lab-7-5"))
+        assertNull(findIllustratedBucket("lab-7-5"))
+    }
+
 }

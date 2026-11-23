@@ -502,3 +502,12 @@ Nutzer meldete per Screenshots, dass Flechtkorb korrekt wirkt, Holzkübel und Zi
 - [ ] CI/Kotlin-Kompilierung und echte Android-Bedienung prüfen. Finger-Release/Cancel/Scroll-Konflikte und Accessibility testen.
 - [ ] Finaler Drag-and-drop-Flow, Feueranimation und Undo sowie Originalsignatur/Update-Test fehlen. Keine APK als fertig deklarieren.
 - Designlabor-Scope-Freeze Abschnitt 17 bleibt vollständig unverändert.
+
+
+### 0.3.3-dev29 / Build 42 — haptische Warnphase ab 1,5 s
+- Commits `92453d0d`, `445a50f1`: Die Notiz-Press-Geste wartet nach dem 700-ms-Lift bis 1500 ms, bevor sie eine Warnvibration (`SegmentTick`) auslöst. Bei weiter gehaltenem Finger folgt nach 180 ms ein zweiter kurzer Impuls. Ein normaler Release ab 700 ms öffnet die sichere Zieleimer-Auswahl; bei abgebrochenem Press kein Dialog. Der Picker wird nicht mehr bei 700 ms während eines noch laufenden Press eingeblendet.
+- Commit `1e0cbe06`: `versionCode=42`, `versionName=0.3.3-dev29`.
+- **Grenzen:** Noch keine echte Drag-Interaktion, keine sichtbare Warn-Wackelanimation und keine Verbrennung bei 2 s. Langes Halten über 2 s führt derzeit nur zur späteren Zieleimerauswahl; es wird ausdrücklich nichts gelöscht. Haptik ist abhängig von Android-Hardware und muss auf Nothing Phone 3a und Moto G6 geprüft werden.
+- [ ] CI/Kotlin-Kompilierung, Gesture-Cancel/Scroll-Tests, reale Vibration und Release-Verhalten verifizieren.
+- [ ] Echte Papier-Drag-Animation, 1,5-s-Wackeln, 2-s-Feueranimation und Undo folgen vor finaler Freigabe. Originalsignatur und Bestandsdaten-Update ebenfalls offen.
+- Abschnitt 17: Designlabor bleibt auf genau drei Nutzer-Eimer eingefroren; Original-PNGs und Legacy-Daten unverändert.

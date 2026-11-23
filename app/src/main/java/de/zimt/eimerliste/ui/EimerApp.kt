@@ -1097,11 +1097,12 @@ private fun BucketContents(
                                 )
                             }
                     ) {
-                        Row(
-                            Modifier.fillMaxWidth().padding(18.dp),
-                            verticalAlignment=Alignment.CenterVertically
-                        ) {
-                            Text("✉",fontSize=22.sp,color=Ink.BrassDark)
+                        Box(Modifier.fillMaxWidth()) {
+                            Row(
+                                Modifier.fillMaxWidth().padding(18.dp),
+                                verticalAlignment=Alignment.CenterVertically
+                            ) {
+                                Text("✉",fontSize=22.sp,color=Ink.BrassDark)
                             Spacer(Modifier.width(13.dp))
                             Column(Modifier.weight(1f)) {
                                 Text(
@@ -1119,6 +1120,45 @@ private fun BucketContents(
                                     note.drawingPayload,
                                     Modifier.size(width=62.dp,height=45.dp)
                                 )
+                            }
+                            }
+                            if (burnProgress > 0f) {
+                                androidx.compose.foundation.Canvas(
+                                    Modifier.matchParentSize()
+                                        .semantics { contentDescription = "Zettel verbrennt" }
+                                ) {
+                                    val p = burnProgress.coerceIn(0f, 1f)
+                                    val edge = size.height * (1f - p)
+                                    val ember = androidx.compose.ui.graphics.Color(0xFFFF7A24)
+                                    val glow = androidx.compose.ui.graphics.Color(0xFFFFC56A)
+                                    val smoke = androidx.compose.ui.graphics.Color(0xFF74706A)
+                                    val ash = androidx.compose.ui.graphics.Color(0xFF55504B)
+                                    // The burn front travels from bottom to top; the random-looking
+                                    // offsets are deterministic to avoid jitter during recomposition.
+                                    for (i in 0 until 19) {
+                                        val x = size.width * ((i * 37 % 97) / 97f)
+                                        val drift = size.height * ((i * 13 % 17) / 100f)
+                                        val y = edge + drift - size.height * (i % 5) * .018f
+                                        drawCircle(
+                                            color = if (i % 3 == 0) glow else ember,
+                                            radius = (2f + (i % 4) * 1.8f) * density * (1f - p * .65f),
+                                            center = Offset(x, y),
+                                            alpha = (1f - p * .4f).coerceIn(0f, 1f)
+                                        )
+                                        drawCircle(
+                                            color = smoke,
+                                            radius = (7f + i % 6) * density * (1f + p),
+                                            center = Offset(x + p * 18f * density, y - p * 42f * density),
+                                            alpha = ((1f - p) * .22f).coerceIn(0f, 1f)
+                                        )
+                                        if (p > .35f) drawCircle(
+                                            color = ash,
+                                            radius = (1f + i % 3) * density,
+                                            center = Offset(x - p * 8f * density, y + p * 26f * density),
+                                            alpha = ((p - .35f) * .8f).coerceIn(0f, 1f)
+                                        )
+                                    }
+                                }
                             }
                         }
                     }

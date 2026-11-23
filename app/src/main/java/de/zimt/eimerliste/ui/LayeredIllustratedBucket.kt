@@ -16,7 +16,7 @@ import androidx.compose.ui.unit.sp
 import de.zimt.eimerliste.R
 
 /**
- * Actual bundled Android vector drawables, split into transparent rear and front layers.
+ * Bundled user PNG artwork split into transparent rear and front layers.
  * The folded note is always drawn between these layers and disappears into the opening.
  * This renderer is deliberately independent of the app's Room model for later ZIMT reuse.
  */
@@ -27,11 +27,16 @@ data class IllustratedBucketAsset(
     val front: Int
 )
 
+// Only the three user-provided PNG pairs are selectable in the active design laboratory.
 val illustratedBucketAssets = listOf(
     IllustratedBucketAsset("user-wicker-01", "Flechtkorb", R.drawable.flechtkorb_hinten, R.drawable.flechtkorb_vorne),
     IllustratedBucketAsset("user-wood-01", "Holzkübel", R.drawable.holzkuebel_hinten, R.drawable.holzkuebel_vorne),
-    IllustratedBucketAsset("user-zinc-01", "Zinkeimer", R.drawable.bucket_zinc_user_rear, R.drawable.bucket_zinc_user_front),
-    IllustratedBucketAsset("illustrated-astral-01", "Astralgefäß",
+    IllustratedBucketAsset("user-zinc-01", "Zinkeimer", R.drawable.bucket_zinc_user_rear, R.drawable.bucket_zinc_user_front)
+)
+
+// Historical designs remain resolvable for existing saved selections; never offer them as new choices.
+private val legacyIllustratedBucketAssets = listOf(
+IllustratedBucketAsset("illustrated-astral-01", "Astralgefäß",
         R.drawable.bucket_astral_rear, R.drawable.bucket_astral_front),
     IllustratedBucketAsset("illustrated-copper-01", "Kupferkessel",
         R.drawable.bucket_copper_rear, R.drawable.bucket_copper_front),
@@ -46,7 +51,7 @@ val illustratedBucketAssets = listOf(
 )
 
 fun findIllustratedBucket(id: String?): IllustratedBucketAsset? =
-    illustratedBucketAssets.firstOrNull { it.id == id }
+    (illustratedBucketAssets + legacyIllustratedBucketAssets).firstOrNull { it.id == id }
 
 @Composable
 fun LayeredIllustratedBucket(
@@ -71,9 +76,8 @@ fun LayeredIllustratedBucket(
     }
     BoxWithConstraints(modifier, contentAlignment = Alignment.Center) {
         val vesselHeight = maxHeight
-        // Both original PNGs share one viewport and the exact same Fit transform.
-        // Never independently scale or translate a layer: this breaks the rim
-        // geometry and can expose a false seam when the artwork is composited.
+        // Front and rear share the original Fit viewport; only the explicitly requested
+        // wood/zinc rear vertical alignment adjustment is applied below.
         // Start from the original, unscaled, pixel-aligned PNG viewport.
         // User-requested correction: move ONLY the interior/rear artwork UP.
         // No scaling, no horizontal shift, no changes to the front or wicker.

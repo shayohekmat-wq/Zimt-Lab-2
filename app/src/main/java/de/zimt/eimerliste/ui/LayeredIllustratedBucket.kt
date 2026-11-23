@@ -58,9 +58,22 @@ fun LayeredIllustratedBucket(
     val t = paperProgress.coerceIn(0f, 1f)
     BoxWithConstraints(modifier, contentAlignment = Alignment.Center) {
         val vesselHeight = maxHeight
+        // Original PNGs were rendered separately: their rear rim geometry is
+        // slightly narrower/taller than the foreground. Keep originals intact
+        // and calibrate only the rear layer in the same compositing viewport.
+        // Values were checked against the six 1254/2048px user source images.
+        val rearCalibration = when (asset.id) {
+            "user-wood-01" -> Triple(1.08f, .94f, .017f)
+            "user-zinc-01" -> Triple(1.08f, .94f, .016f)
+            else -> Triple(1f, 1f, 0f)
+        }
         Image(painterResource(asset.rear), contentDescription = null,
             contentScale = androidx.compose.ui.layout.ContentScale.Fit,
-            modifier = Modifier.fillMaxSize())
+            modifier = Modifier.fillMaxSize().graphicsLayer {
+                scaleX = rearCalibration.first
+                scaleY = rearCalibration.second
+                translationY = size.height * rearCalibration.third
+            })
         // Paper starts above the rim and descends behind the opaque front.
         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
             Box(

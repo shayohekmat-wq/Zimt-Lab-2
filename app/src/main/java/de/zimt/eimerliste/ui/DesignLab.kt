@@ -305,11 +305,31 @@ fun DesignLab(
             color = Ink.Paper, fontSize = 12.sp)
         var wickerTarget by remember { mutableStateOf<String?>(null) }
         var wickerDepth by remember { mutableFloatStateOf(0f) }
+        // Real, reversible in-gallery paper motion, not a static screenshot.
+        var wickerPlaying by remember { mutableStateOf(false) }
+        LaunchedEffect(wickerPlaying) {
+            if (wickerPlaying) {
+                for (step in 0..24) {
+                    wickerDepth = step / 24f
+                    kotlinx.coroutines.delay(24L)
+                }
+                for (step in 24 downTo 0) {
+                    wickerDepth = step / 24f
+                    kotlinx.coroutines.delay(24L)
+                }
+                wickerPlaying = false
+            }
+        }
         WickerReferenceBucket(
             title = buckets.firstOrNull { it.id == wickerTarget }?.name ?: "Mein Picknickkorb",
             paperProgress = wickerDepth,
             modifier = Modifier.fillMaxWidth().height(250.dp)
         )
+        OutlinedButton(
+            onClick = { wickerPlaying = true },
+            enabled = !wickerPlaying,
+            modifier = Modifier.fillMaxWidth()
+        ) { Text(if (wickerPlaying) "Papier bewegt sich …" else "Einwurf und Auswurf vorführen") }
         Text("Zettel-Einwurf ausprobieren", color = Ink.Muted, fontSize = 11.sp)
         Slider(value = wickerDepth, onValueChange = { wickerDepth = it },
             valueRange = 0f..1f, modifier = Modifier.fillMaxWidth())

@@ -3,6 +3,9 @@
 ## Mission and authority
 Build a polished, reliable, independently testable Android lab whose features can later be integrated into the main ZIMT app. The **latest explicit user request** controls product scope; preserve established safety, privacy and data-integrity requirements. Read the repository README, current source and any active product plan before implementing. Never assume requirements or a framework from another lab apply here.
 
+## Development Doctrine 5.0 — binding workflow interpretation
+Read `docs/DEVELOPMENT_DOCTRINE.md` and `docs/ACTIVE_SCOPE.md` first. No global feature freeze; use risk-based creative, feature, safety and release gates. Preserve three user-original bucket designs, all legacy data and signing identity. Coordinate overlapping automated work and require exact-SHA evidence for release claims.
+
 ## Execution protocol
 1. Inspect actual HEAD, relevant code, existing tests, CI configuration and the most recent verified checkpoint. Identify a concrete, end-to-end acceptance target; avoid repeating planning when implementation is possible.
 2. Implement a coherent vertical slice: UI, state, persistence, animations/haptics where applicable, accessibility, cancellation and error handling, and focused tests. Preserve modularity and integration boundaries. Keep app-specific shell and package identity separate from reusable feature logic.

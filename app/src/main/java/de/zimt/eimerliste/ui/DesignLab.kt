@@ -299,6 +299,36 @@ fun DesignLab(
             color = Ink.Muted, fontSize = 12.sp
         )
         Spacer(Modifier.height(12.dp))
+        // This interactive engineering proof is deliberately not selectable as premium art.
+        var showLayerProof by remember { mutableStateOf(false) }
+        var paperDepth by remember { mutableFloatStateOf(0f) }
+        OutlinedButton(
+            onClick = { showLayerProof = !showLayerProof },
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text(if (showLayerProof) "Ebenentest schließen" else "Ebenentest: Zettel im Eimer")
+        }
+        if (showLayerProof) {
+            Text("TECHNISCHER PROTOTYP · KEIN FERTIGES DESIGN",
+                color = Ink.Brass, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+            LayeredBucketPrototype(
+                title = "Papier-Test",
+                paperProgress = paperDepth,
+                modifier = Modifier.fillMaxWidth().height(210.dp)
+            )
+            Slider(
+                value = paperDepth,
+                onValueChange = { paperDepth = it },
+                valueRange = 0f..1f,
+                modifier = Modifier.fillMaxWidth()
+            )
+            Text(
+                "Zettelbewegung testen: Die Vorderwand verdeckt den Zettel beim Eintauchen. " +
+                    "Der Test verändert keine gespeicherten Eimer.",
+                color = Ink.Muted, fontSize = 12.sp
+            )
+        }
+        Spacer(Modifier.height(12.dp))
         Text("VON MENSCHEN GESTALTET", color = Ink.Brass, fontSize = 12.sp,
             fontWeight = FontWeight.Bold)
         Text("Digitale PNG-, SVG-, Sprite- und 3D-Grafiken von Designern. Die geprüfte Sammlung entsteht gerade.",

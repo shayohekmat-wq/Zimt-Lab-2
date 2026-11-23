@@ -182,7 +182,7 @@ fun EimerApp(vm: EimerViewModel = viewModel()) {
                     } catch (_: Exception) {
                         dragOffset = Offset.Zero
                         hoveredBucket = null
-                        haptics.performHapticFeedback(HapticFeedbackType.Reject)
+                        haptics.performHapticFeedback(HapticFeedbackType.LongPress)
                         snackbar.showSnackbar("Nicht gespeichert. Dein gefalteter Zettel bleibt erhalten.")
                     } finally {
                         saving = false
@@ -1097,6 +1097,7 @@ private fun BucketContents(
                                     val start = down.position
                                     val startedAt = down.uptimeMillis
                                     var lastPosition = start
+                                    val originalBounds = noteBounds
                                     var lifted = false
                                     var moved = false
                                     var warned = false
@@ -1107,14 +1108,16 @@ private fun BucketContents(
                                     dragging = false
                                     warningActive = false
                                     while (!released && !cancelled && !ignited) {
-                                        val elapsed = lastPosition.let { android.os.SystemClock.uptimeMillis() - startedAt }
+                                        val elapsed = android.os.SystemClock.uptimeMillis() - startedAt
                                         val nextDeadline = when {
                                             !lifted -> NoteHoldTiming.LIFT_MS
                                             !warned -> NoteHoldTiming.WARNING_MS
                                             else -> NoteHoldTiming.IGNITION_MS
                                         }
                                         val remaining = (nextDeadline - elapsed).coerceAtLeast(1L)
-                                        val event = kotlinx.coroutines.withTimeoutOrNull(remaining) {
+                                        val event = if (moved) {
+                                            awaitPointerEvent(PointerEventPass.Main)
+                                        } else kotlinx.coroutines.withTimeoutOrNull(remaining) {
                                             awaitPointerEvent(PointerEventPass.Main)
                                         }
                                         if (event == null) {
@@ -1152,7 +1155,7 @@ private fun BucketContents(
                                                         dragging = true
                                                         warningActive = false
                                                         noteDrag = delta
-                                                        noteBounds?.let { onDragLocation(it.center + delta) }
+                                                        originalBounds?.let { onDragLocation(it.center + delta) }
                                                         pointer.consume()
                                                     }
                                                 }
@@ -1162,7 +1165,7 @@ private fun BucketContents(
                                     warningActive = false
                                     if (released && !cancelled && !ignited) {
                                         when {
-                                            moved && lifted -> noteBounds?.let { onDropNote(note, it.center + noteDrag) }
+                                            moved && lifted -> originalBounds?.let { onDropNote(note, it.center + noteDrag) }
                                             lifted -> onLiftNote(note) // Accessible fallback picker.
                                             else -> onNote(note)
                                         }

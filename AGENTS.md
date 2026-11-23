@@ -39,3 +39,8 @@ For direct implementation orders, avoid progress-only messages and premature com
 - Accidental ignition during drag/scroll/multitouch/cancellation/lifecycle is forbidden; soft-delete and Undo must work reliably. Device verification of gestures/occlusion/haptics is distinct from CI success.
 - On the development branch consult `docs/ACCEPTANCE_CRITERIA.md`, `docs/ARCHITECTURE.md`, `docs/DEVELOPMENT_STATUS.md`, `docs/RELEASE_CHECKLIST.md` and `docs/RELEASE_AND_DATA.md`. Those documents may not yet exist on main: check before relying on them.
 - Current active feature work belongs on `development/integrated-milestone` until reviewed; do not silently merge incomplete work into main.
+
+### Motion First 2.1 override (newer, binding)
+- **Moto-G6-first, not generalized adaptive quality control:** follow `docs/MOTION_FIRST_PLAN.md` and researched `docs/MOTO_G6_REFERENCE.md`. The older `docs/ADAPTIVE_MOTION.md` now explicitly defers to this decision.
+- Optimize actual expensive animations while preserving maximalist motion, identical interaction choreography and input priority. No automatic quality tiers unless measured failures require a narrow exception.
+- **Deferred ZIMT Performance Lab:** separately installable, privacy-preserving, user-run physical-device test APK; record real frame/jank/memory/lifecycle metrics and export reports. Do not claim a real Motorola test before it happens.

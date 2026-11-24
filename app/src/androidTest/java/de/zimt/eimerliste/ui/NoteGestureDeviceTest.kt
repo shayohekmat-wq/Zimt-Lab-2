@@ -85,7 +85,9 @@ class NoteGestureDeviceTest {
             inject(MotionEvent.ACTION_DOWN, cancelStart.exactCenterX(), cancelStart.exactCenterY(), cancelDown)
             SystemClock.sleep(850)
             inject(MotionEvent.ACTION_MOVE, cancelStart.exactCenterX(), cancelStart.exactCenterY() - 55f, cancelDown)
-            checkNotNull(device.wait(Until.findObject(By.descStartsWith("Offener Zettel.")), 5000))
+            // The source artwork becomes transparent while the root draws the floating copy.
+            assertTrue("Carry tray should be visible before cancellation",
+                device.wait(Until.hasObject(By.text("ZETTEL ANGEHOBEN · EIMER WÄHLEN")), 5000))
             inject(MotionEvent.ACTION_MOVE, destinationBounds.exactCenterX(), destinationBounds.exactCenterY(), cancelDown)
             inject(MotionEvent.ACTION_CANCEL, destinationBounds.exactCenterX(), destinationBounds.exactCenterY(), cancelDown)
             device.pressBack()

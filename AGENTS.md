@@ -22,3 +22,5 @@
 
 ## Engineering Legibility Protocol 1.0
 Verbindlich ergänzend zur Development Doctrine: [ELP 1.0](docs/ENGINEERING_LEGIBILITY_PROTOCOL.md). Bei jeder relevanten Änderung verständliche Verantwortlichkeiten, explizite Datenwirkungen und nachvollziehbare Übergaben sicherstellen. Bestehende Dokumente und Nachweise nutzen; konkrete Probleme in der kanonischen Queue priorisieren. Keine separate Aufräumphase, keine zusätzlichen pauschalen Gates; Doctrine 7.0 und ihre Sicherheits- und Fortsetzungsregeln bleiben unverändert maßgeblich.
+
+Für ein Eimer-Liste-Update zuerst den [privaten Fundort des Originalschlüssels](docs/RELEASE_AND_DATA.md#privater-fundort-des-originalschlüssels) und die [Release-Checkliste](docs/RELEASE_CHECKLIST.md) prüfen.

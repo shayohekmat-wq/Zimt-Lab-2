@@ -2,6 +2,12 @@
 
 **Nicht verhandelbar:** Wer in Build 0.1 Eimer anlegt, muss sie in späteren Versionen wiederfinden. Eine neue APK allein garantiert das **nicht**.
 
+## Privater Fundort des Originalschlüssels
+
+Der dokumentierte Fundort ist die **private ChatGPT-Dateibibliothek des Projektinhabers**. Suche dort nach dem exakten Dateinamen `Eimer-Liste-Update-Schluessel.p12`. Die zugehörige Passwortdatei lag beim Signieren von Build 38 in derselben privaten Bibliothek. Einen stabilen Datei-Link oder eine Datei-ID nennt der damalige Bericht nicht. [Signiernachweis zu Build 38](https://github.com/shayohekmat-wq/Zimt-Lab-2/blob/5a92737946d451c895cd91b3ad42ba68a8520f3f/docs/BUILD_PLAN.md#L455)
+
+Ein autorisierter Lauf mit Bibliothekszugriff kann beide Dateien im privaten Signierkontext verwenden. In Codex kann die Auswahl eingebundener Bibliotheksdateien unter `/workspace/library-files` pro Lauf variieren. Prüfe den Zertifikatsfingerabdruck der signierten APK gegen die Release-Checkliste und vergleiche die APK mit dem gebauten Commit. Übergib nachfolgenden Läufen den Artefaktverweis und das Prüfergebnis. Für CI sind die vier vorhandenen Secret-Namen unten dokumentiert. Der Entwicklungsbranch baut das unsignierte Release für die private Signierung.
+
 ## Identität
 - `applicationId` bleibt über alle eigenständigen Lab-Builds identisch.
 - `versionCode` steigt monoton; auch Rückrollversuche werden explizit behandelt.
@@ -57,4 +63,4 @@ Die CI erzeugt auf jedem Commit eine unsignierte Release-APK und die Debug-Tests
 
 GitHub Actions verifiziert das resultierende APK anhand des festen Zertifikats-Fingerprints `40e6b73383a29f9ca792595b369329e2ab8f9165f49eec69b4eb57a8ffe26fe1` und der APK-v2/v3-Signaturen. Bei falschem Schlüssel schlägt der Build fehl, **keine** scheinbar updatefähige APK wird veröffentlicht.
 
-Die ChatGPT-Automation läuft alle drei Stunden und überwacht den neuen Build. Sie liefert eine neue APK nur dann als direkt aktualisierbare Datei aus, wenn Build, Signaturprüfung und verfügbarer Download nachweisbar sind. Ohne Secrets kann sie weiterhin dokumentierte Build-Pläne, Quellcode und unsignierte Testpakete erzeugen, aber nicht zuverlässig einen updatefähigen Release über verschiedene Ausführungsumgebungen hinweg signieren.
+Der aktuelle Codex-Entwicklungsauftrag prüft die Build-Ergebnisse stündlich. Sie liefert eine neue APK nur dann als direkt aktualisierbare Datei aus, wenn Build, Signaturprüfung und verfügbarer Download nachweisbar sind. Ohne Secrets kann sie weiterhin dokumentierte Build-Pläne, Quellcode und unsignierte Testpakete erzeugen, aber nicht zuverlässig einen updatefähigen Release über verschiedene Ausführungsumgebungen hinweg signieren.

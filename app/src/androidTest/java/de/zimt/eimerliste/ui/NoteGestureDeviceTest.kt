@@ -41,11 +41,15 @@ class NoteGestureDeviceTest {
 
     private fun currentNote() = runBlocking { dao.noteById(note.id)!! }
 
-    private fun inject(action: Int, x: Float, y: Float, down: Long) {
+    private fun inject(action: Int, x: Float, y: Float, down: Long,
+                       requireAccepted: Boolean = true): Boolean {
         val event = MotionEvent.obtain(down, SystemClock.uptimeMillis(), action, x, y, 0)
         event.source = InputDevice.SOURCE_TOUCHSCREEN
-        try { check(instrumentation.uiAutomation.injectInputEvent(event, true)) }
-        finally { event.recycle() }
+        return try {
+            val accepted = instrumentation.uiAutomation.injectInputEvent(event, true)
+            if (requireAccepted) check(accepted) { "Input injection rejected: action=$action" }
+            accepted
+        } finally { event.recycle() }
     }
 
     @Test fun shortTapDragCancelAndBurnUseRealPointerEvents() {
@@ -96,11 +100,29 @@ class NoteGestureDeviceTest {
             val burnDown = SystemClock.uptimeMillis()
             inject(MotionEvent.ACTION_DOWN, burn.centerX().toFloat(), burn.centerY().toFloat(), burnDown)
             SystemClock.sleep(2250)
-            inject(MotionEvent.ACTION_UP, burn.centerX().toFloat(), burn.centerY().toFloat(), burnDown)
+            // With animations disabled the successful burn may already dismiss the
+            // modal window. Android can reject a trailing synthetic UP in that case.
+            val releaseAccepted = inject(MotionEvent.ACTION_UP, burn.centerX().toFloat(),
+                burn.centerY().toFloat(), burnDown, requireAccepted = false)
             val burnUntil = SystemClock.uptimeMillis() + 5000
             while (currentNote().deletedAt == null && SystemClock.uptimeMillis() < burnUntil) SystemClock.sleep(100)
-            assertNotNull(currentNote().deletedAt)
+            assertNotNull("Burn must commit even if trailing UP was rejected: $releaseAccepted",
+                currentNote().deletedAt)
             assertEquals(note.id, currentNote().id)
+            // The persistent recovery path must restore the same row, not recreate a note.
+            SystemClock.sleep(500)
+            openBucket(target.name)
+            val recovery = checkNotNull(device.wait(Until.findObject(
+                By.textContains("Verbrannte Zettel (1)")), 10000))
+            recovery.click()
+            checkNotNull(device.wait(Until.findObject(By.text("↶ " + note.text)), 10000)).click()
+            val restoreUntil = SystemClock.uptimeMillis() + 5000
+            while (currentNote().deletedAt != null && SystemClock.uptimeMillis() < restoreUntil)
+                SystemClock.sleep(100)
+            assertNull(currentNote().deletedAt)
+            assertEquals(note.id, currentNote().id)
+            assertEquals(target.id, currentNote().bucketId)
+            assertEquals(note.text, currentNote().text)
         }
     }
 }

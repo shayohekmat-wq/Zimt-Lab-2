@@ -52,10 +52,10 @@ class ComposerDeviceTest {
                 SystemClock.sleep(100)
                 saved = runBlocking { dao.snapshotNotes().firstOrNull() }
             }
-            assertNotNull(saved)
-            assertEquals(bucket.id, saved!!.bucketId)
-            assertEquals(text, saved.text)
-            assertTrue(PaperDrawingCodec.hasInk(saved.drawingPayload))
+            val note = checkNotNull(saved) { "Composer did not save the note" }
+            assertEquals(bucket.id, note.bucketId)
+            assertEquals(text, note.text)
+            assertTrue(PaperDrawingCodec.hasInk(note.drawingPayload))
         }
     }
 }

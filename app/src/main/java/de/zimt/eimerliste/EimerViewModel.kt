@@ -60,6 +60,8 @@ class EimerViewModel(application: Application) : AndroidViewModel(application) {
     suspend fun undoBurn(noteId: String, deletedAt: Long) =
         repository.undoBurn(noteId, deletedAt)
 
+    suspend fun savedNote(id: String) = repository.savedNote(id)
+
     suspend fun backupSnapshot() = backupStore.snapshot()
     suspend fun restoreBackup(snapshot: EimerBackupSnapshot) = backupStore.merge(snapshot)
 

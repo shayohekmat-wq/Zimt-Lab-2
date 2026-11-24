@@ -11,6 +11,8 @@ class EimerRepository(private val dao: EimerDao) {
     val buckets = dao.observeBuckets()
     val counts = dao.observeCounts()
 
+    suspend fun savedNote(id: String): NoteEntity? = withContext(Dispatchers.IO) { dao.noteById(id) }
+
     fun notes(bucketId: String) = dao.observeNotes(bucketId)
     fun deletedNotes(bucketId: String) = dao.observeDeletedNotes(bucketId)
 

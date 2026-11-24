@@ -18,6 +18,7 @@ run_test de.zimt.eimerliste.data.UpgradeFixtureTest#seedOldInstallation seed
 adb install -r "$new" | tee "$evidence/install-upgrade.txt"
 run_test de.zimt.eimerliste.data.UpgradeFixtureTest#verifyAfterUpgrade verify-upgrade
 run_test de.zimt.eimerliste.data.EimerPersistenceTest persistence
+run_test de.zimt.eimerliste.data.DraftPersistenceTest draft
 # Use a clean test installation for UI gestures. The update fixture above has
 # already been verified, and this is the ephemeral debug emulator only.
 adb shell pm clear de.zimt.eimerliste.debug

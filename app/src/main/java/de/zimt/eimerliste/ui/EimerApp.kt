@@ -79,6 +79,8 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import de.zimt.eimerliste.EimerViewModel
 import de.zimt.eimerliste.data.BucketEntity
 import de.zimt.eimerliste.data.EimerBackupCodec
+import de.zimt.eimerliste.data.DraftPreferences
+import de.zimt.eimerliste.data.DraftSnapshot
 import de.zimt.eimerliste.data.NoteEntity
 import de.zimt.eimerliste.domain.BucketMaterial
 import de.zimt.eimerliste.domain.NoteRules
@@ -111,14 +113,37 @@ fun EimerApp(vm: EimerViewModel = viewModel()) {
         var backupDialog by remember { mutableStateOf(false) }
         var backupBusy by remember { mutableStateOf(false) }
 
-        // A draft and its folded version are never deleted until the destination write succeeds.
-        var draft by rememberSaveable { mutableStateOf("") }
-        var drawing by rememberSaveable { mutableStateOf<String?>(null) }
-        var sketchOpen by rememberSaveable { mutableStateOf(false) }
+        // Committed strokes and writing also survive a full process restart.
+        val appContext = LocalContext.current
+        val initialDraft = remember { DraftPreferences.load(appContext) }
+        var draft by rememberSaveable { mutableStateOf(initialDraft.text) }
+        var drawing by rememberSaveable { mutableStateOf(initialDraft.drawing) }
+        var sketchOpen by rememberSaveable { mutableStateOf(initialDraft.sketchOpen) }
         var focusTextOnReturn by remember { mutableStateOf(false) }
         var heldBucketId by remember { mutableStateOf<String?>(null) }
-        var pendingPaper by rememberSaveable { mutableStateOf<String?>(null) }
-        var pendingNoteId by rememberSaveable { mutableStateOf<String?>(null) }
+        var pendingPaper by rememberSaveable { mutableStateOf(initialDraft.foldedText) }
+        var pendingNoteId by rememberSaveable { mutableStateOf(initialDraft.noteId) }
+        val draftSnapshot = DraftSnapshot(draft, drawing, sketchOpen, pendingPaper, pendingNoteId)
+        SideEffect { DraftPreferences.saveIfChanged(appContext, draftSnapshot) }
+        // A Room insert may have succeeded immediately before the previous process
+        // stopped. Do not present that already-delivered draft as new work.
+        LaunchedEffect(Unit) {
+            val id = pendingNoteId
+            val foldedText = pendingPaper
+            val currentDrawing = drawing
+            if (id != null && foldedText != null) {
+                val saved = vm.savedNote(id)
+                if (saved != null && saved.text == NoteRules.normalize(foldedText) &&
+                    saved.drawingPayload == currentDrawing && pendingNoteId == id &&
+                    pendingPaper == foldedText && drawing == currentDrawing) {
+                    draft = ""
+                    drawing = null
+                    pendingPaper = null
+                    pendingNoteId = null
+                    sketchOpen = false
+                }
+            }
+        }
         var paperReady by remember { mutableStateOf(false) }
         var saving by remember { mutableStateOf(false) }
         val fold = remember { Animatable(0f) }
@@ -136,7 +161,6 @@ fun EimerApp(vm: EimerViewModel = viewModel()) {
         val focus = LocalFocusManager.current
         val haptics = LocalHapticFeedback.current
         val density = LocalDensity.current
-        val appContext = LocalContext.current
         val designSelections = remember { mutableStateMapOf<String, String>() }
         val exportDocument = rememberLauncherForActivityResult(
             ActivityResultContracts.CreateDocument("application/json")
@@ -259,12 +283,12 @@ fun EimerApp(vm: EimerViewModel = viewModel()) {
                         pendingNoteId = null
                         dragOffset = Offset.Zero
                         hoveredBucket = null
-                        snackbar.showSnackbar("Zettel in „" + destination.name + "“ gelandet.")
+                        scope.launch { snackbar.showSnackbar("Zettel in „" + destination.name + "“ gelandet.") }
                     } catch (_: Exception) {
                         dragOffset = Offset.Zero
                         hoveredBucket = null
                         haptics.performHapticFeedback(HapticFeedbackType.LongPress)
-                        snackbar.showSnackbar("Nicht gespeichert. Dein gefalteter Zettel bleibt erhalten.")
+                        scope.launch { snackbar.showSnackbar("Nicht gespeichert. Dein gefalteter Zettel bleibt erhalten.") }
                     } finally {
                         saving = false
                     }
@@ -697,8 +721,9 @@ fun EimerApp(vm: EimerViewModel = viewModel()) {
         }
         if (sketchOpen) {
             PaperSketchEditor(
-                initialPayload = drawing,
+                drawingPayload = drawing,
                 text = draft,
+                onPayloadChange = { drawing = it },
                 onTextEdit = {
                     drawing = it
                     sketchOpen = false
@@ -1076,6 +1101,10 @@ private fun PaperDropTray(
     onCancel: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val latestDragStart by rememberUpdatedState(onDragStart)
+    val latestDrag by rememberUpdatedState(onDrag)
+    val latestDragEnd by rememberUpdatedState(onDragEnd)
+    val latestDragCancel by rememberUpdatedState(onDragCancel)
     Column(modifier, horizontalAlignment = Alignment.CenterHorizontally) {
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             Text(
@@ -1100,12 +1129,12 @@ private fun PaperDropTray(
                     .pointerInput(ready, message) {
                         if (ready) {
                             detectDragGestures(
-                                onDragStart = onDragStart,
-                                onDragEnd = onDragEnd,
-                                onDragCancel = onDragCancel,
+                                onDragStart = { latestDragStart(it) },
+                                onDragEnd = { latestDragEnd() },
+                                onDragCancel = { latestDragCancel() },
                                 onDrag = { change, delta ->
                                     change.consume()
-                                    onDrag(delta)
+                                    latestDrag(delta)
                                 }
                             )
                         }

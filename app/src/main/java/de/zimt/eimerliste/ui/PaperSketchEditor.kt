@@ -99,13 +99,15 @@ private fun SketchCanvas(
     widthDp: Float,
     onStroke: (InkStroke) -> Unit,
     onActive: (InkStroke?) -> Unit,
+    enabled: Boolean,
     modifier: Modifier = Modifier
 ) {
     val latestStrokes by rememberUpdatedState(strokes)
     val latestStrokeCallback by rememberUpdatedState(onStroke)
     val latestActiveCallback by rememberUpdatedState(onActive)
     Canvas(
-        modifier.pointerInput(color, widthDp) {
+        modifier.pointerInput(color, widthDp, enabled) {
+            if (!enabled) return@pointerInput
             awaitEachGesture {
                 val down = awaitFirstDown(requireUnconsumed = true)
                 val canvasW = size.width.toFloat().coerceAtLeast(1f)
@@ -150,19 +152,20 @@ private fun SketchCanvas(
 
 @Composable
 fun PaperSketchEditor(
-    initialPayload: String?,
+    drawingPayload: String?,
     text: String,
+    onPayloadChange: (String?) -> Unit,
     onTextEdit: (String?) -> Unit,
     onApply: (String?) -> Unit,
     onFold: (String?) -> Unit
 ) {
-    // Persist the in-progress sketch across activity recreation, e.g. rotation.
-    var workingPayload by rememberSaveable(initialPayload) { mutableStateOf(initialPayload) }
-    val strokes = remember(workingPayload) { PaperDrawingCodec.decode(workingPayload) }
-    var redo by remember(initialPayload) { mutableStateOf(emptyList<InkStroke>()) }
+    // The composer owns the drawing. The editor owns only active input and redo history.
+    val strokes = remember(drawingPayload) { PaperDrawingCodec.decode(drawingPayload) }
+    var redoPayload by rememberSaveable { mutableStateOf<String?>(null) }
+    val redo = remember(redoPayload) { PaperDrawingCodec.decode(redoPayload) }
     var active by remember { mutableStateOf<InkStroke?>(null) }
-    var color by remember { mutableIntStateOf(sketchColors[0]) }
-    var widthDp by remember { mutableFloatStateOf(3f) }
+    var color by rememberSaveable { mutableIntStateOf(sketchColors[0]) }
+    var widthDp by rememberSaveable { mutableFloatStateOf(3f) }
     var status by remember { mutableStateOf<String?>(null) }
     val paperZoom = remember { Animatable(0f) }
     val scope = rememberCoroutineScope()
@@ -193,7 +196,7 @@ fun PaperSketchEditor(
 
     // Back also animates and preserves the sketch. No cancellation loses strokes.
     Dialog(
-        onDismissRequest = { leaveAndKeepSketch { onApply(workingPayload) } },
+        onDismissRequest = { leaveAndKeepSketch { onApply(drawingPayload) } },
         properties = DialogProperties(usePlatformDefaultWidth = false)
     ) {
         Column(
@@ -254,14 +257,15 @@ fun PaperSketchEditor(
                         val next = strokes + stroke
                         val encoded = PaperDrawingCodec.encode(next)
                         if (encoded != null) {
-                            workingPayload = encoded
-                            redo = emptyList()
+                            onPayloadChange(encoded)
+                            redoPayload = null
                             status = null
                         } else {
                             status = "Das Papier ist voll. Nutze Rückgängig oder Übernehmen."
                         }
                     },
                     onActive = { active = it },
+                    enabled = !leaving,
                     modifier = Modifier.fillMaxSize()
                 )
             }
@@ -312,7 +316,7 @@ fun PaperSketchEditor(
                         .background(Ink.PaperEdge)
                         .semantics { contentDescription = "Zur Textbearbeitung wechseln und Skizze behalten" }
                         .clickable(enabled = !leaving) {
-                            leaveAndKeepSketch(toText = true) { onTextEdit(workingPayload) }
+                            leaveAndKeepSketch(toText = true) { onTextEdit(drawingPayload) }
                         },
                     contentAlignment = Alignment.Center
                 ) {
@@ -328,20 +332,23 @@ fun PaperSketchEditor(
                 IconButton(
                     onClick = {
                         if (strokes.isNotEmpty()) {
-                            redo = redo + strokes.last()
-                            workingPayload = PaperDrawingCodec.encode(strokes.dropLast(1))
+                            redoPayload = PaperDrawingCodec.encode(redo + strokes.last())
+                            onPayloadChange(PaperDrawingCodec.encode(strokes.dropLast(1)))
                         }
                     },
-                    enabled = strokes.isNotEmpty()
+                    enabled = !leaving && strokes.isNotEmpty()
                 ) { Icon(Icons.Default.Undo, contentDescription = "Rückgängig", tint = Ink.Paper) }
                 IconButton(
                     onClick = {
                         if (redo.isNotEmpty()) {
-                            workingPayload = PaperDrawingCodec.encode(strokes + redo.last())
-                            redo = redo.dropLast(1)
+                            val next = PaperDrawingCodec.encode(strokes + redo.last())
+                            if (next != null) {
+                                onPayloadChange(next)
+                                redoPayload = PaperDrawingCodec.encode(redo.dropLast(1))
+                            }
                         }
                     },
-                    enabled = redo.isNotEmpty()
+                    enabled = !leaving && redo.isNotEmpty()
                 ) { Icon(Icons.Default.Redo, contentDescription = "Wiederholen", tint = Ink.Paper) }
             }
             if (status != null) {

@@ -10,6 +10,9 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import de.zimt.eimerliste.domain.ShakeDecision
 import kotlin.math.abs
 import kotlin.math.sqrt
@@ -22,7 +25,8 @@ import kotlin.math.sqrt
 fun ObserveBucketShake(heldBucketId: String?, onShaken: (String) -> Unit) {
     val context = LocalContext.current
     val currentCallback by rememberUpdatedState(onShaken)
-    DisposableEffect(heldBucketId, context) {
+    val lifecycle = LocalLifecycleOwner.current.lifecycle
+    DisposableEffect(heldBucketId, context, lifecycle) {
         val manager = context.getSystemService(Context.SENSOR_SERVICE) as SensorManager
         val sensor = manager.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION)
             ?: manager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
@@ -31,7 +35,8 @@ fun ObserveBucketShake(heldBucketId: String?, onShaken: (String) -> Unit) {
         val listener = object : SensorEventListener {
             override fun onSensorChanged(event: SensorEvent) {
                 val id = heldBucketId ?: return
-                if (fired || event.values.size < 3) return
+                if (fired || event.values.size < 3 ||
+                    !lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) return
                 val x = event.values[0]
                 val y = event.values[1]
                 val z = event.values[2]
@@ -46,9 +51,19 @@ fun ObserveBucketShake(heldBucketId: String?, onShaken: (String) -> Unit) {
             }
             override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) = Unit
         }
-        if (heldBucketId != null && sensor != null) {
-            manager.registerListener(listener, sensor, SensorManager.SENSOR_DELAY_GAME)
+        fun updateRegistration() {
+            manager.unregisterListener(listener)
+            if (!fired && heldBucketId != null && sensor != null &&
+                lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) {
+                manager.registerListener(listener, sensor, SensorManager.SENSOR_DELAY_GAME)
+            }
         }
-        onDispose { manager.unregisterListener(listener) }
+        val observer = LifecycleEventObserver { _, _ -> updateRegistration() }
+        lifecycle.addObserver(observer)
+        updateRegistration()
+        onDispose {
+            lifecycle.removeObserver(observer)
+            manager.unregisterListener(listener)
+        }
     }
 }

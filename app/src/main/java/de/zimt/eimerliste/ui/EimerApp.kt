@@ -84,6 +84,7 @@ import de.zimt.eimerliste.data.DraftSnapshot
 import de.zimt.eimerliste.data.NoteEntity
 import de.zimt.eimerliste.domain.BucketMaterial
 import de.zimt.eimerliste.domain.NoteRules
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.launch
@@ -132,7 +133,14 @@ fun EimerApp(vm: EimerViewModel = viewModel()) {
             val foldedText = pendingPaper
             val currentDrawing = drawing
             if (id != null && foldedText != null) {
-                val saved = vm.savedNote(id)
+                val saved = try {
+                    vm.savedNote(id)
+                } catch (cancelled: CancellationException) {
+                    throw cancelled
+                } catch (_: Exception) {
+                    // Keep the private draft intact if Room cannot be read yet.
+                    null
+                }
                 if (saved != null && saved.text == NoteRules.normalize(foldedText) &&
                     saved.drawingPayload == currentDrawing && pendingNoteId == id &&
                     pendingPaper == foldedText && drawing == currentDrawing) {

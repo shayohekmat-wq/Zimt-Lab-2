@@ -14,10 +14,12 @@ internal class NotePressSafety {
         private set
     private var startedAt: Long = 0
     private var disarmed = false
+    private var warningElapsedMs = 0L
 
     fun down(uptimeMs: Long) {
         startedAt = uptimeMs
         disarmed = false
+        warningElapsedMs = 0L
         releasedFrom = Phase.IDLE
         phase = Phase.PRESSED
     }
@@ -30,7 +32,9 @@ internal class NotePressSafety {
     fun nextDeadlineMs(): Long? = when (phase) {
         Phase.PRESSED -> NoteHoldTiming.LIFT_MS
         Phase.LIFTED -> NoteHoldTiming.WARNING_MS
-        Phase.WARNING -> NoteHoldTiming.IGNITION_MS
+        // A delayed Android frame must not skip the visible warning interval.
+        Phase.WARNING -> maxOf(NoteHoldTiming.IGNITION_MS,
+            warningElapsedMs + NoteHoldTiming.IGNITION_MS - NoteHoldTiming.WARNING_MS)
         else -> null
     }
 
@@ -47,11 +51,14 @@ internal class NotePressSafety {
     fun advance(uptimeMs: Long): Phase {
         if (!isTracking() || disarmed) return phase
         val elapsed = (uptimeMs - startedAt).coerceAtLeast(0)
-        phase = when {
-            elapsed >= NoteHoldTiming.IGNITION_MS -> Phase.IGNITED
-            elapsed >= NoteHoldTiming.WARNING_MS -> Phase.WARNING
-            elapsed >= NoteHoldTiming.LIFT_MS -> Phase.LIFTED
-            else -> Phase.PRESSED
+        phase = when (phase) {
+            Phase.PRESSED -> if (elapsed >= NoteHoldTiming.LIFT_MS) Phase.LIFTED else phase
+            Phase.LIFTED -> if (elapsed >= NoteHoldTiming.WARNING_MS) {
+                warningElapsedMs = elapsed
+                Phase.WARNING
+            } else phase
+            Phase.WARNING -> if (elapsed >= requireNotNull(nextDeadlineMs())) Phase.IGNITED else phase
+            else -> phase
         }
         return phase
     }

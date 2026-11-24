@@ -6,23 +6,29 @@ import org.junit.Assert.*
 import org.junit.Test
 import org.junit.runner.RunWith
 
+/** Separate instrumentation invocations verify that data is not merely held in RAM. */
 @RunWith(AndroidJUnit4::class)
 class DraftPersistenceTest {
-    @Test fun textSketchAndStableFoldIdentityRoundTrip() {
-        val context = InstrumentationRegistry.getInstrumentation().targetContext
+    private val context = InstrumentationRegistry.getInstrumentation().targetContext
+    private val sketch = "ZIMT-SKETCH/1\nff000000,2:0,0|10000,10000\n"
+    private val first = DraftSnapshot("Text\nAbsatz", sketch, true)
+    private val folded = first.copy(sketchOpen = false, foldedText = first.text, noteId = "stable-draft")
+
+    @Test fun seedDraft() {
         check(context.packageName.endsWith(".debug"))
-        val sketch = "ZIMT-SKETCH/1\nff000000,2:0,0|10000,10000\n"
-        val first = DraftSnapshot("Text\nAbsatz", sketch, true)
+        DraftPreferences.saveIfChanged(context, first)
+        assertEquals(first, DraftPreferences.load(context))
+        DraftPreferences.saveIfChanged(context, folded)
+        assertEquals(folded, DraftPreferences.load(context))
+    }
+
+    @Test fun verifyDraftAfterRestart() {
+        check(context.packageName.endsWith(".debug"))
         try {
-            DraftPreferences.saveIfChanged(context, first)
-            assertEquals(first, DraftPreferences.load(context))
-            val folded = first.copy(sketchOpen = false, foldedText = first.text, noteId = "stable-draft")
-            DraftPreferences.saveIfChanged(context, folded)
             assertEquals(folded, DraftPreferences.load(context))
-            DraftPreferences.saveIfChanged(context, DraftSnapshot())
-            assertEquals(DraftSnapshot(), DraftPreferences.load(context))
         } finally {
             DraftPreferences.saveIfChanged(context, DraftSnapshot())
         }
+        assertEquals(DraftSnapshot(), DraftPreferences.load(context))
     }
 }

@@ -50,6 +50,8 @@ class NotePressSafetyTest {
     @Test fun restartClearsPriorGestureState() {
         val g = NotePressSafety()
         g.down(0)
+        g.advance(700)
+        g.advance(1500)
         g.advance(2000)
         assertTrue(g.mayCommitBurn())
         g.down(3000)
@@ -60,6 +62,7 @@ class NotePressSafetyTest {
     @Test fun dragAfterWarningStillDisarms() {
         val g = NotePressSafety()
         g.down(0)
+        g.advance(700)
         assertEquals(NotePressSafety.Phase.WARNING, g.advance(1500))
         g.move(beyondSlop = true)
         assertEquals(NotePressSafety.Phase.DRAGGING, g.advance(5000))
@@ -69,6 +72,8 @@ class NotePressSafetyTest {
     @Test fun cancelAfterWarningNeverIgnites() {
         val g = NotePressSafety()
         g.down(0)
+        g.advance(700)
+        g.advance(1500)
         g.advance(1999)
         g.cancel()
         assertEquals(NotePressSafety.Phase.CANCELLED, g.advance(10000))
@@ -90,6 +95,7 @@ class NotePressSafetyTest {
     @Test fun dragCanNeverBecomeIgnitionOrReenterHold() {
         val g = NotePressSafety()
         g.down(0)
+        g.advance(700)
         g.advance(1500)
         g.move(true)
         assertNull(g.nextDeadlineMs())
@@ -102,6 +108,8 @@ class NotePressSafetyTest {
     @Test fun ignitionIsExactlyOnceAndCannotReenterTracking() {
         val g = NotePressSafety()
         g.down(0)
+        g.advance(700)
+        g.advance(1500)
         g.advance(2000)
         assertTrue(g.mayCommitBurn())
         assertFalse(g.isTracking())
@@ -109,6 +117,27 @@ class NotePressSafetyTest {
         g.move(true)
         assertEquals(NotePressSafety.Phase.IGNITED, g.phase)
         assertTrue(g.mayCommitBurn())
+    }
+
+    @Test fun delayedFrameNeverSkipsWarningOrIgnitesImmediately() {
+        val g = NotePressSafety()
+        g.down(0)
+        assertEquals(NotePressSafety.Phase.LIFTED, g.advance(2100))
+        assertFalse(g.mayCommitBurn())
+        assertEquals(NotePressSafety.Phase.WARNING, g.advance(2101))
+        assertEquals(2601L, g.nextDeadlineMs())
+        assertEquals(NotePressSafety.Phase.WARNING, g.advance(2600))
+        assertEquals(NotePressSafety.Phase.IGNITED, g.advance(2601))
+    }
+
+    @Test fun releasingDuringLateWarningNeverBurns() {
+        val g = NotePressSafety()
+        g.down(0)
+        g.advance(700)
+        g.advance(2400)
+        g.release()
+        assertEquals(NotePressSafety.Phase.RELEASED, g.advance(6000))
+        assertFalse(g.mayCommitBurn())
     }
 
     @Test fun scrollBeforeLiftCancelsAndDoesNotOpenNote() {

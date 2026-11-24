@@ -43,13 +43,34 @@ private fun tornPath(w: Float, h: Float): Path = Path().apply {
     close()
 }
 
+/** Uneven burn front, continuous and monotonically retreating from bottom to top. */
+internal fun burnEdgeFraction(progress: Float, x: Float): Float {
+    val t = progress.coerceIn(0f, 1f)
+    val wave = (kotlin.math.sin(x * 31f) * .045f + kotlin.math.sin(x * 71f) * .025f)
+    return (1f - t + wave * kotlin.math.sin(t * kotlin.math.PI.toFloat())).coerceIn(0f, 1f)
+}
+
 @Composable
-fun PaperSheet(modifier: Modifier = Modifier, content: @Composable BoxScope.() -> Unit) {
+fun PaperSheet(modifier: Modifier = Modifier, burnProgress: Float = 0f,
+               content: @Composable BoxScope.() -> Unit) {
     Box(modifier = modifier.drawWithContent {
         // Same torn outline for ink, text and background; no side inset is needed.
         val canvas = drawContext.canvas
         canvas.save()
         canvas.clipPath(tornPath(size.width, size.height))
+        if (burnProgress > 0f) {
+            val remainingPaper = Path().apply {
+                moveTo(0f, 0f)
+                lineTo(size.width, 0f)
+                for (i in 32 downTo 0) {
+                    val x = i / 32f
+                    lineTo(x * size.width, burnEdgeFraction(burnProgress, x) * size.height)
+                }
+                close()
+            }
+            // Clip material, text and sketch together; embers are drawn outside this layer.
+            canvas.clipPath(remainingPaper)
+        }
         drawContent()
         canvas.restore()
     }) {

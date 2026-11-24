@@ -20,6 +20,7 @@ import androidx.compose.ui.platform.LocalViewConfiguration
 import kotlin.math.abs
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -68,6 +69,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.zIndex
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import de.zimt.eimerliste.EimerViewModel
@@ -82,6 +85,7 @@ import kotlinx.coroutines.launch
 import java.util.UUID
 import kotlinx.coroutines.delay
 import kotlin.math.min
+import kotlin.math.roundToInt
 import kotlin.math.sin
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -526,6 +530,8 @@ fun EimerApp(vm: EimerViewModel = viewModel()) {
                     bucket = visibleBucket,
                     notes = if (visibleBucket.id == selectedId) notes else emptyList(),
                     destinations = buckets.filter { it.id != visibleBucket.id },
+                    destinationDesigns = designSelections,
+                    destinationImpacts = bucketImpactEvents,
                     burningNote = burningNote?.takeIf { it.bucketId == visibleBucket.id },
                     recoveryCount = deletedNotes.count { it.bucketId == visibleBucket.id },
                     onRecovery = { recoveryBucket = visibleBucket.id },
@@ -543,7 +549,8 @@ fun EimerApp(vm: EimerViewModel = viewModel()) {
                                     vm.moveNote(note.id, note.bucketId, target.id)
                                     bucketImpactEvents[target.id] = (bucketImpactEvents[target.id] ?: 0) + 1
                                     haptics.performHapticFeedback(HapticFeedbackType.Confirm)
-                                    openBucket = null
+                                    if (ValueAnimator.areAnimatorsEnabled()) delay(480L)
+                                    if (openBucket == note.bucketId) openBucket = null
                                     snackbar.showSnackbar("Zettel in ${target.name} gelegt.")
                                 } catch (error: Exception) {
                                     snackbar.showSnackbar(error.message ?: "Verschieben fehlgeschlagen.")
@@ -566,7 +573,7 @@ fun EimerApp(vm: EimerViewModel = viewModel()) {
                             scope.launch {
                             try {
                                 val deletedAt = vm.burnNote(note.id)
-                                if (ValueAnimator.areAnimatorsEnabled()) delay(1250L)
+                                if (ValueAnimator.areAnimatorsEnabled()) delay(1700L)
                                 burningNote = null
                                 if (openBucket == note.bucketId) openBucket = null
                                 haptics.performHapticFeedback(HapticFeedbackType.Confirm)
@@ -1176,6 +1183,8 @@ private fun BucketContents(
     bucket: BucketEntity,
     notes: List<NoteEntity>,
     destinations: List<BucketEntity>,
+    destinationDesigns: Map<String, String>,
+    destinationImpacts: Map<String, Int>,
     burningNote: NoteEntity?,
     recoveryCount: Int,
     onRecovery: () -> Unit,
@@ -1193,12 +1202,15 @@ private fun BucketContents(
     // use this same root, not coordinates of obscured tiles in the activity.
     val targetBounds = remember { mutableStateMapOf<String, Rect>() }
     var hoveredTarget by remember { mutableStateOf<String?>(null) }
+    var dragPreview by remember { mutableStateOf<Pair<NoteEntity, Offset>?>(null) }
+    var sheetOrigin by remember { mutableStateOf(Offset.Zero) }
     fun targetAt(point: Offset): String? = destinations.firstOrNull {
         targetBounds[it.id]?.contains(point) == true
     }?.id
     val displayedNotes = if (burningNote != null && notes.none { it.id == burningNote.id }) {
         (notes + burningNote).sortedByDescending { it.createdAt }
     } else notes
+    Box(Modifier.fillMaxWidth().onGloballyPositioned { sheetOrigin = it.boundsInRoot().topLeft }) {
     Column(Modifier.fillMaxWidth().padding(horizontal=20.dp).heightIn(min=260.dp,max=650.dp)) {
         Text(bucket.name,fontFamily=FontFamily.Serif,fontSize=30.sp,fontWeight=FontWeight.Bold)
         Text(
@@ -1218,24 +1230,39 @@ private fun BucketContents(
         }
         if (destinations.isNotEmpty()) {
             Text("ZETTEL HIERHER ZIEHEN", color = Ink.BrassDark, fontSize = 10.sp)
-            Row(
-                Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(vertical = 6.dp),
+            LazyRow(
+                Modifier.fillMaxWidth().padding(vertical = 6.dp),
                 horizontalArrangement = Arrangement.spacedBy(7.dp)
             ) {
-                destinations.forEach { target ->
-                    key(target.id) {
-                        DisposableEffect(target.id) { onDispose { targetBounds.remove(target.id) } }
-                        val active = hoveredTarget == target.id
-                        Surface(
-                            modifier = Modifier.widthIn(min = 86.dp, max = 146.dp)
-                                .onGloballyPositioned { targetBounds[target.id] = it.boundsInRoot() },
-                            shape = RoundedCornerShape(6.dp),
-                            color = if (active) Ink.Brass else Ink.Paper,
-                            border = BorderStroke(if (active) 2.dp else 1.dp, Ink.BrassDark)
-                        ) {
-                            Text("↳ " + target.name, modifier = Modifier.padding(12.dp),
+                items(destinations, key = { it.id }) { target ->
+                    DisposableEffect(target.id) { onDispose { targetBounds.remove(target.id) } }
+                    val active = hoveredTarget == target.id
+                    val asset = findIllustratedBucket(destinationDesigns[target.id])
+                    val impactToken = destinationImpacts[target.id] ?: 0
+                    val drop = remember { Animatable(1f) }
+                    LaunchedEffect(impactToken) {
+                        if (impactToken > 0 && ValueAnimator.areAnimatorsEnabled()) {
+                            drop.snapTo(0f)
+                            drop.animateTo(1f, tween(460, easing = FastOutSlowInEasing))
+                        } else drop.snapTo(1f)
+                    }
+                    Surface(
+                        modifier = Modifier.width(104.dp)
+                            .onGloballyPositioned { targetBounds[target.id] = it.boundsInRoot() },
+                        shape = RoundedCornerShape(8.dp),
+                        color = if (active) Ink.Brass.copy(alpha = .38f) else Ink.Paper,
+                        border = BorderStroke(if (active) 2.dp else 1.dp, Ink.BrassDark)
+                    ) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            val artwork = Modifier.size(width = 78.dp, height = 70.dp)
+                            if (asset != null) {
+                                LayeredIllustratedBucket(asset, target.name, drop.value, artwork)
+                            } else {
+                                BucketArtwork(BucketMaterial.fromKey(target.material), target.name, artwork)
+                            }
+                            Text(target.name, modifier = Modifier.padding(start = 5.dp, end = 5.dp, bottom = 5.dp),
                                 maxLines = 1, overflow = TextOverflow.Ellipsis,
-                                fontSize = 12.sp, color = Ink.InkBlack)
+                                fontSize = 11.sp, color = Ink.InkBlack)
                         }
                     }
                 }
@@ -1261,32 +1288,35 @@ private fun BucketContents(
                         label = "note-lift"
                     )
                     val burningActive = burningNote?.id == note.id
-                    var noteDrag by remember(note.id) { mutableStateOf(Offset.Zero) }
                     var noteCoordinates by remember(note.id) { mutableStateOf<LayoutCoordinates?>(null) }
-                                        val burnProgress by androidx.compose.animation.core.animateFloatAsState(
+                    val burnProgress by androidx.compose.animation.core.animateFloatAsState(
                         targetValue = if (burningActive) 1f else 0f,
-                        animationSpec = tween(durationMillis = 1250, easing = FastOutSlowInEasing),
+                        animationSpec = tween(durationMillis = 1700, easing = FastOutSlowInEasing),
                         label = "paper-burn-progress"
                     )
-                    val warningTransition = androidx.compose.animation.core.rememberInfiniteTransition(label = "note-warning")
-                    val warningAngle by warningTransition.animateFloat(
-                        initialValue = -1.1f,
-                        targetValue = 1.1f,
-                        animationSpec = androidx.compose.animation.core.infiniteRepeatable(
-                            animation = tween(durationMillis = 115, easing = androidx.compose.animation.core.LinearEasing),
-                            repeatMode = androidx.compose.animation.core.RepeatMode.Reverse
-                        ), label = "note-warning-angle"
-                    )
-                    PaperSheet(
+                    val warningAngle = remember(note.id) { Animatable(0f) }
+                    LaunchedEffect(warningActive) {
+                        if (warningActive && ValueAnimator.areAnimatorsEnabled()) {
+                            while (true) {
+                                warningAngle.animateTo(-1.1f, tween(90))
+                                warningAngle.animateTo(1.1f, tween(135))
+                            }
+                        } else warningAngle.snapTo(0f)
+                    }
+                    LaunchedEffect(warningActive) {
+                        if (warningActive) {
+                            delay(180)
+                            onWarningHaptic()
+                        }
+                    }
+                    Box(
                         Modifier.fillMaxWidth().heightIn(min=68.dp)
                             .graphicsLayer {
-                                rotationZ = if (warningActive) warningAngle else 0f
-                                translationX = noteDrag.x
-                                translationY = noteDrag.y
-                                scaleX = liftScale * (1f - burnProgress * 0.28f)
-                                scaleY = liftScale * (1f - burnProgress * 0.52f)
+                                rotationZ = if (warningActive) warningAngle.value else 0f
+                                scaleX = liftScale * (1f - burnProgress * .07f)
+                                scaleY = liftScale
                                 shadowElevation = if (lifted) 9.dp.toPx() else 0f
-                                alpha = 1f - burnProgress
+                                alpha = if (dragPreview?.first?.id == note.id) .32f else 1f
                             }
                             .onGloballyPositioned { noteCoordinates = it }
                             .semantics {
@@ -1306,7 +1336,6 @@ private fun BucketContents(
                                     val startedAt = down.uptimeMillis
                                     var lastPosition = start
                                     val gesture = NotePressSafety().apply { down(startedAt) }
-                                    noteDrag = Offset.Zero
                                     visualPhase = gesture.phase
                                     try {
                                         while (gesture.isTracking()) {
@@ -1363,7 +1392,7 @@ private fun BucketContents(
                                                         } else {
                                                             gesture.move(beyondSlop = true)
                                                             visualPhase = gesture.phase
-                                                            noteDrag = delta
+                                                            dragPreview = note to lastPosition
                                                             hoveredTarget = targetAt(lastPosition)
                                                             pointer.consume()
                                                         }
@@ -1389,13 +1418,14 @@ private fun BucketContents(
                                         }
                                     } finally {
                                         visualPhase = NotePressSafety.Phase.PRESSED
-                                        noteDrag = Offset.Zero
+                                        if (dragPreview?.first?.id == note.id) dragPreview = null
                                         hoveredTarget = null
                                     }
                                 }
                             }
                     ) {
                         Box(Modifier.fillMaxWidth()) {
+                            PaperSheet(Modifier.fillMaxWidth().heightIn(min = 68.dp), burnProgress = burnProgress) {
                             Row(
                                 Modifier.fillMaxWidth().padding(18.dp),
                                 verticalAlignment=Alignment.CenterVertically
@@ -1420,23 +1450,42 @@ private fun BucketContents(
                                 )
                             }
                             }
-                            if (burnProgress > 0f) {
+                            }
+                            if (warningActive || burnProgress > 0f) {
                                 androidx.compose.foundation.Canvas(
                                     Modifier.matchParentSize()
                                         .semantics { contentDescription = "Zettel verbrennt" }
                                 ) {
                                     val p = burnProgress.coerceIn(0f, 1f)
-                                    val edge = size.height * (1f - p)
                                     val ember = androidx.compose.ui.graphics.Color(0xFFFF7A24)
                                     val glow = androidx.compose.ui.graphics.Color(0xFFFFC56A)
                                     val smoke = androidx.compose.ui.graphics.Color(0xFF74706A)
                                     val ash = androidx.compose.ui.graphics.Color(0xFF55504B)
                                     // The burn front travels from bottom to top; the random-looking
                                     // offsets are deterministic to avoid jitter during recomposition.
+                                    if (warningActive && p == 0f) {
+                                        drawCircle(ember, radius = 3.dp.toPx(),
+                                            center = Offset(size.width * .92f, size.height * .87f), alpha = .9f)
+                                        return@Canvas
+                                    }
+                                    val edgePath = androidx.compose.ui.graphics.Path().apply {
+                                        for (i in 0..32) {
+                                            val x = i / 32f
+                                            val y = size.height * burnEdgeFraction(p, x)
+                                            if (i == 0) moveTo(0f, y) else lineTo(size.width * x, y)
+                                        }
+                                    }
+                                    drawPath(edgePath, Color(0xFF58351D),
+                                        style = androidx.compose.ui.graphics.drawscope.Stroke(5.dp.toPx()),
+                                        alpha = (1f - p).coerceIn(0f, 1f))
+                                    drawPath(edgePath, glow,
+                                        style = androidx.compose.ui.graphics.drawscope.Stroke(1.5.dp.toPx()),
+                                        alpha = (1f - p).coerceIn(0f, 1f))
                                     for (i in 0 until 19) {
-                                        val x = size.width * ((i * 37 % 97) / 97f)
+                                        val fraction = (i * 37 % 97) / 97f
+                                        val x = size.width * fraction
                                         val drift = size.height * ((i * 13 % 17) / 100f)
-                                        val y = edge + drift - size.height * (i % 5) * .018f
+                                        val y = size.height * burnEdgeFraction(p, fraction) + drift - size.height * (i % 5) * .018f
                                         drawCircle(
                                             color = if (i % 3 == 0) glow else ember,
                                             radius = (2f + (i % 4) * 1.8f) * density * (1f - p * .65f),
@@ -1461,6 +1510,26 @@ private fun BucketContents(
                         }
                     }
                 }
+            }
+        }
+    }
+        // This overlay is a sibling of the LazyColumn, so the paper remains
+        // visible when the pointer crosses its clipped scrolling viewport.
+        dragPreview?.let { (note, point) ->
+            val density = LocalDensity.current
+            val widthPx = with(density) { 154.dp.toPx() }
+            val heightPx = with(density) { 68.dp.toPx() }
+            PaperSheet(
+                Modifier.zIndex(2f).offset {
+                    IntOffset((point.x - sheetOrigin.x - widthPx / 2f).roundToInt(),
+                        (point.y - sheetOrigin.y - heightPx / 2f).roundToInt())
+                }.size(width = 154.dp, height = 68.dp)
+                    .graphicsLayer { rotationZ = -5f; shadowElevation = 10.dp.toPx() }
+            ) {
+                Text(note.text.ifBlank { "✎ Skizze" },
+                    modifier = Modifier.align(Alignment.Center).padding(9.dp),
+                    color = Ink.InkBlack, fontFamily = FontFamily.Serif,
+                    fontSize = 12.sp, maxLines = 2, overflow = TextOverflow.Ellipsis)
             }
         }
     }

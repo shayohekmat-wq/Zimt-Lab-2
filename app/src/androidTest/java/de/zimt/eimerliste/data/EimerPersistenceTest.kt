@@ -46,6 +46,17 @@ class EimerPersistenceTest {
             val stale = snapshot.copy(notes = listOf(restored.copy(deletedAt = 999)))
             assertEquals(1, store.merge(stale).conflicts)
             assertNull(database.dao().noteById(id)!!.deletedAt)
+            val targetDbName = "eimer-restore-" + UUID.randomUUID()
+            val targetDb = Room.databaseBuilder(context, EimerDatabase::class.java, targetDbName).build()
+            try {
+                val targetStore = EimerBackupStore(targetDb)
+                assertEquals(EimerBackupMergeResult(2, 1, 0), targetStore.merge(snapshot))
+                assertEquals(snapshot, targetStore.snapshot())
+                assertEquals(EimerBackupMergeResult(0, 0, 0), targetStore.merge(snapshot))
+            } finally {
+                targetDb.close()
+                context.deleteDatabase(targetDbName)
+            }
         } finally {
             database.close()
             context.deleteDatabase(dbName)

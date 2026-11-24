@@ -74,6 +74,7 @@ import de.zimt.eimerliste.data.NoteEntity
 import de.zimt.eimerliste.domain.BucketMaterial
 import de.zimt.eimerliste.domain.NoteRules
 import kotlinx.coroutines.launch
+import java.util.UUID
 import kotlinx.coroutines.delay
 import kotlin.math.min
 import kotlin.math.sin
@@ -103,6 +104,7 @@ fun EimerApp(vm: EimerViewModel = viewModel()) {
         var focusTextOnReturn by remember { mutableStateOf(false) }
         var heldBucketId by remember { mutableStateOf<String?>(null) }
         var pendingPaper by rememberSaveable { mutableStateOf<String?>(null) }
+        var pendingNoteId by rememberSaveable { mutableStateOf<String?>(null) }
         var paperReady by remember { mutableStateOf(false) }
         var saving by remember { mutableStateOf(false) }
         val fold = remember { Animatable(0f) }
@@ -139,6 +141,9 @@ fun EimerApp(vm: EimerViewModel = viewModel()) {
         val imeVisible = WindowInsets.ime.getBottom(density) > 0
 
         val countsByBucket = remember(counts) { counts.associate { it.bucketId to it.noteCount } }
+        LaunchedEffect(openBucket) {
+            openBucket?.let { if (selectedId != it) vm.selectBucket(it) }
+        }
 
         // Repeatable folding if the activity is recreated halfway through an animation.
         LaunchedEffect(pendingPaper) {
@@ -163,6 +168,7 @@ fun EimerApp(vm: EimerViewModel = viewModel()) {
                 // Hide the IME before showing the movable, folded slip.
                 keyboard?.hide()
                 focus.clearFocus()
+                pendingNoteId = UUID.randomUUID().toString()
                 pendingPaper = draft
             }
         }
@@ -171,16 +177,18 @@ fun EimerApp(vm: EimerViewModel = viewModel()) {
             val textToSave = pendingPaper
             val destination = buckets.firstOrNull { it.id == targetId }
             if (textToSave != null && destination != null && paperReady && !saving) {
+                val draftId = pendingNoteId ?: UUID.randomUUID().toString().also { pendingNoteId = it }
                 saving = true
                 scope.launch {
                     try {
-                        vm.addNote(targetId, textToSave, drawing)
+                        vm.addNote(targetId, textToSave, drawing, draftId)
                         // A bucket reacts only to confirmed persistence, never an optimistic drop.
                         bucketImpactEvents[targetId] = (bucketImpactEvents[targetId] ?: 0) + 1
                         haptics.performHapticFeedback(HapticFeedbackType.Confirm)
                         draft = ""
                         drawing = null
                         pendingPaper = null
+                        pendingNoteId = null
                         dragOffset = Offset.Zero
                         hoveredBucket = null
                         snackbar.showSnackbar("Zettel in „" + destination.name + "“ gelandet.")
@@ -389,6 +397,7 @@ fun EimerApp(vm: EimerViewModel = viewModel()) {
                         onCancel = {
                             if (!saving) {
                                 pendingPaper = null
+                                pendingNoteId = null
                                 hoveredBucket = null
                                 dragOffset = Offset.Zero
                             }
@@ -611,6 +620,7 @@ fun EimerApp(vm: EimerViewModel = viewModel()) {
                         NoteRules.canSubmit(draft, finishedDrawing)) {
                         keyboard?.hide()
                         focus.clearFocus()
+                        pendingNoteId = UUID.randomUUID().toString()
                         pendingPaper = draft
                     }
                 }
@@ -1150,11 +1160,17 @@ private fun BucketContents(
                 items(displayedNotes,key={it.id}) { note ->
                     var visualPhase by remember(note.id) { mutableStateOf(NotePressSafety.Phase.PRESSED) }
                     val warningActive = visualPhase == NotePressSafety.Phase.WARNING
+                    val lifted = visualPhase == NotePressSafety.Phase.LIFTED ||
+                        warningActive || visualPhase == NotePressSafety.Phase.DRAGGING
+                    val liftScale by androidx.compose.animation.core.animateFloatAsState(
+                        targetValue = if (lifted) 1.045f else 1f,
+                        animationSpec = spring(stiffness = Spring.StiffnessMediumLow),
+                        label = "note-lift"
+                    )
                     val burningActive = burningNote?.id == note.id
                     var noteDrag by remember(note.id) { mutableStateOf(Offset.Zero) }
                     var noteCoordinates by remember(note.id) { mutableStateOf<LayoutCoordinates?>(null) }
-                    val dragging = visualPhase == NotePressSafety.Phase.DRAGGING
-                    val burnProgress by androidx.compose.animation.core.animateFloatAsState(
+                                        val burnProgress by androidx.compose.animation.core.animateFloatAsState(
                         targetValue = if (burningActive) 1f else 0f,
                         animationSpec = tween(durationMillis = 1250, easing = FastOutSlowInEasing),
                         label = "paper-burn-progress"
@@ -1174,9 +1190,9 @@ private fun BucketContents(
                                 rotationZ = if (warningActive) warningAngle else 0f
                                 translationX = noteDrag.x
                                 translationY = noteDrag.y
-                                scaleX = if (dragging) 1.05f else 1f - burnProgress * 0.28f
-                                scaleY = if (dragging) 1.05f else 1f - burnProgress * 0.52f
-                                shadowElevation = if (warningActive) 9.dp.toPx() else 0f
+                                scaleX = liftScale * (1f - burnProgress * 0.28f)
+                                scaleY = liftScale * (1f - burnProgress * 0.52f)
+                                shadowElevation = if (lifted) 9.dp.toPx() else 0f
                                 alpha = 1f - burnProgress
                             }
                             .onGloballyPositioned { noteCoordinates = it }
@@ -1191,7 +1207,7 @@ private fun BucketContents(
                             .pointerInput(note.id, touchSlop, burningActive, destinations.map { it.id }) {
                                 if (burningActive) return@pointerInput
                                 awaitEachGesture {
-                                    val down = awaitFirstDown(requireUnconsumed = false)
+                                    val down = awaitFirstDown(requireUnconsumed = true)
                                     val start = noteCoordinates?.takeIf { it.isAttached }?.localToRoot(down.position)
                                         ?: return@awaitEachGesture
                                     val startedAt = down.uptimeMillis

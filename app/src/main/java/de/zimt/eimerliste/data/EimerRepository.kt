@@ -61,22 +61,33 @@ class EimerRepository(private val dao: EimerDao) {
         }
     }
 
-    suspend fun createNote(bucketId: String, text: String, drawingPayload: String? = null): String = withContext(Dispatchers.IO) {
+    suspend fun createNote(bucketId: String, text: String, drawingPayload: String? = null,
+                           draftId: String = UUID.randomUUID().toString()): String = withContext(Dispatchers.IO) {
         require(NoteRules.canSubmit(text, drawingPayload)) { "Der Zettel ist leer, die Skizze ungültig oder der Text zu lang." }
         val now = System.currentTimeMillis()
-        val id = UUID.randomUUID().toString()
-        // The database transaction completes BEFORE the paper animation is triggered.
-        dao.addNote(
+        require(draftId.isNotBlank()) { "Ungültige Zettel-ID." }
+        val normalizedText = NoteRules.normalize(text)
+        val validDrawing = drawingPayload?.takeIf { PaperDrawingCodec.hasInk(it) }
+        // The stable ID belongs to the folded draft. A retry after a committed insert
+        // must acknowledge the original row, not duplicate or overwrite it.
+        val inserted = dao.addNote(
             NoteEntity(
-                id = id,
+                id = draftId,
                 bucketId = bucketId,
-                text = NoteRules.normalize(text),
-                drawingPayload = drawingPayload?.takeIf { PaperDrawingCodec.hasInk(it) },
-                drawingPayloadVersion = if (PaperDrawingCodec.hasInk(drawingPayload)) 1 else null,
+                text = normalizedText,
+                drawingPayload = validDrawing,
+                drawingPayloadVersion = if (validDrawing != null) 1 else null,
                 createdAt = now,
                 updatedAt = now
             )
         )
-        id
+        if (inserted == -1L) {
+            val original = dao.noteById(draftId)
+            check(original != null && original.text == normalizedText &&
+                original.drawingPayload == validDrawing) {
+                "Die Zettel-ID ist bereits mit einem anderen Inhalt belegt."
+            }
+        }
+        draftId
     }
 }

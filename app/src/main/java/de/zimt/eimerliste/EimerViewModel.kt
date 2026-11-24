@@ -44,8 +44,9 @@ class EimerViewModel(application: Application) : AndroidViewModel(application) {
         repository.renameBucket(id, name)
     }
 
-    suspend fun addNote(bucketId: String, text: String, drawingPayload: String? = null): String =
-        repository.createNote(bucketId, text, drawingPayload)
+    suspend fun addNote(bucketId: String, text: String, drawingPayload: String? = null,
+                        draftId: String): String =
+        repository.createNote(bucketId, text, drawingPayload, draftId)
 
     suspend fun moveNote(noteId: String, sourceBucketId: String, destinationBucketId: String) =
         repository.moveNote(noteId, sourceBucketId, destinationBucketId)

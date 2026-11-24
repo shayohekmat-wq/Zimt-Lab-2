@@ -7,6 +7,7 @@ import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.Insert
+import androidx.room.OnConflictStrategy
 import androidx.room.PrimaryKey
 import androidx.room.Query
 import androidx.room.Room
@@ -75,8 +76,12 @@ interface EimerDao {
     @Insert
     suspend fun addBucket(bucket: BucketEntity)
 
-    @Insert
-    suspend fun addNote(note: NoteEntity)
+    // Stable draft IDs make a retry after a process interruption idempotent.
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun addNote(note: NoteEntity): Long
+
+    @Query("SELECT * FROM notes WHERE id = :id LIMIT 1")
+    suspend fun noteById(id: String): NoteEntity?
 
     /**
      * One atomic SQL UPDATE preserves note ID, content, sketch and creation time.

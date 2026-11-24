@@ -10,6 +10,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.withTransform
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
@@ -51,7 +53,14 @@ private class FlameArtwork {
 @Composable
 internal fun NoteFire(progress: Float, warning: Boolean, modifier: Modifier = Modifier) {
     val art = remember { FlameArtwork() }
-    Canvas(modifier.semantics { contentDescription = if (warning) "Warnung: Zettel beginnt zu glimmen" else "Zettel verbrennt" }) {
+    Canvas(modifier.semantics {
+        if (warning) {
+            liveRegion = LiveRegionMode.Assertive
+            contentDescription = "Jetzt loslassen, um den Zettel zu behalten."
+        } else {
+            contentDescription = "Zettel verbrennt"
+        }
+    }) {
         if (size.width <= 0f || size.height <= 0f) return@Canvas
         val p = progress.coerceIn(0f, 1f)
         if (warning && p == 0f) {

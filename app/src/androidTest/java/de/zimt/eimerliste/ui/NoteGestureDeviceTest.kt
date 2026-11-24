@@ -171,6 +171,24 @@ class NoteGestureDeviceTest {
             device.pressBack()
             device.pressBack()
             openBucket(target.name)
+            // Return to the current bucket during the warning. Neither a move nor a burn
+            // may change the restored row, even after the original ignition deadline.
+            val beforeWarning = currentNote()
+            val lifted = find(noteDesc).visibleBounds
+            val warningDown = SystemClock.uptimeMillis()
+            inject(MotionEvent.ACTION_DOWN, lifted.exactCenterX(), lifted.exactCenterY(), warningDown)
+            SystemClock.sleep(850)
+            inject(MotionEvent.ACTION_MOVE, lifted.exactCenterX(), lifted.exactCenterY() - 55f, warningDown)
+            val bucketBounds = checkNotNull(device.wait(Until.findObject(
+                By.descStartsWith(target.name + ",")), 5000)).visibleBounds
+            inject(MotionEvent.ACTION_MOVE, bucketBounds.exactCenterX(), bucketBounds.exactCenterY(), warningDown)
+            val warning = By.desc("Jetzt loslassen, um den Zettel zu behalten.")
+            assertTrue("The warning must be exposed before release", device.wait(Until.hasObject(warning), 9000))
+            inject(MotionEvent.ACTION_UP, bucketBounds.exactCenterX(), bucketBounds.exactCenterY(), warningDown)
+            assertTrue("Release must disarm the warning", device.wait(Until.gone(warning), 2000))
+            SystemClock.sleep(NoteHoldTiming.WARNING_DURATION_MS + 200)
+            assertEquals(beforeWarning, currentNote())
+            openBucket(target.name)
             val longDrag = find(noteDesc).visibleBounds
             val hold = SystemClock.uptimeMillis()
             inject(MotionEvent.ACTION_DOWN, longDrag.centerX().toFloat(), longDrag.centerY().toFloat(), hold)

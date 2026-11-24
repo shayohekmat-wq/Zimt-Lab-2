@@ -170,7 +170,6 @@ fun PaperSketchEditor(
     val scope = rememberCoroutineScope()
     val haptics = rememberEimerHapticFeedback()
     var leaving by remember { mutableStateOf(false) }
-    var returnToText by remember { mutableStateOf(false) }
     var paperHeightPx by remember { mutableFloatStateOf(1f) }
     var paperTopPx by remember { mutableFloatStateOf(0f) }
     var editorHeightPx by remember { mutableFloatStateOf(1f) }
@@ -185,7 +184,6 @@ fun PaperSketchEditor(
     fun leaveAndKeepSketch(toText: Boolean = false, onFinished: () -> Unit) {
         if (leaving) return
         leaving = true
-        returnToText = toText
         scope.launch {
             paperZoom.animateTo(0f, tween(if (toText) 490 else 330, easing = FastOutSlowInEasing))
             haptics.performHapticFeedback(HapticFeedbackType.GestureEnd)
@@ -219,17 +217,12 @@ fun PaperSketchEditor(
                 .graphicsLayer {
                     transformOrigin = TransformOrigin(0.5f, 0f)
                     val t = if (ValueAnimator.areAnimatorsEnabled()) paperZoom.value else 1f
-                    if (returnToText) {
-                        // The destination is the real-size composer near the bottom,
-                        // not a collapsed strip stuck at the top of this dialog.
-                        val targetHeight = with(density) { 95.dp.toPx() }
-                        val targetScale = (targetHeight / paperHeightPx).coerceIn(.08f, 1f)
-                        scaleY = targetScale + (1f - targetScale) * t
-                        translationY = (editorHeightPx - paperTopPx - targetHeight -
-                            with(density) { 14.dp.toPx() }).coerceAtLeast(0f) * (1f - t)
-                    } else {
-                        scaleY = if (ValueAnimator.areAnimatorsEnabled()) 0.02f + .98f * t else 1f
-                    }
+                    // The exact same geometric path is used in both directions.
+                    val targetHeight = with(density) { 95.dp.toPx() }
+                    val pose = paperRollPose(t, paperHeightPx, paperTopPx, editorHeightPx,
+                        targetHeight, with(density) { 14.dp.toPx() })
+                    scaleY = pose.scaleY
+                    translationY = pose.translationY
                 }) {
                 // Text and ink are parts of the SAME sheet, not separate modes.
                 // Draw over the entire sheet including its visible edges; no hidden 16dp margins.
@@ -264,7 +257,7 @@ fun PaperSketchEditor(
                         }
                     },
                     onActive = { active = it },
-                    enabled = !leaving,
+                    enabled = !leaving && (paperZoom.value >= .98f || !ValueAnimator.areAnimatorsEnabled()),
                     modifier = Modifier.fillMaxSize().semantics { contentDescription = "Zeichenfläche" }
                 )
             }

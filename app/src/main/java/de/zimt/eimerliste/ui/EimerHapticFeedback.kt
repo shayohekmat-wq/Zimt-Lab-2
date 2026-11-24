@@ -1,6 +1,11 @@
 package de.zimt.eimerliste.ui
 
 import android.os.Build
+import android.os.VibrationEffect
+import android.os.Vibrator
+import android.os.VibratorManager
+import android.content.Context
+import android.provider.Settings
 import android.view.HapticFeedbackConstants
 import android.view.View
 import androidx.compose.runtime.Composable
@@ -37,6 +42,35 @@ internal fun eimerHapticPlan(type: HapticFeedbackType, sdk: Int): HapticPlan {
  * Never bypass the user's system haptic setting.
  */
 internal class EimerHapticFeedback(private val view: View) {
+    /**
+     * A finite, perceptible warning waveform. The composition cancels it on
+     * release, drag, lifecycle interruption or ignition; no background vibration.
+     */
+    fun beginBurnWarning(): (() -> Unit)? {
+        val context = view.context
+        if (!view.isHapticFeedbackEnabled ||
+            Settings.System.getInt(context.contentResolver, Settings.System.HAPTIC_FEEDBACK_ENABLED, 1) == 0)
+            return null
+        val vibrator = if (Build.VERSION.SDK_INT >= 31)
+            context.getSystemService(VibratorManager::class.java)?.defaultVibrator
+        else @Suppress("DEPRECATION") (context.getSystemService(Context.VIBRATOR_SERVICE) as? Vibrator)
+        if (vibrator == null || !vibrator.hasVibrator()) {
+            performHapticFeedback(HapticFeedbackType.LongPress)
+            return null
+        }
+        // Nine short beats over exactly 2.7 seconds, growing subtly in intensity.
+        val timing = LongArray(18) { if (it % 2 == 0) 100L else 200L }
+        val strengths = IntArray(18) { if (it % 2 == 0) (135 + it * 6).coerceAtMost(235) else 0 }
+        return try {
+            vibrator.vibrate(VibrationEffect.createWaveform(timing, strengths, -1))
+            val stop: () -> Unit = { vibrator.cancel() }
+            stop
+        } catch (_: SecurityException) {
+            performHapticFeedback(HapticFeedbackType.LongPress)
+            null
+        }
+    }
+
     fun performHapticFeedback(type: HapticFeedbackType) {
         val plan = eimerHapticPlan(type, Build.VERSION.SDK_INT)
         if (!view.performHapticFeedback(plan.preferred) && plan.preferred != plan.fallback)

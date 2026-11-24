@@ -1,6 +1,7 @@
 package de.zimt.eimerliste.ui
 
 import android.animation.ValueAnimator
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.core.Animatable
@@ -15,12 +16,10 @@ import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.ui.input.pointer.PointerEventPass
-import androidx.compose.ui.input.pointer.positionChanged
 import androidx.compose.ui.platform.LocalViewConfiguration
 import kotlin.math.abs
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -109,6 +108,10 @@ fun EimerApp(vm: EimerViewModel = viewModel()) {
         var openBucket by rememberSaveable { mutableStateOf<String?>(null) }
         var openNote by remember { mutableStateOf<NoteEntity?>(null) }
         var movingNote by remember { mutableStateOf<NoteEntity?>(null) }
+        // One root owns the pointer across the content-to-overview transition.
+        // A lifted note is only a visual reservation: Room keeps it in its source.
+        var carriedPointer by remember { mutableStateOf<Offset?>(null) }
+        var rootCoordinates by remember { mutableStateOf<LayoutCoordinates?>(null) }
         var burningNote by remember { mutableStateOf<NoteEntity?>(null) }
         var recoveryBucket by rememberSaveable { mutableStateOf<String?>(null) }
         var noteMoveSaving by remember { mutableStateOf(false) }
@@ -295,8 +298,64 @@ fun EimerApp(vm: EimerViewModel = viewModel()) {
             }
         }
 
+        fun cancelTransfer() {
+            if (noteMoveSaving) return
+            val source = movingNote?.bucketId
+            movingNote = null
+            carriedPointer = null
+            hoveredBucket = null
+            dragOffset = Offset.Zero
+            if (source != null && buckets.any { it.id == source }) {
+                vm.selectBucket(source)
+                openBucket = source
+            }
+        }
+
+        fun beginTransfer(note: NoteEntity, pointer: Offset?) {
+            if (movingNote != null || pendingPaper != null || noteMoveSaving || burningNote != null) return
+            movingNote = note
+            carriedPointer = pointer
+            dragOffset = Offset.Zero
+            hoveredBucket = null
+            heldBucketId = null
+            openBucket = null
+        }
+
+        fun targetAt(point: Offset): String? = bucketBounds.entries.firstOrNull { (id, rect) ->
+            id != movingNote?.bucketId && rect.contains(point)
+        }?.key
+
+        fun moveCarriedNote(targetId: String) {
+            val note = movingNote ?: return
+            if (noteMoveSaving || targetId == note.bucketId) return
+            val target = buckets.firstOrNull { it.id == targetId } ?: return
+            noteMoveSaving = true
+            scope.launch {
+                try {
+                    vm.moveNote(note.id, note.bucketId, target.id)
+                    bucketImpactEvents[target.id] = (bucketImpactEvents[target.id] ?: 0) + 1
+                    haptics.performHapticFeedback(HapticFeedbackType.Confirm)
+                    movingNote = null
+                    carriedPointer = null
+                    hoveredBucket = null
+                    dragOffset = Offset.Zero
+                    scope.launch { snackbar.showSnackbar("Zettel in „" + target.name + "“ verschoben.") }
+                } catch (cancelled: CancellationException) {
+                    throw cancelled
+                } catch (error: Exception) {
+                    carriedPointer = null
+                    hoveredBucket = null
+                    dragOffset = Offset.Zero
+                    haptics.performHapticFeedback(HapticFeedbackType.Reject)
+                    scope.launch { snackbar.showSnackbar(error.message ?: "Verschieben fehlgeschlagen. Zettel bleibt erhalten.") }
+                } finally {
+                    noteMoveSaving = false
+                }
+            }
+        }
+
         val foldPaper: () -> Unit = {
-            if (pendingPaper == null && buckets.isNotEmpty() && NoteRules.canSubmit(draft, drawing)) {
+            if (movingNote == null && pendingPaper == null && buckets.isNotEmpty() && NoteRules.canSubmit(draft, drawing)) {
                 // Hide the IME before showing the movable, folded slip.
                 keyboard?.hide()
                 focus.clearFocus()
@@ -305,7 +364,11 @@ fun EimerApp(vm: EimerViewModel = viewModel()) {
             }
         }
 
-        val deliver: (String) -> Unit = { targetId ->
+        val deliver: (String) -> Unit = deliver@{ targetId ->
+            if (movingNote != null) {
+                moveCarriedNote(targetId)
+                return@deliver
+            }
             val textToSave = pendingPaper
             val destination = buckets.firstOrNull { it.id == targetId }
             if (textToSave != null && destination != null && paperReady && !saving) {
@@ -337,7 +400,7 @@ fun EimerApp(vm: EimerViewModel = viewModel()) {
         }
 
         ObserveBucketShake(heldBucketId) { bucketId ->
-            if (pendingPaper == null) {
+            if (pendingPaper == null && movingNote == null) {
                 heldBucketId = null
                 scope.launch {
                     try {
@@ -362,7 +425,48 @@ fun EimerApp(vm: EimerViewModel = viewModel()) {
             }
         }
 
-        Box(Modifier.fillMaxSize().safeDrawingPadding().imePadding()) {
+        val latestDeliver by rememberUpdatedState(deliver)
+        val latestTargetAt by rememberUpdatedState<(Offset) -> String?>(::targetAt)
+        BackHandler(enabled = movingNote != null || (openBucket != null && openNote == null && recoveryBucket == null)) {
+            if (movingNote != null) cancelTransfer() else openBucket = null
+        }
+        Box(Modifier.fillMaxSize().safeDrawingPadding().imePadding()
+            .onGloballyPositioned { rootCoordinates = it }
+            .pointerInput(Unit) {
+                awaitEachGesture {
+                    val down = awaitFirstDown(requireUnconsumed = false, pass = PointerEventPass.Main)
+                    try {
+                        do {
+                            val event = awaitPointerEvent(PointerEventPass.Main)
+                            val change = event.changes.firstOrNull { it.id == down.id }
+                            if (carriedPointer != null) {
+                                if (change == null || event.changes.size != 1) {
+                                    carriedPointer = null
+                                    hoveredBucket = null
+                                    break
+                                }
+                                val point = rootCoordinates?.takeIf { it.isAttached }?.localToRoot(change.position)
+                                if (point != null) {
+                                    carriedPointer = point
+                                    hoveredBucket = latestTargetAt(point)
+                                    if (!change.pressed) {
+                                        val hit = hoveredBucket
+                                        carriedPointer = null
+                                        hoveredBucket = null
+                                        if (hit != null) latestDeliver(hit)
+                                    }
+                                }
+                                change.consume()
+                            }
+                        } while (event.changes.any { it.pressed })
+                    } finally {
+                        if (carriedPointer != null) {
+                            carriedPointer = null
+                            hoveredBucket = null
+                        }
+                    }
+                }
+            }) {
             WoodBackdrop(Modifier.fillMaxSize())
             Column(Modifier.fillMaxSize()) {
                 if (!imeVisible) {
@@ -391,6 +495,7 @@ fun EimerApp(vm: EimerViewModel = viewModel()) {
                 } else {
                     Text(
                         when {
+                            movingNote != null -> "WÄHLE EINEN NEUEN EIMER"
                             pendingPaper != null -> "ZIEH DEN ZETTEL IN EINEN EIMER"
                             imeVisible -> "DEINE EIMER"
                             else -> "DEINE EIMER · ANTIPPEN ZUM ÖFFNEN"
@@ -398,7 +503,7 @@ fun EimerApp(vm: EimerViewModel = viewModel()) {
                         modifier = Modifier.padding(start = 22.dp, top = 7.dp, bottom = 4.dp),
                         fontSize = 10.sp,
                         letterSpacing = 1.sp,
-                        color = if (pendingPaper != null) Ink.Brass else Ink.Muted
+                        color = if (pendingPaper != null || movingNote != null) Ink.Brass else Ink.Muted
                     )
                     LazyVerticalGrid(
                         columns = GridCells.Fixed(2),
@@ -426,7 +531,7 @@ fun EimerApp(vm: EimerViewModel = viewModel()) {
                                 impactToken = bucketImpactEvents[bucket.id] ?: 0,
                                 onBoundsChanged = { rect -> bucketBounds[bucket.id] = rect },
                                 onHold = {
-                                    if (pendingPaper == null) {
+                                    if (pendingPaper == null && movingNote == null) {
                                         heldBucketId = bucket.id
                                         haptics.performHapticFeedback(HapticFeedbackType.LongPress)
                                         scope.launch { snackbar.showSnackbar("Eimer halten und zweimal schütteln …") }
@@ -435,9 +540,11 @@ fun EimerApp(vm: EimerViewModel = viewModel()) {
                                 onRelease = {
                                     if (heldBucketId == bucket.id) heldBucketId = null
                                 },
-                                paperPending = pendingPaper != null,
+                                paperPending = pendingPaper != null || movingNote != null,
                                 onOpen = {
-                                    if (pendingPaper != null) {
+                                    if (movingNote?.bucketId == bucket.id) {
+                                        cancelTransfer()
+                                    } else if (pendingPaper != null || movingNote != null) {
                                         deliver(bucket.id)
                                     } else {
                                         vm.selectBucket(bucket.id)
@@ -446,7 +553,7 @@ fun EimerApp(vm: EimerViewModel = viewModel()) {
                                 }
                             )
                         }
-                        item(span = { androidx.compose.foundation.lazy.grid.GridItemSpan(maxLineSpan) }) {
+                        if (movingNote == null && pendingPaper == null) item(span = { androidx.compose.foundation.lazy.grid.GridItemSpan(maxLineSpan) }) {
                             DesignLab(buckets = buckets,
                                 onApplied = { bucketId, designId -> changeDesign(bucketId, designId) },
                                 onReset = { bucketId -> changeDesign(bucketId, null) })
@@ -454,7 +561,7 @@ fun EimerApp(vm: EimerViewModel = viewModel()) {
                     }
                 }
                 WoodenShelf()
-                if (pendingPaper == null) {
+                if (pendingPaper == null && movingNote == null) {
                     PaperComposer(
                         draft = draft,
                         drawing = drawing,
@@ -474,10 +581,12 @@ fun EimerApp(vm: EimerViewModel = viewModel()) {
                     )
                 } else {
                     PaperDropTray(
-                        message = pendingPaper.orEmpty(),
-                        drawing = drawing,
-                        progress = fold.value,
-                        ready = paperReady && !saving,
+                        message = movingNote?.text ?: pendingPaper.orEmpty(),
+                        drawing = if (movingNote != null) movingNote?.drawingPayload else drawing,
+                        progress = if (movingNote != null) 3f else fold.value,
+                        ready = if (movingNote != null) !noteMoveSaving && carriedPointer == null else paperReady && !saving,
+                        transfer = movingNote != null,
+                        hidePaper = carriedPointer != null,
                         dragOffset = dragOffset,
                         onPaperBounds = { paperBounds = it },
                         onDragStart = { point ->
@@ -488,9 +597,7 @@ fun EimerApp(vm: EimerViewModel = viewModel()) {
                         onDrag = { delta ->
                             dragOffset += delta
                             val pointer = pointerStart + dragOffset
-                            val newlyHovered = bucketBounds.entries.firstOrNull { (_, rect) ->
-                                rect.contains(pointer)
-                            }?.key
+                            val newlyHovered = targetAt(pointer)
                             if (newlyHovered != hoveredBucket && newlyHovered != null) {
                                 haptics.performHapticFeedback(HapticFeedbackType.GestureThresholdActivate)
                             }
@@ -498,9 +605,7 @@ fun EimerApp(vm: EimerViewModel = viewModel()) {
                         },
                         onDragEnd = {
                             val pointer = pointerStart + dragOffset
-                            val hit = bucketBounds.entries.firstOrNull { (_, rect) ->
-                                rect.contains(pointer)
-                            }?.key
+                            val hit = targetAt(pointer)
                             if (hit != null) {
                                 // Keep the paper at the bucket while the database write is pending.
                                 hoveredBucket = hit
@@ -522,7 +627,9 @@ fun EimerApp(vm: EimerViewModel = viewModel()) {
                             dragOffset = Offset.Zero
                         },
                         onCancel = {
-                            if (!saving) {
+                            if (movingNote != null) {
+                                cancelTransfer()
+                            } else if (!saving) {
                                 pendingPaper = null
                                 pendingNoteId = null
                                 hoveredBucket = null
@@ -532,6 +639,102 @@ fun EimerApp(vm: EimerViewModel = viewModel()) {
                         modifier = Modifier.fillMaxWidth().padding(horizontal = 13.dp, vertical = 12.dp)
                     )
                 }
+            }
+            val visibleBucket = buckets.firstOrNull { it.id == openBucket }
+        if (visibleBucket != null) {
+            // Keep the sheet in the activity window: removing it must not break
+            // the ancestor pointer stream carrying the note into the real grid.
+            Box(Modifier.matchParentSize().background(Color(0x99000000))
+                .clickable { openBucket = null })
+            Surface(
+                modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth()
+                    .heightIn(max = 690.dp),
+                shape = RoundedCornerShape(topStart = 22.dp, topEnd = 22.dp),
+                color = Ink.Paper,
+                contentColor = Ink.InkBlack
+            ) {
+                Column {
+                    Box(Modifier.fillMaxWidth().height(36.dp)
+                        .clickable { openBucket = null }, contentAlignment = Alignment.Center) {
+                        Box(Modifier.size(36.dp, 4.dp).background(Ink.BrassDark, CircleShape))
+                    }
+                BucketContents(
+                    bucket = visibleBucket,
+                    notes = if (visibleBucket.id == selectedId) notes.filter { it.bucketId == visibleBucket.id } else emptyList(),
+                    canTransfer = buckets.any { it.id != visibleBucket.id } && pendingPaper == null,
+                    burningNote = burningNote?.takeIf { it.bucketId == visibleBucket.id },
+                    recoveryCount = deletedNotes.count { it.bucketId == visibleBucket.id },
+                    onRecovery = { recoveryBucket = visibleBucket.id },
+                    onNote = { openNote = it },
+                    onLiftNote = { note, point -> beginTransfer(note, point) },
+                    onIgnite = { note ->
+                        if (burningNote == null) {
+                            // Preserve a visual copy of the note while Room removes it from the
+                            // active list. The durable soft-delete does not depend on the animation.
+                            burningNote = note
+                            scope.launch {
+                            try {
+                                val deletedAt = vm.burnNote(note.id)
+                                if (ValueAnimator.areAnimatorsEnabled()) delay(NoteFireDurationMs)
+                                burningNote = null
+                                if (openBucket == note.bucketId) openBucket = null
+                                haptics.performHapticFeedback(HapticFeedbackType.Confirm)
+                                val result = snackbar.showSnackbar(
+                                    message = "Zettel verbrannt.",
+                                    actionLabel = "Rückgängig",
+                                    withDismissAction = true,
+                                    duration = SnackbarDuration.Long
+                                )
+                                if (result == SnackbarResult.ActionPerformed) {
+                                    vm.undoBurn(note.id, deletedAt)
+                                    haptics.performHapticFeedback(HapticFeedbackType.Confirm)
+                                }
+                            } catch (error: Exception) {
+                                burningNote = null
+                                snackbar.showSnackbar(error.message ?: "Verbrennen oder Wiederherstellen fehlgeschlagen.")
+                            } finally {
+                                if (burningNote?.id == note.id) burningNote = null
+                            }
+                            }
+                        }
+                    },
+                    onRandom = {
+                        scope.launch {
+                            try {
+                                val note = vm.randomNote(visibleBucket.id)
+                                if (note != null) {
+                                    openBucket = null
+                                    openNote = note
+                                } else {
+                                    snackbar.showSnackbar("Dieser Eimer ist noch leer.")
+                                }
+                            } catch (_: Exception) {
+                                snackbar.showSnackbar("Konnte keinen Zufallszettel ziehen.")
+                            }
+                        }
+                    }
+                )
+                }
+            }
+        }
+
+            if (carriedPointer != null) {
+                val point = carriedPointer!!
+                val origin = rootCoordinates?.takeIf { it.isAttached }?.localToRoot(Offset.Zero) ?: Offset.Zero
+                val halfWidth = with(density) { 77.dp.toPx() }
+                val halfHeight = with(density) { 37.dp.toPx() }
+                FoldedPaperArtwork(
+                    progress = 3f,
+                    message = movingNote?.text.orEmpty(),
+                    drawing = movingNote?.drawingPayload,
+                    modifier = Modifier.zIndex(4f).offset {
+                        IntOffset((point.x - origin.x - halfWidth).roundToInt(),
+                            (point.y - origin.y - halfHeight).roundToInt())
+                    }.size(154.dp, 74.dp).graphicsLayer {
+                        rotationZ = -7f
+                        shadowElevation = 10.dp.toPx()
+                    }
+                )
             }
             SnackbarHost(
                 hostState = snackbar,
@@ -579,102 +782,6 @@ fun EimerApp(vm: EimerViewModel = viewModel()) {
             )
         }
 
-        val visibleBucket = buckets.firstOrNull { it.id == openBucket }
-        if (visibleBucket != null) {
-            ModalBottomSheet(
-                onDismissRequest = { openBucket = null },
-                containerColor = Ink.Paper,
-                contentColor = Ink.InkBlack,
-                dragHandle = { BottomSheetDefaults.DragHandle(color = Ink.BrassDark) }
-            ) {
-                BucketContents(
-                    bucket = visibleBucket,
-                    notes = if (visibleBucket.id == selectedId) notes.filter { it.bucketId == visibleBucket.id } else emptyList(),
-                    destinations = buckets.filter { it.id != visibleBucket.id },
-                    destinationDesigns = designSelections,
-                    destinationImpacts = bucketImpactEvents,
-                    burningNote = burningNote?.takeIf { it.bucketId == visibleBucket.id },
-                    recoveryCount = deletedNotes.count { it.bucketId == visibleBucket.id },
-                    onRecovery = { recoveryBucket = visibleBucket.id },
-                    onNote = { openNote = it },
-                    onLiftNote = { movingNote = it },
-                    onDropNote = { note, targetId ->
-                        val target = buckets.firstOrNull { candidate ->
-                            candidate.id != note.bucketId && candidate.id == targetId
-                        }
-                        hoveredBucket = null
-                        if (target != null && !noteMoveSaving) {
-                            noteMoveSaving = true
-                            scope.launch {
-                                try {
-                                    vm.moveNote(note.id, note.bucketId, target.id)
-                                    bucketImpactEvents[target.id] = (bucketImpactEvents[target.id] ?: 0) + 1
-                                    haptics.performHapticFeedback(HapticFeedbackType.Confirm)
-                                    if (ValueAnimator.areAnimatorsEnabled()) delay(480L)
-                                    if (openBucket == note.bucketId) openBucket = null
-                                    snackbar.showSnackbar("Zettel in ${target.name} gelegt.")
-                                } catch (error: Exception) {
-                                    snackbar.showSnackbar(error.message ?: "Verschieben fehlgeschlagen.")
-                                } finally {
-                                    noteMoveSaving = false
-                                }
-                            }
-                        } else {
-                            haptics.performHapticFeedback(HapticFeedbackType.Reject)
-                        }
-                    },
-                    onLiftHaptic = { haptics.performHapticFeedback(HapticFeedbackType.GestureThresholdActivate) },
-                    onWarningHaptic = { haptics.performHapticFeedback(HapticFeedbackType.SegmentTick) },
-                    onIgnitionHaptic = { haptics.performHapticFeedback(HapticFeedbackType.LongPress) },
-                    onIgnite = { note ->
-                        if (burningNote == null) {
-                            // Preserve a visual copy of the note while Room removes it from the
-                            // active list. The durable soft-delete does not depend on the animation.
-                            burningNote = note
-                            scope.launch {
-                            try {
-                                val deletedAt = vm.burnNote(note.id)
-                                if (ValueAnimator.areAnimatorsEnabled()) delay(1700L)
-                                burningNote = null
-                                if (openBucket == note.bucketId) openBucket = null
-                                haptics.performHapticFeedback(HapticFeedbackType.Confirm)
-                                val result = snackbar.showSnackbar(
-                                    message = "Zettel verbrannt.",
-                                    actionLabel = "Rückgängig",
-                                    withDismissAction = true,
-                                    duration = SnackbarDuration.Long
-                                )
-                                if (result == SnackbarResult.ActionPerformed) {
-                                    vm.undoBurn(note.id, deletedAt)
-                                    haptics.performHapticFeedback(HapticFeedbackType.Confirm)
-                                }
-                            } catch (error: Exception) {
-                                burningNote = null
-                                snackbar.showSnackbar(error.message ?: "Verbrennen oder Wiederherstellen fehlgeschlagen.")
-                            } finally {
-                                if (burningNote?.id == note.id) burningNote = null
-                            }
-                            }
-                        }
-                    },
-                    onRandom = {
-                        scope.launch {
-                            try {
-                                val note = vm.randomNote(visibleBucket.id)
-                                if (note != null) {
-                                    openBucket = null
-                                    openNote = note
-                                } else {
-                                    snackbar.showSnackbar("Dieser Eimer ist noch leer.")
-                                }
-                            } catch (_: Exception) {
-                                snackbar.showSnackbar("Konnte keinen Zufallszettel ziehen.")
-                            }
-                        }
-                    }
-                )
-            }
-        }
         recoveryBucket?.let { bucketId ->
             val recoverable = deletedNotes.filter { it.bucketId == bucketId }
             AlertDialog(
@@ -706,48 +813,6 @@ fun EimerApp(vm: EimerViewModel = viewModel()) {
                     }
                 },
                 confirmButton = { TextButton(onClick = { recoveryBucket = null }) { Text("Schließen") } }
-            )
-        }
-        movingNote?.let { note ->
-            AlertDialog(
-                onDismissRequest = { if (!noteMoveSaving) movingNote = null },
-                title = { Text("Zettel umlegen") },
-                text = {
-                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text("Wähle einen anderen Eimer. Text und Zeichnung bleiben erhalten.")
-                        buckets.filter { it.id != note.bucketId }.forEach { target ->
-                            TextButton(
-                                enabled = !noteMoveSaving,
-                                onClick = {
-                                    noteMoveSaving = true
-                                    scope.launch {
-                                        try {
-                                            vm.moveNote(note.id, note.bucketId, target.id)
-                                            bucketImpactEvents[target.id] = (bucketImpactEvents[target.id] ?: 0) + 1
-                                            haptics.performHapticFeedback(HapticFeedbackType.Confirm)
-                                            movingNote = null
-                                            openBucket = null
-                                            snackbar.showSnackbar("Zettel in „" + target.name + "“ verschoben.")
-                                        } catch (error: Exception) {
-                                            haptics.performHapticFeedback(HapticFeedbackType.Reject)
-                                            snackbar.showSnackbar(error.message ?: "Verschieben fehlgeschlagen.")
-                                        } finally {
-                                            noteMoveSaving = false
-                                        }
-                                    }
-                                }
-                            ) { Text(target.name) }
-                        }
-                        if (buckets.none { it.id != note.bucketId }) {
-                            Text("Lege zuerst einen zweiten Eimer an.")
-                        }
-                    }
-                },
-                confirmButton = {
-                    TextButton(enabled = !noteMoveSaving, onClick = { movingNote = null }) {
-                        Text("Abbrechen")
-                    }
-                }
             )
         }
         openNote?.let { note ->
@@ -1127,6 +1192,8 @@ private fun PaperDropTray(
     drawing: String?,
     progress: Float,
     ready: Boolean,
+    transfer: Boolean,
+    hidePaper: Boolean,
     dragOffset: Offset,
     onPaperBounds: (Rect) -> Unit,
     onDragStart: (Offset) -> Unit,
@@ -1143,7 +1210,8 @@ private fun PaperDropTray(
     Column(modifier, horizontalAlignment = Alignment.CenterHorizontally) {
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             Text(
-                if (ready) "ZIEH DEINEN ZETTEL IN EINEN EIMER" else "DEIN ZETTEL FALTET SICH ...",
+                if (transfer) "ZETTEL ANGEHOBEN · NEUEN EIMER WÄHLEN"
+                else if (ready) "ZIEH DEINEN ZETTEL IN EINEN EIMER" else "DEIN ZETTEL FALTET SICH ...",
                 fontSize = 10.sp,
                 letterSpacing = 1.sp,
                 color = Ink.Brass,
@@ -1160,6 +1228,7 @@ private fun PaperDropTray(
                     .graphicsLayer {
                         translationX = dragOffset.x
                         translationY = dragOffset.y
+                        alpha = if (hidePaper) 0f else 1f
                     }
                     .pointerInput(ready, message) {
                         if (ready) {
@@ -1189,7 +1258,8 @@ private fun PaperDropTray(
             }
         }
         Text(
-            if (ready) "Daneben loslassen? Kein Problem – der Zettel bleibt hier." else "Eins · zwei · drei",
+            if (transfer) "Ziehe den Zettel in einen Eimer oder tippe auf ihn."
+            else if (ready) "Daneben loslassen? Kein Problem – der Zettel bleibt hier." else "Eins · zwei · drei",
             fontSize = 11.sp,
             color = Ink.Muted,
             textAlign = TextAlign.Center
@@ -1254,18 +1324,12 @@ private fun CreateBucketDialog(onClose:()->Unit,onCreate:(String,BucketMaterial)
 private fun BucketContents(
     bucket: BucketEntity,
     notes: List<NoteEntity>,
-    destinations: List<BucketEntity>,
-    destinationDesigns: Map<String, String>,
-    destinationImpacts: Map<String, Int>,
+    canTransfer: Boolean,
     burningNote: NoteEntity?,
     recoveryCount: Int,
     onRecovery: () -> Unit,
     onNote: (NoteEntity) -> Unit,
-    onLiftNote: (NoteEntity) -> Unit,
-    onDropNote: (NoteEntity, String?) -> Unit,
-    onLiftHaptic: () -> Unit,
-    onWarningHaptic: () -> Unit,
-    onIgnitionHaptic: () -> Unit,
+    onLiftNote: (NoteEntity, Offset?) -> Unit,
     onIgnite: (NoteEntity) -> Unit,
     onRandom: () -> Unit
 ) {
@@ -1281,21 +1345,11 @@ private fun BucketContents(
     }
     val latestOpenNote by rememberUpdatedState(onNote)
     val latestLiftNote by rememberUpdatedState(onLiftNote)
-    val latestDropNote by rememberUpdatedState(onDropNote)
     val latestIgnite by rememberUpdatedState(onIgnite)
-    // Modal sheets have a separate layout root. Targets and note pointers must
-    // use this same root, not coordinates of obscured tiles in the activity.
-    val targetBounds = remember { mutableStateMapOf<String, Rect>() }
-    var hoveredTarget by remember { mutableStateOf<String?>(null) }
-    var dragPreview by remember { mutableStateOf<Pair<NoteEntity, Offset>?>(null) }
-    var sheetOrigin by remember { mutableStateOf(Offset.Zero) }
-    fun targetAt(point: Offset): String? = destinations.firstOrNull {
-        targetBounds[it.id]?.contains(point) == true
-    }?.id
+    val noteHaptics = rememberEimerHapticFeedback()
     val displayedNotes = if (burningNote != null && notes.none { it.id == burningNote.id }) {
         (notes + burningNote).sortedByDescending { it.createdAt }
     } else notes
-    Box(Modifier.fillMaxWidth().onGloballyPositioned { sheetOrigin = it.boundsInRoot().topLeft }) {
     Column(Modifier.fillMaxWidth().padding(horizontal=20.dp).heightIn(min=260.dp,max=650.dp)) {
         Text(bucket.name,fontFamily=FontFamily.Serif,fontSize=30.sp,fontWeight=FontWeight.Bold)
         Text(
@@ -1311,47 +1365,6 @@ private fun BucketContents(
         if (recoveryCount > 0) {
             TextButton(onClick = onRecovery, modifier = Modifier.align(Alignment.End)) {
                 Text("↶ Verbrannte Zettel ($recoveryCount)", color = Ink.BrassDark)
-            }
-        }
-        if (destinations.isNotEmpty()) {
-            Text("ZETTEL HIERHER ZIEHEN", color = Ink.BrassDark, fontSize = 10.sp)
-            LazyRow(
-                Modifier.fillMaxWidth().padding(vertical = 6.dp),
-                horizontalArrangement = Arrangement.spacedBy(7.dp)
-            ) {
-                items(destinations, key = { it.id }) { target ->
-                    DisposableEffect(target.id) { onDispose { targetBounds.remove(target.id) } }
-                    val active = hoveredTarget == target.id
-                    val asset = findIllustratedBucket(destinationDesigns[target.id])
-                    val impactToken = destinationImpacts[target.id] ?: 0
-                    val drop = remember { Animatable(1f) }
-                    LaunchedEffect(impactToken) {
-                        if (impactToken > 0 && ValueAnimator.areAnimatorsEnabled()) {
-                            drop.snapTo(0f)
-                            drop.animateTo(1f, tween(460, easing = FastOutSlowInEasing))
-                        } else drop.snapTo(1f)
-                    }
-                    Surface(
-                        modifier = Modifier.width(104.dp)
-                            .onGloballyPositioned { targetBounds[target.id] = it.boundsInRoot() }
-                            .semantics { contentDescription = "Zieleimer: " + target.name },
-                        shape = RoundedCornerShape(8.dp),
-                        color = if (active) Ink.Brass.copy(alpha = .38f) else Ink.Paper,
-                        border = BorderStroke(if (active) 2.dp else 1.dp, Ink.BrassDark)
-                    ) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            val artwork = Modifier.size(width = 78.dp, height = 70.dp)
-                            if (asset != null) {
-                                LayeredIllustratedBucket(asset, target.name, drop.value, artwork)
-                            } else {
-                                BucketArtwork(BucketMaterial.fromKey(target.material), target.name, artwork)
-                            }
-                            Text(target.name, modifier = Modifier.padding(start = 5.dp, end = 5.dp, bottom = 5.dp),
-                                maxLines = 1, overflow = TextOverflow.Ellipsis,
-                                fontSize = 11.sp, color = Ink.InkBlack)
-                        }
-                    }
-                }
             }
         }
         Spacer(Modifier.height(7.dp))
@@ -1377,7 +1390,7 @@ private fun BucketContents(
                     var noteCoordinates by remember(note.id) { mutableStateOf<LayoutCoordinates?>(null) }
                     val burnProgress by androidx.compose.animation.core.animateFloatAsState(
                         targetValue = if (burningActive) 1f else 0f,
-                        animationSpec = tween(durationMillis = 1700, easing = FastOutSlowInEasing),
+                        animationSpec = tween(durationMillis = NoteFireDurationMs.toInt(), easing = androidx.compose.animation.core.LinearEasing),
                         label = "paper-burn-progress"
                     )
                     val warningAngle = remember(note.id) { Animatable(0f) }
@@ -1389,11 +1402,9 @@ private fun BucketContents(
                             }
                         } else warningAngle.snapTo(0f)
                     }
-                    LaunchedEffect(warningActive) {
-                        if (warningActive) {
-                            delay(180)
-                            onWarningHaptic()
-                        }
+                    DisposableEffect(warningActive) {
+                        val stop = if (warningActive) noteHaptics.beginBurnWarning() else null
+                        onDispose { stop?.invoke() }
                     }
                     Box(
                         Modifier.fillMaxWidth().heightIn(min=68.dp)
@@ -1402,19 +1413,19 @@ private fun BucketContents(
                                 scaleX = liftScale * (1f - burnProgress * .07f)
                                 scaleY = liftScale
                                 shadowElevation = if (lifted) 9.dp.toPx() else 0f
-                                alpha = if (dragPreview?.first?.id == note.id) .32f else 1f
+                                alpha = 1f
                             }
                             .onGloballyPositioned { noteCoordinates = it }
                             .semantics {
                                 if (!burningActive) {
                                     contentDescription = "Zettel: " + note.text.ifBlank { "Skizze" }
                                     onClick(label = "Zettel öffnen") { onNote(note); true }
-                                    customActions = if (destinations.isNotEmpty()) listOf(
-                                        CustomAccessibilityAction("Zettel umlegen") { onLiftNote(note); true }
+                                    customActions = if (canTransfer) listOf(
+                                        CustomAccessibilityAction("Zettel umlegen") { onLiftNote(note, null); true }
                                     ) else emptyList()
                                 }
                             }
-                            .pointerInput(note.id, touchSlop, burningActive, resumed, destinations.map { it.id }) {
+                            .pointerInput(note.id, touchSlop, burningActive, resumed, canTransfer) {
                                 if (burningActive || !resumed) return@pointerInput
                                 awaitEachGesture {
                                     val down = awaitFirstDown(requireUnconsumed = true)
@@ -1447,13 +1458,10 @@ private fun BucketContents(
                                                 val phase = gesture.advance(android.os.SystemClock.uptimeMillis())
                                                 visualPhase = phase
                                                 when (phase) {
-                                                    NotePressSafety.Phase.LIFTED -> onLiftHaptic()
-                                                    NotePressSafety.Phase.WARNING -> {
-                                                        onWarningHaptic()
-                                                    }
-                                                    NotePressSafety.Phase.IGNITED -> {
-                                                        onIgnitionHaptic()
-                                                    }
+                                                    NotePressSafety.Phase.LIFTED ->
+                                                        noteHaptics.performHapticFeedback(HapticFeedbackType.GestureThresholdActivate)
+                                                    NotePressSafety.Phase.IGNITED ->
+                                                        noteHaptics.performHapticFeedback(HapticFeedbackType.LongPress)
                                                     else -> Unit
                                                 }
                                             } else {
@@ -1481,9 +1489,12 @@ private fun BucketContents(
                                                         gesture.move(beyondSlop = true)
                                                         visualPhase = gesture.phase
                                                         if (gesture.phase == NotePressSafety.Phase.DRAGGING) {
-                                                            dragPreview = note to lastPosition
-                                                            hoveredTarget = targetAt(lastPosition)
                                                             pointer.consume()
+                                                            if (canTransfer) {
+                                                                latestLiftNote(note, lastPosition)
+                                                                return@awaitEachGesture
+                                                            }
+                                                            gesture.cancel()
                                                         }
                                                     }
                                                     // The scrolling parent may consume a change after our Main
@@ -1498,10 +1509,9 @@ private fun BucketContents(
                                         if (!lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) return@awaitEachGesture
                                         when (gesture.phase) {
                                             NotePressSafety.Phase.RELEASED -> when (gesture.releasedFrom) {
-                                                NotePressSafety.Phase.DRAGGING ->
-                                                    latestDropNote(note, targetAt(lastPosition))
+                                                NotePressSafety.Phase.DRAGGING,
                                                 NotePressSafety.Phase.LIFTED, NotePressSafety.Phase.WARNING ->
-                                                    latestLiftNote(note) // Accessible fallback picker.
+                                                    if (canTransfer) latestLiftNote(note, null)
                                                 NotePressSafety.Phase.PRESSED -> latestOpenNote(note)
                                                 else -> Unit
                                             }
@@ -1514,14 +1524,13 @@ private fun BucketContents(
                                         }
                                     } finally {
                                         visualPhase = NotePressSafety.Phase.PRESSED
-                                        if (dragPreview?.first?.id == note.id) dragPreview = null
-                                        hoveredTarget = null
+                                        // Data is unchanged until the overview accepts a drop.
                                     }
                                 }
                             }
                     ) {
                         Box(Modifier.fillMaxWidth()) {
-                            PaperSheet(Modifier.fillMaxWidth().heightIn(min = 68.dp), burnProgress = burnProgress) {
+                            PaperSheet(Modifier.fillMaxWidth().heightIn(min = 68.dp), burnProgress = (burnProgress / .88f).coerceIn(0f, 1f)) {
                             Row(
                                 Modifier.fillMaxWidth().padding(18.dp),
                                 verticalAlignment=Alignment.CenterVertically
@@ -1547,85 +1556,16 @@ private fun BucketContents(
                             }
                             }
                             }
-                            if (warningActive || burnProgress > 0f) {
-                                androidx.compose.foundation.Canvas(
-                                    Modifier.matchParentSize()
-                                        .semantics { contentDescription = "Zettel verbrennt" }
-                                ) {
-                                    val p = burnProgress.coerceIn(0f, 1f)
-                                    val ember = androidx.compose.ui.graphics.Color(0xFFFF7A24)
-                                    val glow = androidx.compose.ui.graphics.Color(0xFFFFC56A)
-                                    val smoke = androidx.compose.ui.graphics.Color(0xFF74706A)
-                                    val ash = androidx.compose.ui.graphics.Color(0xFF55504B)
-                                    // The burn front travels from bottom to top; the random-looking
-                                    // offsets are deterministic to avoid jitter during recomposition.
-                                    if (warningActive && p == 0f) {
-                                        drawCircle(ember, radius = 3.dp.toPx(),
-                                            center = Offset(size.width * .92f, size.height * .87f), alpha = .9f)
-                                        return@Canvas
-                                    }
-                                    val edgePath = androidx.compose.ui.graphics.Path().apply {
-                                        for (i in 0..32) {
-                                            val x = i / 32f
-                                            val y = size.height * burnEdgeFraction(p, x)
-                                            if (i == 0) moveTo(0f, y) else lineTo(size.width * x, y)
-                                        }
-                                    }
-                                    drawPath(edgePath, Color(0xFF58351D),
-                                        style = androidx.compose.ui.graphics.drawscope.Stroke(5.dp.toPx()),
-                                        alpha = (1f - p).coerceIn(0f, 1f))
-                                    drawPath(edgePath, glow,
-                                        style = androidx.compose.ui.graphics.drawscope.Stroke(1.5.dp.toPx()),
-                                        alpha = (1f - p).coerceIn(0f, 1f))
-                                    for (i in 0 until 19) {
-                                        val fraction = (i * 37 % 97) / 97f
-                                        val x = size.width * fraction
-                                        val drift = size.height * ((i * 13 % 17) / 100f)
-                                        val y = size.height * burnEdgeFraction(p, fraction) + drift - size.height * (i % 5) * .018f
-                                        drawCircle(
-                                            color = if (i % 3 == 0) glow else ember,
-                                            radius = (2f + (i % 4) * 1.8f) * density * (1f - p * .65f),
-                                            center = Offset(x, y),
-                                            alpha = (1f - p * .4f).coerceIn(0f, 1f)
-                                        )
-                                        drawCircle(
-                                            color = smoke,
-                                            radius = (7f + i % 6) * density * (1f + p),
-                                            center = Offset(x + p * 18f * density, y - p * 42f * density),
-                                            alpha = ((1f - p) * .22f).coerceIn(0f, 1f)
-                                        )
-                                        if (p > .35f) drawCircle(
-                                            color = ash,
-                                            radius = (1f + i % 3) * density,
-                                            center = Offset(x - p * 8f * density, y + p * 26f * density),
-                                            alpha = ((p - .35f) * .8f).coerceIn(0f, 1f)
-                                        )
-                                    }
-                                }
+                            if (warningActive || burningActive) {
+                                NoteFire(
+                                    progress = burnProgress,
+                                    warning = warningActive && !burningActive,
+                                    modifier = Modifier.matchParentSize()
+                                )
                             }
                         }
                     }
                 }
-            }
-        }
-    }
-        // This overlay is a sibling of the LazyColumn, so the paper remains
-        // visible when the pointer crosses its clipped scrolling viewport.
-        dragPreview?.let { (note, point) ->
-            val density = LocalDensity.current
-            val widthPx = with(density) { 154.dp.toPx() }
-            val heightPx = with(density) { 68.dp.toPx() }
-            PaperSheet(
-                Modifier.zIndex(2f).offset {
-                    IntOffset((point.x - sheetOrigin.x - widthPx / 2f).roundToInt(),
-                        (point.y - sheetOrigin.y - heightPx / 2f).roundToInt())
-                }.size(width = 154.dp, height = 68.dp)
-                    .graphicsLayer { rotationZ = -5f; shadowElevation = 10.dp.toPx() }
-            ) {
-                Text(note.text.ifBlank { "✎ Skizze" },
-                    modifier = Modifier.align(Alignment.Center).padding(9.dp),
-                    color = Ink.InkBlack, fontFamily = FontFamily.Serif,
-                    fontSize = 12.sp, maxLines = 2, overflow = TextOverflow.Ellipsis)
             }
         }
     }

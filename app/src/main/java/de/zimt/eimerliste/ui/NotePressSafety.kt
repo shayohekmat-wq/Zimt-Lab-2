@@ -34,7 +34,7 @@ internal class NotePressSafety {
         Phase.LIFTED -> NoteHoldTiming.WARNING_MS
         // A delayed Android frame must not skip the visible warning interval.
         Phase.WARNING -> maxOf(NoteHoldTiming.IGNITION_MS,
-            warningElapsedMs + NoteHoldTiming.IGNITION_MS - NoteHoldTiming.WARNING_MS)
+            warningElapsedMs + NoteHoldTiming.WARNING_DURATION_MS)
         else -> null
     }
 

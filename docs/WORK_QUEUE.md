@@ -14,3 +14,5 @@
 
 ## Coverage
 Prioritization never caps authorized features. Reconcile current ACTIVE_SCOPE and observed code, add missing work; do not stop merely because a milestone is committed.
+
+Latest user priority: full-overview carry/drop replaces nested target row and move dialog; 2700ms warning, flame rendering, symmetric bottom-up sketch transition. Verify exact HEAD before release.

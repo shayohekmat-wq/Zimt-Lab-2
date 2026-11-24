@@ -11,7 +11,7 @@ class NotePressSafetyTest {
         assertEquals(NotePressSafety.Phase.LIFTED, g.advance(800))
         assertEquals(NotePressSafety.Phase.WARNING, g.advance(1600))
         assertFalse(g.mayCommitBurn())
-        assertEquals(NotePressSafety.Phase.IGNITED, g.advance(2100))
+        assertEquals(NotePressSafety.Phase.IGNITED, g.advance(4300))
         assertTrue(g.mayCommitBurn())
     }
 
@@ -52,11 +52,11 @@ class NotePressSafetyTest {
         g.down(0)
         g.advance(700)
         g.advance(1500)
-        g.advance(2000)
+        g.advance(4200)
         assertTrue(g.mayCommitBurn())
-        g.down(3000)
+        g.down(5000)
         assertFalse(g.mayCommitBurn())
-        assertEquals(NotePressSafety.Phase.PRESSED, g.advance(3000))
+        assertEquals(NotePressSafety.Phase.PRESSED, g.advance(5000))
     }
 
     @Test fun dragAfterWarningStillDisarms() {
@@ -74,7 +74,7 @@ class NotePressSafetyTest {
         g.down(0)
         g.advance(700)
         g.advance(1500)
-        g.advance(1999)
+        g.advance(4199)
         g.cancel()
         assertEquals(NotePressSafety.Phase.CANCELLED, g.advance(10000))
         assertFalse(g.mayCommitBurn())
@@ -110,7 +110,7 @@ class NotePressSafetyTest {
         g.down(0)
         g.advance(700)
         g.advance(1500)
-        g.advance(2000)
+        g.advance(4200)
         assertTrue(g.mayCommitBurn())
         assertFalse(g.isTracking())
         g.release()
@@ -125,9 +125,9 @@ class NotePressSafetyTest {
         assertEquals(NotePressSafety.Phase.LIFTED, g.advance(2100))
         assertFalse(g.mayCommitBurn())
         assertEquals(NotePressSafety.Phase.WARNING, g.advance(2101))
-        assertEquals(2601L, g.nextDeadlineMs())
-        assertEquals(NotePressSafety.Phase.WARNING, g.advance(2600))
-        assertEquals(NotePressSafety.Phase.IGNITED, g.advance(2601))
+        assertEquals(4801L, g.nextDeadlineMs())
+        assertEquals(NotePressSafety.Phase.WARNING, g.advance(4800))
+        assertEquals(NotePressSafety.Phase.IGNITED, g.advance(4801))
     }
 
     @Test fun releasingDuringLateWarningNeverBurns() {

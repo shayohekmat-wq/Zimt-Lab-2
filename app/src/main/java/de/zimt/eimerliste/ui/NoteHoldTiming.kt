@@ -9,7 +9,8 @@ package de.zimt.eimerliste.ui
 internal object NoteHoldTiming {
     const val LIFT_MS = 700L
     const val WARNING_MS = 1500L
-    const val IGNITION_MS = 2000L
+    const val WARNING_DURATION_MS = 2700L
+    const val IGNITION_MS = WARNING_MS + WARNING_DURATION_MS
 
     enum class Stage { PRESSED, LIFTED, WARNING, IGNITED, DRAGGING, RELEASED }
 

@@ -12,8 +12,9 @@ Independently installable Eimer-Liste with persistent notes/drawings, charming t
 Keep original assets unchanged; REAR → PAPER → FRONT with identical geometry; retain legacy IDs/data without surfacing historical catalog experiments.
 
 ## Active note gesture feature
-- Tap opens note. 700ms stationary lift; drag to another bucket preserves ID, text and drawing; no target means no data change.
-- 1500ms stationary warning; 2000ms ignition with beautiful burn animation and reversible soft-delete/Undo.
+- Tap opens note. 700ms stationary lift; movement or release carries the note back into the normal bucket overview, never a nested bucket picker. Continuous drag or tap/drag from the carried-paper tray preserves ID, text and drawing; cancellation or a missed drop never mutates Room.
+- 1500ms stationary warning with finite 2700ms haptic waveform; ignition no earlier than 4200ms total, with layered flames, embers and reversible soft-delete/Undo.
+- Drawing paper expands from the bottom composer into the editor and reverses the identical geometry on return.
 - Scroll, multitouch, cancellation, rotation/background, rapid input and accessibility alternatives must not cause accidental data loss.
 - Animation and haptic polish welcome. No global freeze on unrelated feature development.
 

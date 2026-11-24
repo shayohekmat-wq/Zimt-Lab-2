@@ -60,6 +60,8 @@ class NoteGestureDeviceTest {
             dao.addNote(note)
         }
         ActivityScenario.launch(MainActivity::class.java).use {
+            val destinationBounds = checkNotNull(device.wait(Until.findObject(
+                By.descStartsWith(target.name + ",")), 10000)).visibleBounds
             openBucket(source.name)
             val noteDesc = "Zettel: " + note.text
             find(noteDesc).click()
@@ -78,10 +80,14 @@ class NoteGestureDeviceTest {
             device.pressBack()
             openBucket(source.name)
             val from = find(noteDesc).visibleBounds
-            val to = find("Zieleimer: " + target.name).visibleBounds
+            assertFalse(device.hasObject(By.desc("Zieleimer: " + target.name)))
+            val to = destinationBounds
             val dragDown = SystemClock.uptimeMillis()
             inject(MotionEvent.ACTION_DOWN, from.centerX().toFloat(), from.centerY().toFloat(), dragDown)
             SystemClock.sleep(850)
+            // Move out of the contents. The same finger is now owned by the overview.
+            inject(MotionEvent.ACTION_MOVE, from.centerX().toFloat(), from.centerY() - 35f, dragDown)
+            SystemClock.sleep(300)
             for (step in 1..15) {
                 val t = step / 15f
                 inject(MotionEvent.ACTION_MOVE,
@@ -99,7 +105,9 @@ class NoteGestureDeviceTest {
             val burn = find(noteDesc).visibleBounds
             val burnDown = SystemClock.uptimeMillis()
             inject(MotionEvent.ACTION_DOWN, burn.centerX().toFloat(), burn.centerY().toFloat(), burnDown)
-            SystemClock.sleep(2250)
+            SystemClock.sleep(3000)
+            assertNull("Warning must last at least 2700ms", currentNote().deletedAt)
+            SystemClock.sleep(1600)
             // With animations disabled the successful burn may already dismiss the
             // modal window. Android can reject a trailing synthetic UP in that case.
             val releaseAccepted = inject(MotionEvent.ACTION_UP, burn.centerX().toFloat(),

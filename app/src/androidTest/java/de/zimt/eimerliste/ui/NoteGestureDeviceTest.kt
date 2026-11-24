@@ -79,6 +79,19 @@ class NoteGestureDeviceTest {
             // Close a potentially scrolled sheet and reopen a clean gesture target.
             device.pressBack()
             openBucket(source.name)
+            // Android may cancel the pointer stream while the paper is over a valid target.
+            val cancelStart = find(noteDesc).visibleBounds
+            val cancelDown = SystemClock.uptimeMillis()
+            inject(MotionEvent.ACTION_DOWN, cancelStart.exactCenterX(), cancelStart.exactCenterY(), cancelDown)
+            SystemClock.sleep(850)
+            inject(MotionEvent.ACTION_MOVE, cancelStart.exactCenterX(), cancelStart.exactCenterY() - 55f, cancelDown)
+            checkNotNull(device.wait(Until.findObject(By.descStartsWith("Offener Zettel.")), 5000))
+            inject(MotionEvent.ACTION_MOVE, destinationBounds.exactCenterX(), destinationBounds.exactCenterY(), cancelDown)
+            inject(MotionEvent.ACTION_CANCEL, destinationBounds.exactCenterX(), destinationBounds.exactCenterY(), cancelDown)
+            device.pressBack()
+            find(noteDesc)
+            assertEquals(note, currentNote())
+
             val from = find(noteDesc).visibleBounds
             assertFalse(device.hasObject(By.desc("Zieleimer: " + target.name)))
             val to = destinationBounds

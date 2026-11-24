@@ -12,6 +12,7 @@
 | L2-007 | AC-L2-007: separately installable Lab can migrate notes safely into ZIMT | P2 / schema | IMPLEMENTED | CI_VERIFIED | Build 47 versioned JSON export/import, stable IDs and Room restore tests passed. Host-app integration still outstanding. |
 | L2-008 | AC-L2-008: build/tests on exact SHA and reproducible debug artifact | P2 / CI | IMPLEMENTED | CI_VERIFIED | Build 47 CI run 45294180118 + Room run 45294179965; new HEAD requires fresh evidence. |
 | L2-009 | AC-L2-004/007: preserve unsupported imported sketch bytes and version when placing an existing note | P0 / restore and edit | IMPLEMENTED | UNVERIFIED | Build 55 guards the editor and Room update. EimerPersistenceTest imports a v2 sketch, moves it with a text edit and checks rejected replacements preserve the row. Verify on API 28 and the original-signed update path. |
+| L2-010 | AC-L2-001/002: Android cancellation over a valid target leaves the carried row intact | P0 / root pointer handling | IMPLEMENTED | UNVERIFIED | Build 56 disarms a consumed release. NoteGestureDeviceTest injects ACTION_CANCEL over a second bucket and checks every stored field upon returning to the source. |
 
 ## Coverage
 Prioritization never caps authorized features. Reconcile current ACTIVE_SCOPE and observed code, add missing work; do not stop merely because a milestone is committed.

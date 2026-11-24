@@ -611,7 +611,10 @@ fun EimerApp(vm: EimerViewModel = viewModel()) {
                             val event = awaitPointerEvent(PointerEventPass.Main)
                             val change = event.changes.firstOrNull { it.id == down.id }
                             if (carriedPointer != null) {
-                                if (change == null || event.changes.size != 1 || (!change.pressed && !change.previousPressed)) {
+                                // Compose represents a platform cancellation as a consumed release.
+                                // Only a real finger-up may commit a drop in the overview.
+                                if (change == null || event.changes.size != 1 ||
+                                    (!change.pressed && (!change.previousPressed || change.isConsumed))) {
                                     stopCarryTimer()
                                     carriedPointer = null
                                     hoveredBucket = null

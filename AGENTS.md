@@ -23,4 +23,4 @@
 ## Engineering Legibility Protocol 1.0
 Verbindlich ergänzend zur Development Doctrine: [ELP 1.0](docs/ENGINEERING_LEGIBILITY_PROTOCOL.md). Bei jeder relevanten Änderung verständliche Verantwortlichkeiten, explizite Datenwirkungen und nachvollziehbare Übergaben sicherstellen. Bestehende Dokumente und Nachweise nutzen; konkrete Probleme in der kanonischen Queue priorisieren. Keine separate Aufräumphase, keine zusätzlichen pauschalen Gates; Doctrine 7.0 und ihre Sicherheits- und Fortsetzungsregeln bleiben unverändert maßgeblich.
 
-Für ein Eimer-Liste-Update zuerst den [privaten Fundort des Originalschlüssels](docs/RELEASE_AND_DATA.md#privater-fundort-des-originalschlüssels) und die [Release-Checkliste](docs/RELEASE_CHECKLIST.md) prüfen.
+Für ein Eimer-Liste-Update zuerst den [registrierten privaten Signierzugang](docs/RELEASE_AND_DATA.md#privater-signierzugang-für-laufende-updates) mit `python3 tools/eimer_signer.py status` prüfen. Der [Bibliotheksfundort](docs/RELEASE_AND_DATA.md#privater-fundort-des-originalschlüssels) dient zur einmaligen Registrierung und Wiederherstellung. Die [Release-Checkliste](docs/RELEASE_CHECKLIST.md) gilt für jede Ausgabe.

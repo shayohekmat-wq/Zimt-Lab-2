@@ -87,6 +87,8 @@ import de.zimt.eimerliste.domain.NoteRules
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.launch
 import java.util.UUID
 import kotlinx.coroutines.delay
@@ -126,6 +128,13 @@ fun EimerApp(vm: EimerViewModel = viewModel()) {
         var pendingNoteId by rememberSaveable { mutableStateOf(initialDraft.noteId) }
         val draftSnapshot = DraftSnapshot(draft, drawing, sketchOpen, pendingPaper, pendingNoteId)
         SideEffect { DraftPreferences.saveIfChanged(appContext, draftSnapshot) }
+        LaunchedEffect(pendingNoteId) {
+            if (pendingNoteId != null) {
+                // Explicit folding is a durability boundary. Flush the queued preference
+                // write off the UI thread; normal typing remains non-blocking.
+                withContext(Dispatchers.IO) { DraftPreferences.flush(appContext) }
+            }
+        }
         // A Room insert may have succeeded immediately before the previous process
         // stopped. Do not present that already-delivered draft as new work.
         LaunchedEffect(Unit) {
@@ -170,6 +179,26 @@ fun EimerApp(vm: EimerViewModel = viewModel()) {
         val haptics = LocalHapticFeedback.current
         val density = LocalDensity.current
         val designSelections = remember { mutableStateMapOf<String, String>() }
+        val designWriteMutex = remember { Mutex() }
+        fun changeDesign(bucketId: String, designId: String?) {
+            scope.launch {
+                try {
+                    designWriteMutex.withLock {
+                        withContext(Dispatchers.IO) {
+                            if (designId == null) BucketDesignPreferences.clear(appContext, bucketId)
+                            else BucketDesignPreferences.set(appContext, bucketId, designId)
+                        }
+                        if (designId == null) designSelections.remove(bucketId)
+                        else designSelections[bucketId] = designId
+                    }
+                    haptics.performHapticFeedback(HapticFeedbackType.Confirm)
+                } catch (cancelled: CancellationException) {
+                    throw cancelled
+                } catch (error: Exception) {
+                    snackbar.showSnackbar(error.message ?: "Design konnte nicht gespeichert werden.")
+                }
+            }
+        }
         val exportDocument = rememberLauncherForActivityResult(
             ActivityResultContracts.CreateDocument("application/json")
         ) { uri ->
@@ -205,11 +234,13 @@ fun EimerApp(vm: EimerViewModel = viewModel()) {
                             input.use { EimerBackupCodec.decode(it) }
                         }
                         val result = vm.restoreBackup(snapshot)
-                        val restoredDesigns = withContext(Dispatchers.IO) {
-                            BucketDesignPreferences.restoreMissing(appContext, snapshot.designs)
-                        }
-                        restoredDesigns.forEach { (id, design) ->
-                            if (BucketArtworkCatalog.isKnownDesignId(design)) designSelections[id] = design
+                        designWriteMutex.withLock {
+                            val restoredDesigns = withContext(Dispatchers.IO) {
+                                BucketDesignPreferences.restoreMissing(appContext, snapshot.designs)
+                            }
+                            restoredDesigns.forEach { (id, design) ->
+                                if (BucketArtworkCatalog.isKnownDesignId(design)) designSelections[id] = design
+                            }
                         }
                         haptics.performHapticFeedback(HapticFeedbackType.Confirm)
                         snackbar.showSnackbar(
@@ -415,15 +446,9 @@ fun EimerApp(vm: EimerViewModel = viewModel()) {
                             )
                         }
                         item(span = { androidx.compose.foundation.lazy.grid.GridItemSpan(maxLineSpan) }) {
-                            DesignLab(buckets = buckets, onApplied = { bucketId, designId ->
-                                BucketDesignPreferences.set(appContext, bucketId, designId)
-                                designSelections[bucketId] = designId
-                                haptics.performHapticFeedback(HapticFeedbackType.Confirm)
-                            }, onReset = { bucketId ->
-                                BucketDesignPreferences.clear(appContext, bucketId)
-                                designSelections.remove(bucketId)
-                                haptics.performHapticFeedback(HapticFeedbackType.Confirm)
-                            })
+                            DesignLab(buckets = buckets,
+                                onApplied = { bucketId, designId -> changeDesign(bucketId, designId) },
+                                onReset = { bucketId -> changeDesign(bucketId, null) })
                         }
                     }
                 }

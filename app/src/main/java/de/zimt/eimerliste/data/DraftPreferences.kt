@@ -31,6 +31,10 @@ object DraftPreferences {
 
     // One atomic preference edit; Android persists asynchronously and flushes
     // outstanding writes during normal lifecycle transitions.
+    /** Wait for outstanding asynchronous preference writes without changing the draft. */
+    fun flush(context: Context): Boolean =
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().commit()
+
     fun saveIfChanged(context: Context, draft: DraftSnapshot) {
         val p = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
         if (p.getString("text", "") == draft.text &&

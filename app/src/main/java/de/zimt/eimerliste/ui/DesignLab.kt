@@ -97,8 +97,8 @@ object BucketDesignPreferences {
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getString(bucketId, null)
     fun set(context: Context, bucketId: String, designId: String) {
         require(BucketArtworkCatalog.isKnownDesignId(designId))
-        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
-            .putString(bucketId, designId).apply()
+        check(context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
+            .putString(bucketId, designId).commit()) { "Designauswahl konnte nicht gespeichert werden." }
     }
     /** Import only missing choices, retaining current selections and opaque legacy IDs. */
     fun restoreMissing(context: Context, designs: Map<String, String>): Map<String, String> {
@@ -112,8 +112,8 @@ object BucketDesignPreferences {
     }
 
     fun clear(context: Context, bucketId: String) {
-        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
-            .remove(bucketId).apply()
+        check(context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
+            .remove(bucketId).commit()) { "Designauswahl konnte nicht zurückgesetzt werden." }
     }
 }
 

@@ -20,6 +20,7 @@ class DraftPersistenceTest {
         assertEquals(first, DraftPreferences.load(context))
         DraftPreferences.saveIfChanged(context, folded)
         assertEquals(folded, DraftPreferences.load(context))
+        assertTrue(DraftPreferences.flush(context))
     }
 
     @Test fun verifyDraftAfterRestart() {

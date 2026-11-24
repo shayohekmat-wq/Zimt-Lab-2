@@ -15,6 +15,7 @@ run_test() {
   grep -Eq '^OK \(1 test[s]?\)' "$evidence/$name.txt"
 }
 run_test de.zimt.eimerliste.data.UpgradeFixtureTest#seedOldInstallation seed
+run_test de.zimt.eimerliste.data.UpgradeFixtureTest#verifyAfterUpgrade verify-baseline-on-disk
 adb install -r "$new" | tee "$evidence/install-upgrade.txt"
 run_test de.zimt.eimerliste.data.UpgradeFixtureTest#verifyAfterUpgrade verify-upgrade
 run_test de.zimt.eimerliste.data.EimerPersistenceTest persistence

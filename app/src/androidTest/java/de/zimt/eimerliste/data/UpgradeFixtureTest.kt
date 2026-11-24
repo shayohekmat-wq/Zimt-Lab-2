@@ -30,6 +30,12 @@ class UpgradeFixtureTest {
         dao.addNote(burned)
         BucketDesignPreferences.set(context, a.id, "user-wicker-01")
         BucketDesignPreferences.set(context, b.id, "illustrated-copper-01")
+        // The historical APK used apply(). Instrumentation ends abruptly, unlike
+        // normal Activity lifecycle transitions. Confirm the fixture is on disk
+        // before installing an update; otherwise it is not an upgrade regression.
+        assertTrue(context.getSharedPreferences("bucket-design-lab-v1", 0).edit()
+            .putString(a.id, "user-wicker-01")
+            .putString(b.id, "illustrated-copper-01").commit())
         assertEquals(active, dao.noteById(active.id))
     }
 

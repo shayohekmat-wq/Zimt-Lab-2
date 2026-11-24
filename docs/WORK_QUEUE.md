@@ -16,3 +16,5 @@
 Prioritization never caps authorized features. Reconcile current ACTIVE_SCOPE and observed code, add missing work; do not stop merely because a milestone is committed.
 
 Latest user priority: full-overview carry/drop replaces nested target row and move dialog; 2700ms warning, flame rendering, symmetric bottom-up sketch transition. Verify exact HEAD before release.
+
+Build 53 exact HEAD 4bc64eed CI runs 45299627111 and 45299627202 both green. Build 54 implements user refinements, including original-row editing and direct motor haptics. Exact HEAD verification required.

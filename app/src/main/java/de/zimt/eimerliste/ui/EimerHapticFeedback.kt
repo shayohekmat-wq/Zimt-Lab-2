@@ -7,7 +7,6 @@ import android.media.AudioAttributes
 import android.os.Vibrator
 import android.os.VibratorManager
 import android.content.Context
-import android.provider.Settings
 import android.view.HapticFeedbackConstants
 import android.view.View
 import androidx.compose.runtime.Composable
@@ -39,53 +38,63 @@ internal fun eimerHapticPlan(type: HapticFeedbackType, sdk: Int): HapticPlan {
     return HapticPlan(preferred, fallback)
 }
 
-/** Use platform feedback first and a compatible primitive if the effect is rejected.
- * The return value is framework acceptance, not proof of physical vibration.
- * Never bypass the user's system haptic setting.
+/** Direct finite motor pulses instead of relying on OEM View effect acceptance.
+ * Touch usage lets Android honor the device's vibration settings. Default
+ * amplitude works on motors without amplitude control, including older phones.
  */
 internal class EimerHapticFeedback(private val view: View) {
-    /**
-     * A finite, perceptible warning waveform. The composition cancels it on
-     * release, drag, lifecycle interruption or ignition; no background vibration.
-     */
-    fun beginBurnWarning(): (() -> Unit)? {
-        val context = view.context
-        if (!view.isHapticFeedbackEnabled ||
-            Settings.System.getInt(context.contentResolver, Settings.System.HAPTIC_FEEDBACK_ENABLED, 1) == 0)
-            return null
-        val vibrator = if (Build.VERSION.SDK_INT >= 31)
+    private val context = view.context
+    private val vibrator: Vibrator?
+        get() = if (Build.VERSION.SDK_INT >= 31)
             context.getSystemService(VibratorManager::class.java)?.defaultVibrator
         else @Suppress("DEPRECATION") (context.getSystemService(Context.VIBRATOR_SERVICE) as? Vibrator)
-        if (vibrator == null || !vibrator.hasVibrator()) {
-            performHapticFeedback(HapticFeedbackType.LongPress)
-            return null
-        }
-        // Nine short beats over exactly 2.7 seconds, growing subtly in intensity.
-        val timing = LongArray(18) { if (it % 2 == 0) 100L else 200L }
-        val strengths = IntArray(18) { if (it % 2 == 0) (135 + it * 6).coerceAtMost(235) else 0 }
+
+    private fun play(effect: VibrationEffect): Boolean {
+        val motor = vibrator ?: return false
+        if (!motor.hasVibrator()) return false
         return try {
-            val effect = VibrationEffect.createWaveform(timing, strengths, -1)
-            if (Build.VERSION.SDK_INT >= 33) {
-                vibrator.vibrate(effect, VibrationAttributes.Builder()
-                    .setUsage(VibrationAttributes.USAGE_TOUCH).build())
-            } else {
+            if (Build.VERSION.SDK_INT >= 33) motor.vibrate(effect, VibrationAttributes.Builder()
+                .setUsage(VibrationAttributes.USAGE_TOUCH).build())
+            else {
                 @Suppress("DEPRECATION")
-                vibrator.vibrate(effect, AudioAttributes.Builder()
+                motor.vibrate(effect, AudioAttributes.Builder()
                     .setUsage(AudioAttributes.USAGE_ASSISTANCE_SONIFICATION)
                     .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION).build())
             }
-            val stop: () -> Unit = { vibrator.cancel() }
-            stop
-        } catch (_: SecurityException) {
-            performHapticFeedback(HapticFeedbackType.LongPress)
-            null
+            true
+        } catch (_: RuntimeException) { false }
+    }
+
+    fun beginBurnWarning(): (() -> Unit)? {
+        val motor = vibrator ?: return null
+        if (!motor.hasVibrator()) return null
+        val timing = longArrayOf(0, 140, 160, 140, 160, 140, 160, 150, 150,
+            160, 140, 170, 130, 180, 120, 200, 100, 240, 60)
+        val effect = if (motor.hasAmplitudeControl()) {
+            val amps = IntArray(timing.size) { if (it % 2 == 0) 0 else (165 + it * 5).coerceAtMost(255) }
+            VibrationEffect.createWaveform(timing, amps, -1)
+        } else VibrationEffect.createWaveform(timing, -1)
+        if (!play(effect)) {
+            view.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
+            return null
         }
+        return { motor.cancel() }
     }
 
     fun performHapticFeedback(type: HapticFeedbackType) {
-        val plan = eimerHapticPlan(type, Build.VERSION.SDK_INT)
-        if (!view.performHapticFeedback(plan.preferred) && plan.preferred != plan.fallback)
-            view.performHapticFeedback(plan.fallback)
+        val duration = when (type) {
+            HapticFeedbackType.LongPress -> 65L
+            HapticFeedbackType.Reject -> 52L
+            HapticFeedbackType.Confirm -> 44L
+            HapticFeedbackType.GestureThresholdActivate -> 34L
+            HapticFeedbackType.GestureEnd -> 30L
+            else -> 24L
+        }
+        if (!play(VibrationEffect.createOneShot(duration, VibrationEffect.DEFAULT_AMPLITUDE))) {
+            val plan = eimerHapticPlan(type, Build.VERSION.SDK_INT)
+            if (!view.performHapticFeedback(plan.preferred) && plan.preferred != plan.fallback)
+                view.performHapticFeedback(plan.fallback)
+        }
     }
 }
 

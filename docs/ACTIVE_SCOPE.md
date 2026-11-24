@@ -28,3 +28,5 @@ See `docs/DEVELOPMENT_DOCTRINE.md`, `docs/ARCHITECTURE.md`, `docs/DEVELOPMENT_ST
 
 ## Doctrine 7.0 — Scope und Akzeptanzabdeckung
 Die bestehende Produktdefinition und ausdrückliche Nutzerentscheidungen gelten weiter; die Reihenfolge ist keine numerische Funktionsbegrenzung. `docs/WORK_QUEUE.md` bildet vorläufig AC-L2-001 bis AC-L2-008 ab. Nach jedem Slice aktuelle UI-/Daten-/Gesten-/Designkriterien gegen Code und Nachweise abgleichen und fehlende Aufgaben ergänzen. Historische Kataloggrenzen nur entsprechend aktueller ausdrücklicher Produktentscheidungen interpretieren; nicht als pauschalen Feature-Freeze.
+
+Latest interaction refinement: carry open paper; every bucket including source accepts it; drop in tray reopens existing-note editing without replacing any independent draft. Fold only after valid target release at bucket mouth, then normal insertion. During a continuous existing-note drag, warn after 7 seconds, ignite after another 2.7 seconds; release/cancel disarms. Direct finite motor effects on semantic interactions.

@@ -112,6 +112,19 @@ fun EimerApp(vm: EimerViewModel = viewModel()) {
         // One root owns the pointer across the content-to-overview transition.
         // A lifted note is only a visual reservation: Room keeps it in its source.
         var carriedPointer by remember { mutableStateOf<Offset?>(null) }
+        var dragStartedAt by remember { mutableStateOf<Long?>(null) }
+        var dragWarning by remember { mutableStateOf(false) }
+        var carriedBurnPoint by remember { mutableStateOf<Offset?>(null) }
+        val carriedBurn = remember { Animatable(0f) }
+        var placementPoint by remember { mutableStateOf<Offset?>(null) }
+        val placementFold = remember { Animatable(0f) }
+        var trayBounds by remember { mutableStateOf<Rect?>(null) }
+        // Separate edit session: an existing draft is never overwritten by a lifted note.
+        var editingId by rememberSaveable { mutableStateOf<String?>(null) }
+        var editingSource by rememberSaveable { mutableStateOf<String?>(null) }
+        var editingText by rememberSaveable { mutableStateOf("") }
+        var editingDrawing by rememberSaveable { mutableStateOf<String?>(null) }
+        var editingSketch by rememberSaveable { mutableStateOf(false) }
         var rootCoordinates by remember { mutableStateOf<LayoutCoordinates?>(null) }
         var burningNote by remember { mutableStateOf<NoteEntity?>(null) }
         var recoveryBucket by rememberSaveable { mutableStateOf<String?>(null) }
@@ -299,9 +312,39 @@ fun EimerApp(vm: EimerViewModel = viewModel()) {
             }
         }
 
+        fun stopCarryTimer() {
+            dragStartedAt = null
+            dragWarning = false
+        }
+        fun clearEditing() {
+            editingId = null
+            editingSource = null
+            editingText = ""
+            editingDrawing = null
+            editingSketch = false
+        }
+        fun editCarriedNote() {
+            val note = movingNote ?: return
+            if (noteMoveSaving) return
+            stopCarryTimer()
+            editingId = note.id
+            editingSource = note.bucketId
+            editingText = note.text
+            editingDrawing = note.drawingPayload
+            movingNote = null
+            carriedPointer = null
+            hoveredBucket = null
+            dragOffset = Offset.Zero
+            haptics.performHapticFeedback(HapticFeedbackType.Confirm)
+        }
         fun cancelTransfer() {
             if (noteMoveSaving) return
+            stopCarryTimer()
             val source = movingNote?.bucketId
+            if (editingId != null && movingNote?.id == editingId) {
+                editCarriedNote()
+                return
+            }
             movingNote = null
             carriedPointer = null
             hoveredBucket = null
@@ -316,6 +359,8 @@ fun EimerApp(vm: EimerViewModel = viewModel()) {
             if (movingNote != null || pendingPaper != null || noteMoveSaving || burningNote != null) return
             movingNote = note
             carriedPointer = pointer
+            dragStartedAt = if (pointer != null) android.os.SystemClock.uptimeMillis() else null
+            dragWarning = false
             dragOffset = Offset.Zero
             hoveredBucket = null
             heldBucketId = null
@@ -323,24 +368,46 @@ fun EimerApp(vm: EimerViewModel = viewModel()) {
         }
 
         fun targetAt(point: Offset): String? = bucketBounds.entries.firstOrNull { (id, rect) ->
-            id != movingNote?.bucketId && rect.contains(point)
+            rect.contains(point)
         }?.key
 
         fun moveCarriedNote(targetId: String) {
             val note = movingNote ?: return
-            if (noteMoveSaving || targetId == note.bucketId) return
+            if (noteMoveSaving || carriedBurnPoint != null) return
             val target = buckets.firstOrNull { it.id == targetId } ?: return
+            val bounds = bucketBounds[targetId]
+            stopCarryTimer()
             noteMoveSaving = true
+            carriedPointer = null
+            hoveredBucket = targetId
+            placementPoint = bounds?.let { Offset(it.center.x, it.top + it.height * .10f) }
             scope.launch {
                 try {
-                    vm.moveNote(note.id, note.bucketId, target.id)
+                    placementFold.snapTo(0f)
+                    if (ValueAnimator.areAnimatorsEnabled() && placementPoint != null) {
+                        for (step in 1..3) {
+                            placementFold.animateTo(step.toFloat(), tween(190, easing = FastOutSlowInEasing))
+                            haptics.performHapticFeedback(HapticFeedbackType.SegmentTick)
+                        }
+                    } else placementFold.snapTo(3f)
+                    // Retain the existing row, even when returning to its source.
+                    if (editingId == note.id) {
+                        vm.placeEditedNote(note.id, note.bucketId, target.id, note.text, note.drawingPayload)
+                    } else if (target.id != note.bucketId) {
+                        vm.moveNote(note.id, note.bucketId, target.id)
+                    } else {
+                        val current = vm.savedNote(note.id)
+                        check(current != null && current.deletedAt == null && current.bucketId == target.id)
+                    }
+                    // Let the normal bucket renderer receive the folded packet.
+                    placementPoint = null
                     bucketImpactEvents[target.id] = (bucketImpactEvents[target.id] ?: 0) + 1
                     haptics.performHapticFeedback(HapticFeedbackType.Confirm)
+                    if (editingId == note.id) clearEditing()
                     movingNote = null
-                    carriedPointer = null
                     hoveredBucket = null
                     dragOffset = Offset.Zero
-                    scope.launch { snackbar.showSnackbar("Zettel in „" + target.name + "“ verschoben.") }
+                    scope.launch { snackbar.showSnackbar("Zettel in „" + target.name + "“ gelegt.") }
                 } catch (cancelled: CancellationException) {
                     throw cancelled
                 } catch (error: Exception) {
@@ -350,13 +417,101 @@ fun EimerApp(vm: EimerViewModel = viewModel()) {
                     haptics.performHapticFeedback(HapticFeedbackType.Reject)
                     scope.launch { snackbar.showSnackbar(error.message ?: "Verschieben fehlgeschlagen. Zettel bleibt erhalten.") }
                 } finally {
+                    placementPoint = null
                     noteMoveSaving = false
                 }
             }
         }
 
+        fun foldEditedNote() {
+            val id = editingId ?: return
+            val source = editingSource ?: return
+            if (!NoteRules.canSubmit(editingText, editingDrawing) || noteMoveSaving || movingNote != null) return
+            keyboard?.hide()
+            focus.clearFocus()
+            scope.launch {
+                val original = vm.savedNote(id)
+                if (original == null || original.deletedAt != null || original.bucketId != source) {
+                    snackbar.showSnackbar("Originalzettel nicht mehr verfügbar. Bearbeitung bleibt erhalten.")
+                } else if (editingId == id) {
+                    movingNote = original.copy(text = editingText, drawingPayload = editingDrawing)
+                    editingSketch = false
+                    haptics.performHapticFeedback(HapticFeedbackType.GestureThresholdActivate)
+                }
+            }
+        }
+
+        fun burnCarriedNote() {
+            val note = movingNote ?: return
+            val point = carriedPointer ?: return
+            if (noteMoveSaving || carriedBurnPoint != null) return
+            stopCarryTimer()
+            carriedPointer = null
+            hoveredBucket = null
+            carriedBurnPoint = point
+            noteMoveSaving = true
+            scope.launch {
+                try {
+                    val deletedAt = vm.burnNote(note.id)
+                    haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                    carriedBurn.snapTo(0f)
+                    if (ValueAnimator.areAnimatorsEnabled())
+                        carriedBurn.animateTo(1f, tween(NoteFireDurationMs.toInt(), easing = androidx.compose.animation.core.LinearEasing))
+                    else carriedBurn.snapTo(1f)
+                    carriedBurnPoint = null
+                    movingNote = null
+                    if (editingId == note.id) clearEditing()
+                    noteMoveSaving = false
+                    if (snackbar.showSnackbar("Zettel verbrannt.", "Rückgängig", true, SnackbarDuration.Long)
+                        == SnackbarResult.ActionPerformed) {
+                        vm.undoBurn(note.id, deletedAt)
+                        haptics.performHapticFeedback(HapticFeedbackType.Confirm)
+                    }
+                } catch (cancelled: CancellationException) {
+                    throw cancelled
+                } catch (error: Exception) {
+                    scope.launch { snackbar.showSnackbar(error.message ?: "Verbrennen fehlgeschlagen.") }
+                } finally {
+                    carriedBurnPoint = null
+                    noteMoveSaving = false
+                }
+            }
+        }
+
+        val latestBurnCarried by rememberUpdatedState<() -> Unit>(::burnCarriedNote)
+        LaunchedEffect(dragStartedAt) {
+            val started = dragStartedAt ?: return@LaunchedEffect
+            delay((NoteHoldTiming.DRAG_WARNING_MS - (android.os.SystemClock.uptimeMillis() - started)).coerceAtLeast(0L))
+            if (carriedPointer != null && movingNote != null) {
+                dragWarning = true
+                delay(NoteHoldTiming.WARNING_DURATION_MS)
+                if (carriedPointer != null && dragStartedAt == started) latestBurnCarried()
+            }
+        }
+        DisposableEffect(dragWarning) {
+            val stop = if (dragWarning) haptics.beginBurnWarning() else null
+            onDispose { stop?.invoke() }
+        }
+        LaunchedEffect(movingNote?.id, carriedBurnPoint) {
+            if (carriedBurnPoint == null) carriedBurn.snapTo(0f)
+        }
+        val carryLifecycle = LocalLifecycleOwner.current.lifecycle
+        DisposableEffect(carryLifecycle) {
+            val observer = LifecycleEventObserver { _, _ ->
+                if (!carryLifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) {
+                    stopCarryTimer()
+                    carriedPointer = null
+                    hoveredBucket = null
+                }
+            }
+            carryLifecycle.addObserver(observer)
+            onDispose { carryLifecycle.removeObserver(observer) }
+        }
+
         val foldPaper: () -> Unit = {
-            if (movingNote == null && pendingPaper == null && buckets.isNotEmpty() && NoteRules.canSubmit(draft, drawing)) {
+            if (editingId != null) {
+                foldEditedNote()
+            } else if (movingNote == null && pendingPaper == null && buckets.isNotEmpty() && NoteRules.canSubmit(draft, drawing)) {
                 // Hide the IME before showing the movable, folded slip.
                 keyboard?.hide()
                 focus.clearFocus()
@@ -428,6 +583,7 @@ fun EimerApp(vm: EimerViewModel = viewModel()) {
 
         val latestDeliver by rememberUpdatedState(deliver)
         val latestTargetAt by rememberUpdatedState<(Offset) -> String?>(::targetAt)
+        val latestEditCarried by rememberUpdatedState<() -> Unit>(::editCarriedNote)
         BackHandler(enabled = movingNote != null || (openBucket != null && openNote == null && recoveryBucket == null)) {
             if (movingNote != null) cancelTransfer() else openBucket = null
         }
@@ -442,6 +598,7 @@ fun EimerApp(vm: EimerViewModel = viewModel()) {
                             val change = event.changes.firstOrNull { it.id == down.id }
                             if (carriedPointer != null) {
                                 if (change == null || event.changes.size != 1) {
+                                    stopCarryTimer()
                                     carriedPointer = null
                                     hoveredBucket = null
                                     break
@@ -449,12 +606,17 @@ fun EimerApp(vm: EimerViewModel = viewModel()) {
                                 val point = rootCoordinates?.takeIf { it.isAttached }?.localToRoot(change.position)
                                 if (point != null) {
                                     carriedPointer = point
-                                    hoveredBucket = latestTargetAt(point)
+                                    val hit = latestTargetAt(point)
+                                    if (hit != hoveredBucket && hit != null && !dragWarning)
+                                        haptics.performHapticFeedback(HapticFeedbackType.GestureThresholdActivate)
+                                    hoveredBucket = hit
                                     if (!change.pressed) {
-                                        val hit = hoveredBucket
+                                        stopCarryTimer()
                                         carriedPointer = null
                                         hoveredBucket = null
                                         if (hit != null) latestDeliver(hit)
+                                        else if (trayBounds?.contains(point) == true) latestEditCarried()
+                                        else haptics.performHapticFeedback(HapticFeedbackType.Reject)
                                     }
                                 }
                                 change.consume()
@@ -462,6 +624,7 @@ fun EimerApp(vm: EimerViewModel = viewModel()) {
                         } while (event.changes.any { it.pressed })
                     } finally {
                         if (carriedPointer != null) {
+                            stopCarryTimer()
                             carriedPointer = null
                             hoveredBucket = null
                         }
@@ -545,9 +708,8 @@ fun EimerApp(vm: EimerViewModel = viewModel()) {
                                 },
                                 paperPending = pendingPaper != null || movingNote != null,
                                 onOpen = {
-                                    if (movingNote?.bucketId == bucket.id) {
-                                        cancelTransfer()
-                                    } else if (pendingPaper != null || movingNote != null) {
+                                    haptics.performHapticFeedback(HapticFeedbackType.GestureThresholdActivate)
+                                    if (pendingPaper != null || movingNote != null) {
                                         deliver(bucket.id)
                                     } else {
                                         vm.selectBucket(bucket.id)
@@ -565,17 +727,30 @@ fun EimerApp(vm: EimerViewModel = viewModel()) {
                 }
                 WoodenShelf()
                 if (pendingPaper == null && movingNote == null) {
+                    if (editingId != null) {
+                        Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Text("ZETTEL BEARBEITEN", color = Ink.Brass, fontSize = 11.sp, modifier = Modifier.weight(1f))
+                            TextButton(onClick = {
+                                clearEditing()
+                                haptics.performHapticFeedback(HapticFeedbackType.GestureEnd)
+                            }) { Text("Original behalten", color = Ink.Paper) }
+                        }
+                    }
                     PaperComposer(
-                        draft = draft,
-                        drawing = drawing,
+                        draft = if (editingId != null) editingText else draft,
+                        drawing = if (editingId != null) editingDrawing else drawing,
                         focusTextOnReturn = focusTextOnReturn,
                         onTextFocusHandled = { focusTextOnReturn = false },
                         onEditDrawing = {
                             keyboard?.hide()
                             focus.clearFocus()
-                            sketchOpen = true
+                            haptics.performHapticFeedback(HapticFeedbackType.GestureThresholdActivate)
+                            if (editingId != null) editingSketch = true else sketchOpen = true
                         },
-                        onDraftChange = { draft = it.take(NoteRules.MAX_NOTE_LENGTH) },
+                        onDraftChange = {
+                            if (editingId != null) editingText = it.take(NoteRules.MAX_NOTE_LENGTH)
+                            else draft = it.take(NoteRules.MAX_NOTE_LENGTH)
+                        },
                         onFold = foldPaper,
                         enabled = buckets.isNotEmpty() && !saving,
                         compact = imeVisible,
@@ -586,18 +761,25 @@ fun EimerApp(vm: EimerViewModel = viewModel()) {
                     PaperDropTray(
                         message = movingNote?.text ?: pendingPaper.orEmpty(),
                         drawing = if (movingNote != null) movingNote?.drawingPayload else drawing,
-                        progress = if (movingNote != null) 3f else fold.value,
+                        progress = if (movingNote != null) 0f else fold.value,
                         ready = if (movingNote != null) !noteMoveSaving && carriedPointer == null else paperReady && !saving,
                         transfer = movingNote != null,
-                        hidePaper = carriedPointer != null,
+                        hidePaper = carriedPointer != null || placementPoint != null || carriedBurnPoint != null,
                         dragOffset = dragOffset,
                         onPaperBounds = { paperBounds = it },
                         onDragStart = { point ->
                             pointerStart = (paperBounds?.topLeft ?: Offset.Zero) + point
                             dragOffset = Offset.Zero
                             hoveredBucket = null
+                            haptics.performHapticFeedback(HapticFeedbackType.LongPress)
+                            if (movingNote != null) {
+                                carriedPointer = pointerStart
+                                dragStartedAt = android.os.SystemClock.uptimeMillis()
+                                dragWarning = false
+                            }
                         },
-                        onDrag = { delta ->
+                        onDrag = drag@{ delta ->
+                            if (movingNote != null) return@drag
                             dragOffset += delta
                             val pointer = pointerStart + dragOffset
                             val newlyHovered = targetAt(pointer)
@@ -606,7 +788,8 @@ fun EimerApp(vm: EimerViewModel = viewModel()) {
                             }
                             hoveredBucket = newlyHovered
                         },
-                        onDragEnd = {
+                        onDragEnd = dragEnd@{
+                            if (movingNote != null) return@dragEnd
                             val pointer = pointerStart + dragOffset
                             val hit = targetAt(pointer)
                             if (hit != null) {
@@ -626,9 +809,12 @@ fun EimerApp(vm: EimerViewModel = viewModel()) {
                             }
                         },
                         onDragCancel = {
-                            hoveredBucket = null
-                            dragOffset = Offset.Zero
+                            if (movingNote == null) {
+                                hoveredBucket = null
+                                dragOffset = Offset.Zero
+                            }
                         },
+                        onEdit = { editCarriedNote() },
                         onCancel = {
                             if (movingNote != null) {
                                 cancelTransfer()
@@ -639,7 +825,8 @@ fun EimerApp(vm: EimerViewModel = viewModel()) {
                                 dragOffset = Offset.Zero
                             }
                         },
-                        modifier = Modifier.fillMaxWidth().padding(horizontal = 13.dp, vertical = 12.dp)
+                        modifier = Modifier.fillMaxWidth().onGloballyPositioned { trayBounds = it.boundsInRoot() }
+                            .padding(horizontal = 13.dp, vertical = 12.dp)
                     )
                 }
             }
@@ -664,11 +851,14 @@ fun EimerApp(vm: EimerViewModel = viewModel()) {
                 BucketContents(
                     bucket = visibleBucket,
                     notes = if (visibleBucket.id == selectedId) notes.filter { it.bucketId == visibleBucket.id } else emptyList(),
-                    canTransfer = buckets.any { it.id != visibleBucket.id } && pendingPaper == null,
+                    canTransfer = pendingPaper == null && editingId == null,
                     burningNote = burningNote?.takeIf { it.bucketId == visibleBucket.id },
                     recoveryCount = deletedNotes.count { it.bucketId == visibleBucket.id },
                     onRecovery = { recoveryBucket = visibleBucket.id },
-                    onNote = { openNote = it },
+                    onNote = {
+                        haptics.performHapticFeedback(HapticFeedbackType.GestureThresholdActivate)
+                        openNote = it
+                    },
                     onLiftNote = { note, point -> beginTransfer(note, point) },
                     onIgnite = { note ->
                         if (burningNote == null) {
@@ -702,6 +892,7 @@ fun EimerApp(vm: EimerViewModel = viewModel()) {
                         }
                     },
                     onRandom = {
+                        haptics.performHapticFeedback(HapticFeedbackType.GestureThresholdActivate)
                         scope.launch {
                             try {
                                 val note = vm.randomNote(visibleBucket.id)
@@ -721,23 +912,46 @@ fun EimerApp(vm: EimerViewModel = viewModel()) {
             }
         }
 
-            if (carriedPointer != null) {
-                val point = carriedPointer!!
+            val floatingPoint = carriedBurnPoint ?: placementPoint ?: carriedPointer
+            if (floatingPoint != null && movingNote != null) {
+                val warningWobble = remember { Animatable(0f) }
+                LaunchedEffect(dragWarning) {
+                    if (dragWarning && ValueAnimator.areAnimatorsEnabled()) {
+                        while (true) {
+                            warningWobble.animateTo(-2f, tween(85))
+                            warningWobble.animateTo(2f, tween(125))
+                        }
+                    } else warningWobble.snapTo(0f)
+                }
+                val point = floatingPoint
                 val origin = rootCoordinates?.takeIf { it.isAttached }?.localToRoot(Offset.Zero) ?: Offset.Zero
-                val halfWidth = with(density) { 77.dp.toPx() }
-                val halfHeight = with(density) { 37.dp.toPx() }
-                FoldedPaperArtwork(
-                    progress = 3f,
-                    message = movingNote?.text.orEmpty(),
-                    drawing = movingNote?.drawingPayload,
-                    modifier = Modifier.zIndex(4f).offset {
-                        IntOffset((point.x - origin.x - halfWidth).roundToInt(),
-                            (point.y - origin.y - halfHeight).roundToInt())
-                    }.size(154.dp, 74.dp).graphicsLayer {
-                        rotationZ = -7f
-                        shadowElevation = 10.dp.toPx()
+                val halfWidth = with(density) { 91.dp.toPx() }
+                val halfHeight = with(density) { 57.dp.toPx() }
+                val floatingModifier = Modifier.zIndex(4f).offset {
+                    IntOffset((point.x - origin.x - halfWidth).roundToInt(),
+                        (point.y - origin.y - halfHeight).roundToInt())
+                }.size(182.dp, 114.dp).graphicsLayer {
+                    rotationZ = if (dragWarning) warningWobble.value else -4f
+                    shadowElevation = 10.dp.toPx()
+                }
+                if (dragWarning || carriedBurnPoint != null) {
+                    Box(floatingModifier) {
+                        PaperSheet(Modifier.fillMaxSize(), burnProgress = (carriedBurn.value / .88f).coerceIn(0f, 1f)) {
+                            SketchPreview(movingNote?.drawingPayload, Modifier.fillMaxSize().padding(8.dp))
+                            Text(movingNote?.text.orEmpty(), modifier = Modifier.padding(13.dp),
+                                color = Ink.InkBlack, fontFamily = FontFamily.Serif, fontSize = 13.sp,
+                                maxLines = 4, overflow = TextOverflow.Ellipsis)
+                        }
+                        NoteFire(carriedBurn.value, dragWarning && carriedBurnPoint == null, Modifier.matchParentSize())
                     }
-                )
+                } else {
+                    FoldedPaperArtwork(
+                        progress = if (placementPoint != null) placementFold.value else 0f,
+                        message = movingNote?.text.orEmpty(),
+                        drawing = movingNote?.drawingPayload,
+                        modifier = floatingModifier
+                    )
+                }
             }
             SnackbarHost(
                 hostState = snackbar,
@@ -821,21 +1035,28 @@ fun EimerApp(vm: EimerViewModel = viewModel()) {
         openNote?.let { note ->
             DialogPaper(note = note, onDismiss = { openNote = null })
         }
-        if (sketchOpen) {
+        if (sketchOpen || editingSketch) {
+            val editing = editingId != null
             PaperSketchEditor(
-                drawingPayload = drawing,
-                text = draft,
-                onPayloadChange = { drawing = it },
+                drawingPayload = if (editing) editingDrawing else drawing,
+                text = if (editing) editingText else draft,
+                onPayloadChange = { if (editing) editingDrawing = it else drawing = it },
                 onTextEdit = {
-                    drawing = it
-                    sketchOpen = false
+                    if (editing) { editingDrawing = it; editingSketch = false }
+                    else { drawing = it; sketchOpen = false }
                     focusTextOnReturn = true
                 },
                 onApply = {
-                    drawing = it
-                    sketchOpen = false
+                    if (editing) { editingDrawing = it; editingSketch = false }
+                    else { drawing = it; sketchOpen = false }
                 },
-                onFold = { finishedDrawing ->
+                onFold = foldSketch@{ finishedDrawing ->
+                    if (editing) {
+                        editingDrawing = finishedDrawing
+                        editingSketch = false
+                        foldEditedNote()
+                        return@foldSketch
+                    }
                     // Preserve the completed sketch before starting the real fold sequence.
                     drawing = finishedDrawing
                     sketchOpen = false
@@ -944,6 +1165,7 @@ private fun BucketTile(
     val wobble = remember { Animatable(0f) }
     val ejectFlight = remember { Animatable(0f) }
     val wickerPaper = remember { Animatable(1f) }
+    val plainDrop = remember { Animatable(1f) }
     LaunchedEffect(impactToken, isWickerReference, illustratedAsset) {
         if ((isWickerReference || illustratedAsset != null) && impactToken > 0 && ValueAnimator.areAnimatorsEnabled()) {
             wickerPaper.snapTo(0f)
@@ -954,6 +1176,8 @@ private fun BucketTile(
     }
     LaunchedEffect(impactToken) {
         if (impactToken > 0 && ValueAnimator.areAnimatorsEnabled()) {
+            plainDrop.snapTo(0f)
+            launch { plainDrop.animateTo(1f, tween(440, easing = FastOutSlowInEasing)) }
             impact.snapTo(0f)
             impact.animateTo(1f, tween(95, easing = FastOutSlowInEasing))
             impact.animateTo(0f, spring(dampingRatio = .34f, stiffness = Spring.StiffnessMedium))
@@ -1070,6 +1294,14 @@ private fun BucketTile(
                     title = bucket.name,
                     modifier = artworkModifier
                 )
+            }
+            if (plainDrop.value < 1f && !isWickerReference && illustratedAsset == null) {
+                FoldedPaperArtwork(3f, "", null,
+                    Modifier.align(Alignment.TopCenter).size(92.dp, 64.dp).graphicsLayer {
+                        translationY = (10.dp.toPx() + 90.dp.toPx() * plainDrop.value)
+                        rotationZ = -7f + 13f * plainDrop.value
+                        alpha = 1f - ((plainDrop.value - .48f) / .52f).coerceIn(0f, 1f)
+                    })
             }
             if (isEjecting && !isWickerReference && illustratedAsset == null) {
                 FoldedPaperArtwork(
@@ -1203,6 +1435,7 @@ private fun PaperDropTray(
     onDrag: (Offset) -> Unit,
     onDragEnd: () -> Unit,
     onDragCancel: () -> Unit,
+    onEdit: () -> Unit,
     onCancel: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -1220,6 +1453,9 @@ private fun PaperDropTray(
                 color = Ink.Brass,
                 modifier = Modifier.weight(1f)
             )
+            if (transfer) TextButton(onClick = onEdit, enabled = ready) {
+                Text("Bearbeiten", color = Ink.Paper)
+            }
             TextButton(onClick = onCancel, enabled = ready) {
                 Text("Zurück", color = Ink.Muted, fontSize = 12.sp)
             }
@@ -1248,7 +1484,8 @@ private fun PaperDropTray(
                     }
                     .semantics {
                         contentDescription =
-                            "Gefalteter Zettel. Ziehe ihn auf einen Eimer oder tippe den Zieleimer an."
+                            if (transfer) "Offener Zettel. Ziehe ihn in einen Eimer oder bearbeite ihn."
+                            else "Gefalteter Zettel. Ziehe ihn auf einen Eimer oder tippe den Zieleimer an."
                     },
                 contentAlignment = Alignment.Center
             ) {
@@ -1261,7 +1498,7 @@ private fun PaperDropTray(
             }
         }
         Text(
-            if (transfer) "Ziehe den Zettel in einen Eimer oder tippe auf ihn."
+            if (transfer) "Jeder Eimer ist ein Ziel. Zur Ablage ziehen, um zu bearbeiten."
             else if (ready) "Daneben loslassen? Kein Problem – der Zettel bleibt hier." else "Eins · zwei · drei",
             fontSize = 11.sp,
             color = Ink.Muted,

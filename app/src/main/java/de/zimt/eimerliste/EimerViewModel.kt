@@ -55,6 +55,9 @@ class EimerViewModel(application: Application) : AndroidViewModel(application) {
     suspend fun moveNote(noteId: String, sourceBucketId: String, destinationBucketId: String) =
         repository.moveNote(noteId, sourceBucketId, destinationBucketId)
 
+    suspend fun placeEditedNote(id: String, source: String, destination: String, text: String, drawing: String?) =
+        repository.placeEditedNote(id, source, destination, text, drawing)
+
     suspend fun burnNote(noteId: String): Long = repository.burnNote(noteId)
 
     suspend fun undoBurn(noteId: String, deletedAt: Long) =

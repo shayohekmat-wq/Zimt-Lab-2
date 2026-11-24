@@ -113,6 +113,16 @@ interface EimerDao {
         updatedAt: Long
     ): Int
 
+    // Edit/return in one atomic operation, preserving the existing note identity.
+    @Query("""
+        UPDATE notes SET bucketId = :destination, text = :text,
+            drawingPayload = :drawing, drawingPayloadVersion = :drawingVersion, updatedAt = :now
+        WHERE id = :id AND bucketId = :source AND deletedAt IS NULL
+          AND EXISTS (SELECT 1 FROM buckets WHERE id = :destination AND deletedAt IS NULL)
+    """)
+    suspend fun placeEditedNote(id: String, source: String, destination: String, text: String,
+                                drawing: String?, drawingVersion: Int?, now: Long): Int
+
     // Reversible soft deletion: the row and drawing remain intact for Undo.
     @Query("UPDATE notes SET deletedAt = :deletedAt, updatedAt = :deletedAt WHERE id = :noteId AND deletedAt IS NULL")
     suspend fun softDeleteNote(noteId: String, deletedAt: Long): Int

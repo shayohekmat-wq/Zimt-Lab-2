@@ -102,6 +102,17 @@ class NoteGestureDeviceTest {
             assertEquals(note.text, currentNote().text)
             SystemClock.sleep(800)
             openBucket(target.name)
+            // A stationary lift/release carries the open note to the overview.
+            val same = find(noteDesc).visibleBounds
+            val sameDown = SystemClock.uptimeMillis()
+            inject(MotionEvent.ACTION_DOWN, same.centerX().toFloat(), same.centerY().toFloat(), sameDown)
+            SystemClock.sleep(850)
+            inject(MotionEvent.ACTION_UP, same.centerX().toFloat(), same.centerY().toFloat(), sameDown)
+            checkNotNull(device.wait(Until.findObject(By.descStartsWith(target.name + ",")), 10000)).click()
+            SystemClock.sleep(1100)
+            assertEquals(target.id, currentNote().bucketId)
+            assertEquals(note.id, currentNote().id)
+            openBucket(target.name)
             val burn = find(noteDesc).visibleBounds
             val burnDown = SystemClock.uptimeMillis()
             inject(MotionEvent.ACTION_DOWN, burn.centerX().toFloat(), burn.centerY().toFloat(), burnDown)

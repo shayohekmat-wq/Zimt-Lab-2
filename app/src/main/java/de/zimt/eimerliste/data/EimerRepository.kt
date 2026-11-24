@@ -49,6 +49,16 @@ class EimerRepository(private val dao: EimerDao) {
             }
         }
 
+    suspend fun placeEditedNote(id: String, source: String, destination: String, text: String, drawing: String?) =
+        withContext(Dispatchers.IO) {
+            require(NoteRules.canSubmit(text, drawing)) { "Der Zettel ist leer oder ungültig." }
+            val validDrawing = drawing?.takeIf { PaperDrawingCodec.hasInk(it) }
+            check(dao.placeEditedNote(id, source, destination, NoteRules.normalize(text), validDrawing,
+                if (validDrawing != null) 1 else null, System.currentTimeMillis()) == 1) {
+                "Originalzettel oder Zieleimer nicht mehr verfügbar."
+            }
+        }
+
     /** Soft-delete only; no hard deletion is performed by this workflow. */
     suspend fun burnNote(noteId: String): Long = withContext(Dispatchers.IO) {
         require(noteId.isNotBlank()) { "Ungültige Notiz." }

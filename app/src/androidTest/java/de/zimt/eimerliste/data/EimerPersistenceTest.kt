@@ -62,6 +62,26 @@ class EimerPersistenceTest {
                 assertEquals(EimerBackupMergeResult(2, 1, 0), targetStore.merge(snapshot))
                 assertEquals(snapshot, targetStore.snapshot())
                 assertEquals(EimerBackupMergeResult(0, 0, 0), targetStore.merge(snapshot))
+                // Backups may contain a newer sketch format even though the Room schema is unchanged.
+                val future = edited.copy(id = "future-sketch", drawingPayloadVersion = 2,
+                    drawingPayload = "ZIMT-SKETCH/2\nopaque")
+                targetStore.merge(snapshot.copy(notes = listOf(future)))
+                val targetRepo = EimerRepository(targetDb.dao())
+                assertFalse(future.supportsDrawingEdits())
+                targetRepo.placeEditedNote(future.id, b.id, a.id, "Neuer Text", future.drawingPayload)
+                val withText = targetDb.dao().noteById(future.id)!!
+                assertEquals("Neuer Text", withText.text)
+                assertEquals(a.id, withText.bucketId)
+                assertEquals(future.drawingPayload, withText.drawingPayload)
+                assertEquals(future.drawingPayloadVersion, withText.drawingPayloadVersion)
+                for (replacement in listOf(null, sketch)) {
+                    try {
+                        targetRepo.placeEditedNote(future.id, a.id, b.id, "Anderer Text", replacement)
+                        fail("Unsupported original sketch must survive an edit")
+                    } catch (expected: IllegalStateException) {
+                        assertEquals(withText, targetDb.dao().noteById(future.id))
+                    }
+                }
             } finally {
                 targetDb.close()
                 context.deleteDatabase(targetDbName)

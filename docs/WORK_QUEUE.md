@@ -11,6 +11,7 @@
 | L2-006 | AC-L2-006: bucket assets render correctly with REAR → PAPER → FRONT and documented provenance | P1 / assets | IMPLEMENTED | CI_VERIFIED | Build 50 three-pair Android decode geometry, transparency and <=10 MiB at 512px passed; six original PNG bytes identical to Build 47. Device visual review still pending. |
 | L2-007 | AC-L2-007: separately installable Lab can migrate notes safely into ZIMT | P2 / schema | IMPLEMENTED | CI_VERIFIED | Build 47 versioned JSON export/import, stable IDs and Room restore tests passed. Host-app integration still outstanding. |
 | L2-008 | AC-L2-008: build/tests on exact SHA and reproducible debug artifact | P2 / CI | IMPLEMENTED | CI_VERIFIED | Build 47 CI run 45294180118 + Room run 45294179965; new HEAD requires fresh evidence. |
+| L2-009 | AC-L2-004/007: preserve unsupported imported sketch bytes and version when placing an existing note | P0 / restore and edit | IMPLEMENTED | UNVERIFIED | Build 55 guards the editor and Room update. EimerPersistenceTest imports a v2 sketch, moves it with a text edit and checks rejected replacements preserve the row. Verify on API 28 and the original-signed update path. |
 
 ## Coverage
 Prioritization never caps authorized features. Reconcile current ACTIVE_SCOPE and observed code, add missing work; do not stop merely because a milestone is committed.

@@ -81,6 +81,7 @@ import de.zimt.eimerliste.data.EimerBackupCodec
 import de.zimt.eimerliste.data.DraftPreferences
 import de.zimt.eimerliste.data.DraftSnapshot
 import de.zimt.eimerliste.data.DraftWriteSession
+import de.zimt.eimerliste.data.supportsDrawingEdits
 import de.zimt.eimerliste.data.NoteEntity
 import de.zimt.eimerliste.domain.BucketMaterial
 import de.zimt.eimerliste.domain.NoteRules
@@ -333,6 +334,12 @@ fun EimerApp(vm: EimerViewModel = viewModel()) {
             val note = movingNote ?: return
             if (noteMoveSaving) return
             stopCarryTimer()
+            if (!note.supportsDrawingEdits()) {
+                carriedPointer = null
+                hoveredBucket = null
+                scope.launch { snackbar.showSnackbar("Dieses Skizzenformat lässt sich hier nur verschieben.") }
+                return
+            }
             editingId = note.id
             editingSource = note.bucketId
             editingText = note.text

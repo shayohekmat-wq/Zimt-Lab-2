@@ -7,6 +7,10 @@ import java.util.UUID
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
+internal fun NoteEntity.supportsDrawingEdits(): Boolean =
+    (drawingPayloadVersion == null || drawingPayloadVersion == 1) &&
+        (drawingPayload == null || PaperDrawingCodec.hasInk(drawingPayload))
+
 class EimerRepository(private val dao: EimerDao) {
     val buckets = dao.observeBuckets()
     val counts = dao.observeCounts()
@@ -52,10 +56,18 @@ class EimerRepository(private val dao: EimerDao) {
     suspend fun placeEditedNote(id: String, source: String, destination: String, text: String, drawing: String?) =
         withContext(Dispatchers.IO) {
             require(NoteRules.canSubmit(text, drawing)) { "Der Zettel ist leer oder ungültig." }
-            val validDrawing = drawing?.takeIf { PaperDrawingCodec.hasInk(it) }
-            check(dao.placeEditedNote(id, source, destination, NoteRules.normalize(text), validDrawing,
-                if (validDrawing != null) 1 else null, System.currentTimeMillis()) == 1) {
-                "Originalzettel oder Zieleimer nicht mehr verfügbar."
+            val original = checkNotNull(dao.noteById(id)) { "Originalzettel nicht mehr verfügbar." }
+            val drawingVersion = when {
+                drawing == original.drawingPayload -> original.drawingPayloadVersion
+                !original.supportsDrawingEdits() -> error("Das vorhandene Skizzenformat kann hier nicht bearbeitet werden.")
+                drawing == null -> null
+                PaperDrawingCodec.hasInk(drawing) -> 1
+                else -> error("Ungültige Skizze. Der Originalzettel bleibt erhalten.")
+            }
+            check(dao.placeEditedNote(id, source, destination, NoteRules.normalize(text), drawing,
+                drawingVersion, original.drawingPayload, original.drawingPayloadVersion,
+                System.currentTimeMillis()) == 1) {
+                "Originalzettel geändert oder Zieleimer nicht mehr verfügbar."
             }
         }
 

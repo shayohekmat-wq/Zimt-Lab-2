@@ -9,10 +9,17 @@ test -s "$old"; test -s "$new"; test -s "$tests"
 adb install "$old" | tee "$evidence/install-baseline.txt"
 adb install "$tests"
 runner=de.zimt.eimerliste.debug.test/androidx.test.runner.AndroidJUnitRunner
+failures=0
 run_test() {
   local class="$1" name="$2"
-  adb shell am instrument -w -r -e class "$class" "$runner" | tee "$evidence/$name.txt"
-  grep -Eq '^OK \(1 test[s]?\)' "$evidence/$name.txt"
+  if ! adb shell am instrument -w -r -e class "$class" "$runner" | tee "$evidence/$name.txt" ||
+     ! grep -Eq '^OK \(1 test[s]?\)' "$evidence/$name.txt"; then
+    failures=$((failures+1))
+    # Preserve evidence and continue independent tests, without marking this one passed.
+    adb exec-out screencap -p > "$evidence/$name.png" || true
+    adb shell uiautomator dump /sdcard/eimer-test-window.xml >/dev/null 2>&1 &&
+      adb pull /sdcard/eimer-test-window.xml "$evidence/$name-window.xml" >/dev/null || true
+  fi
 }
 run_test de.zimt.eimerliste.data.UpgradeFixtureTest#seedOldInstallation seed
 run_test de.zimt.eimerliste.data.UpgradeFixtureTest#verifyAfterUpgrade verify-baseline-on-disk
@@ -27,3 +34,6 @@ run_test de.zimt.eimerliste.data.DraftPersistenceTest#verifyDraftAfterRestart ve
 # already been verified, and this is the ephemeral debug emulator only.
 adb shell pm clear de.zimt.eimerliste.debug
 run_test de.zimt.eimerliste.ui.NoteGestureDeviceTest gestures
+
+# A failure in any independent test still fails the CI job.
+test "$failures" -eq 0

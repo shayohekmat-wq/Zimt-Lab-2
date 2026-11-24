@@ -11,7 +11,7 @@ import org.junit.runner.RunWith
 class DraftPersistenceTest {
     private val context = InstrumentationRegistry.getInstrumentation().targetContext
     private val sketch = "ZIMT-SKETCH/1\nff000000,2:0,0|10000,10000\n"
-    private val first = DraftSnapshot("Text\nAbsatz", sketch, true)
+    private val first = DraftSnapshot("Text\nAbsatz\n  Äöß 😀\n", sketch, true)
     private val folded = first.copy(sketchOpen = false, foldedText = first.text, noteId = "stable-draft")
 
     @Test fun seedDraft() {

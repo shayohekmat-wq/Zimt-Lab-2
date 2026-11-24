@@ -17,8 +17,8 @@ android {
         applicationId = "de.zimt.eimerliste"
         minSdk = 26
         targetSdk = 36
-        versionCode = 49
-        versionName = "0.3.3-dev36"
+        versionCode = 50
+        versionName = "0.3.3-dev37"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 

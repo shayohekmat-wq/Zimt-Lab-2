@@ -11,6 +11,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.platform.LocalDensity
+import kotlin.math.roundToInt
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.sp
@@ -92,6 +94,14 @@ fun LayeredIllustratedBucket(
     }, contentAlignment = Alignment.Center) {
         val vesselHeight = maxHeight
         val vesselWidth = maxWidth
+        val targetPx = with(LocalDensity.current) {
+            minOf(vesselHeight, vesselWidth).toPx().roundToInt()
+        }
+        val original = asset.id.startsWith("user-")
+        val originalPair = if (original) rememberBucketImagePair(asset, targetPx) else null
+        // Render the pair atomically; no front-only/rear-only frame during loading.
+        if (originalPair?.loading == true) return@BoxWithConstraints
+        val bitmaps = originalPair?.images
         // Slight sideways drift follows the opening, without moving either PNG layer.
         val drift = when (asset.id) {
             "user-wicker-01" -> -.025f
@@ -102,9 +112,15 @@ fun LayeredIllustratedBucket(
         // Both original PNG layers use precisely the same Fit viewport.
         // Do not translate or scale either layer independently: doing so changes
         // the opening geometry and breaks the authored front/rear alignment.
-        Image(painterResource(asset.rear), contentDescription = null,
-            contentScale = androidx.compose.ui.layout.ContentScale.Fit,
-            modifier = Modifier.fillMaxSize())
+        if (bitmaps != null) {
+            Image(bitmaps.rearImage, contentDescription = null,
+                contentScale = androidx.compose.ui.layout.ContentScale.Fit,
+                modifier = Modifier.fillMaxSize())
+        } else {
+            Image(painterResource(asset.rear), contentDescription = null,
+                contentScale = androidx.compose.ui.layout.ContentScale.Fit,
+                modifier = Modifier.fillMaxSize())
+        }
         // Paper starts above the rim and descends behind the opaque front.
         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
             Box(
@@ -130,9 +146,15 @@ fun LayeredIllustratedBucket(
                 }
             }
         }
-        Image(painterResource(asset.front), contentDescription = null,
-            contentScale = androidx.compose.ui.layout.ContentScale.Fit,
-            modifier = Modifier.fillMaxSize())
+        if (bitmaps != null) {
+            Image(bitmaps.frontImage, contentDescription = null,
+                contentScale = androidx.compose.ui.layout.ContentScale.Fit,
+                modifier = Modifier.fillMaxSize())
+        } else {
+            Image(painterResource(asset.front), contentDescription = null,
+                contentScale = androidx.compose.ui.layout.ContentScale.Fit,
+                modifier = Modifier.fillMaxSize())
+        }
         // Do not paint a second, clipped title over the decorative artwork.
         // Gallery cards already display the full bucket name below the image.
 

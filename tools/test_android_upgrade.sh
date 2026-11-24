@@ -19,6 +19,7 @@ run_test de.zimt.eimerliste.data.UpgradeFixtureTest#verifyAfterUpgrade verify-ba
 adb install -r "$new" | tee "$evidence/install-upgrade.txt"
 run_test de.zimt.eimerliste.data.UpgradeFixtureTest#verifyAfterUpgrade verify-upgrade
 run_test de.zimt.eimerliste.data.EimerPersistenceTest persistence
+run_test de.zimt.eimerliste.ui.BucketBitmapDeviceTest bitmap-pairs
 run_test de.zimt.eimerliste.data.DraftPersistenceTest#seedDraft seed-draft
 adb shell am force-stop de.zimt.eimerliste.debug
 run_test de.zimt.eimerliste.data.DraftPersistenceTest#verifyDraftAfterRestart verify-draft

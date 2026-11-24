@@ -115,7 +115,7 @@ class NotePressSafetyTest {
         val g = NotePressSafety()
         g.down(0)
         g.advance(200)
-        g.cancel()
+        g.move(beyondSlop = true)
         g.release()
         assertEquals(NotePressSafety.Phase.CANCELLED, g.phase)
         assertEquals(NotePressSafety.Phase.IDLE, g.releasedFrom)

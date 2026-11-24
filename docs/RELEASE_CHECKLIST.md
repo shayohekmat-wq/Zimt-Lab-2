@@ -17,7 +17,7 @@ Original certificate SHA-256: `40e6b73383a29f9ca792595b369329e2ab8f9165f49eec69b
 Never put the keystore or passwords in Git, issue comments, build logs or public artifacts. If repository secrets are unavailable, use the existing private offline-signing route; **an unsigned APK is not a safe update**.
 
 ## Current workflow caveat
-The development branch workflow supports debug CI on development pushes/PRs and release compilation only on manual dispatch from main. GitHub requires a workflow_dispatch workflow on the default branch; merge the reviewed workflow before attempting that route. Never silently merge untested features just to obtain an artifact.
+Development pushes compile debug and unsigned release candidates; signing remains private and main is not merged automatically. The Android 9 workflow installs the previous exact debug build, seeds real Room rows and preferences, installs the new debug APK with adb install -r and checks data. This verifies an emulator upgrade with a CI debug identity, not the production-key installation on a physical phone.
 
 ## Evidence to record
 `release commit | CI run URL | unit-test result | APK filename | APK SHA-256 | package | versionCode | certificate fingerprint | upgrade-test result | device-test result`.

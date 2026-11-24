@@ -71,6 +71,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.zIndex
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import de.zimt.eimerliste.EimerViewModel
@@ -528,7 +531,7 @@ fun EimerApp(vm: EimerViewModel = viewModel()) {
             ) {
                 BucketContents(
                     bucket = visibleBucket,
-                    notes = if (visibleBucket.id == selectedId) notes else emptyList(),
+                    notes = if (visibleBucket.id == selectedId) notes.filter { it.bucketId == visibleBucket.id } else emptyList(),
                     destinations = buckets.filter { it.id != visibleBucket.id },
                     destinationDesigns = designSelections,
                     destinationImpacts = bucketImpactEvents,
@@ -804,6 +807,11 @@ private fun BucketTile(
     onOpen: () -> Unit,
     paperPending: Boolean
 ) {
+    // Pointer handlers survive recomposition; the current callbacks must route a
+    // folded slip to delivery rather than opening a stale bucket view.
+    val latestOpen by rememberUpdatedState(onOpen)
+    val latestHold by rememberUpdatedState(onHold)
+    val latestRelease by rememberUpdatedState(onRelease)
     // Short spring after an actual database commit.
     val impact = remember { Animatable(0f) }
     val wobble = remember { Animatable(0f) }
@@ -883,11 +891,11 @@ private fun BucketTile(
             )
             .pointerInput(bucket.id) {
                 detectTapGestures(
-                    onTap = { onOpen() },
-                    onLongPress = { onHold() },
+                    onTap = { latestOpen() },
+                    onLongPress = { latestHold() },
                     onPress = {
-                        tryAwaitRelease()
-                        onRelease()
+                        try { tryAwaitRelease() }
+                        finally { latestRelease() }
                     }
                 )
             }
@@ -1198,6 +1206,19 @@ private fun BucketContents(
     onRandom: () -> Unit
 ) {
     val touchSlop = LocalViewConfiguration.current.touchSlop
+    val lifecycle = LocalLifecycleOwner.current.lifecycle
+    var resumed by remember(lifecycle) { mutableStateOf(lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) }
+    DisposableEffect(lifecycle) {
+        val observer = LifecycleEventObserver { _, _ ->
+            resumed = lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)
+        }
+        lifecycle.addObserver(observer)
+        onDispose { lifecycle.removeObserver(observer) }
+    }
+    val latestOpenNote by rememberUpdatedState(onNote)
+    val latestLiftNote by rememberUpdatedState(onLiftNote)
+    val latestDropNote by rememberUpdatedState(onDropNote)
+    val latestIgnite by rememberUpdatedState(onIgnite)
     // Modal sheets have a separate layout root. Targets and note pointers must
     // use this same root, not coordinates of obscured tiles in the activity.
     val targetBounds = remember { mutableStateMapOf<String, Rect>() }
@@ -1248,7 +1269,8 @@ private fun BucketContents(
                     }
                     Surface(
                         modifier = Modifier.width(104.dp)
-                            .onGloballyPositioned { targetBounds[target.id] = it.boundsInRoot() },
+                            .onGloballyPositioned { targetBounds[target.id] = it.boundsInRoot() }
+                            .semantics { contentDescription = "Zieleimer: " + target.name },
                         shape = RoundedCornerShape(8.dp),
                         color = if (active) Ink.Brass.copy(alpha = .38f) else Ink.Paper,
                         border = BorderStroke(if (active) 2.dp else 1.dp, Ink.BrassDark)
@@ -1321,14 +1343,15 @@ private fun BucketContents(
                             .onGloballyPositioned { noteCoordinates = it }
                             .semantics {
                                 if (!burningActive) {
+                                    contentDescription = "Zettel: " + note.text.ifBlank { "Skizze" }
                                     onClick(label = "Zettel öffnen") { onNote(note); true }
                                     customActions = if (destinations.isNotEmpty()) listOf(
                                         CustomAccessibilityAction("Zettel umlegen") { onLiftNote(note); true }
                                     ) else emptyList()
                                 }
                             }
-                            .pointerInput(note.id, touchSlop, burningActive, destinations.map { it.id }) {
-                                if (burningActive) return@pointerInput
+                            .pointerInput(note.id, touchSlop, burningActive, resumed, destinations.map { it.id }) {
+                                if (burningActive || !resumed) return@pointerInput
                                 awaitEachGesture {
                                     val down = awaitFirstDown(requireUnconsumed = true)
                                     val start = noteCoordinates?.takeIf { it.isAttached }?.localToRoot(down.position)
@@ -1339,6 +1362,10 @@ private fun BucketContents(
                                     visualPhase = gesture.phase
                                     try {
                                         while (gesture.isTracking()) {
+                                            if (!lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) {
+                                                gesture.cancel()
+                                                break
+                                            }
                                             val elapsed = (android.os.SystemClock.uptimeMillis() - startedAt).coerceAtLeast(0L)
                                             val nextDeadline = gesture.nextDeadlineMs()
                                             val event = if (nextDeadline == null) {
@@ -1349,6 +1376,10 @@ private fun BucketContents(
                                                 ) { awaitPointerEvent(PointerEventPass.Main) }
                                             }
                                             if (event == null) {
+                                                if (!lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) {
+                                                    gesture.cancel()
+                                                    break
+                                                }
                                                 val phase = gesture.advance(android.os.SystemClock.uptimeMillis())
                                                 visualPhase = phase
                                                 when (phase) {
@@ -1383,36 +1414,37 @@ private fun BucketContents(
                                                     lastPosition = point
                                                     val delta = lastPosition - start
                                                     if (delta.getDistance() > touchSlop) {
-                                                        val wasLifted = gesture.phase == NotePressSafety.Phase.LIFTED ||
-                                                            gesture.phase == NotePressSafety.Phase.WARNING ||
-                                                            gesture.phase == NotePressSafety.Phase.DRAGGING
-                                                        if (!wasLifted) {
-                                                            // Hand control to the parent scrolling container.
-                                                            gesture.cancel()
-                                                        } else {
-                                                            gesture.move(beyondSlop = true)
-                                                            visualPhase = gesture.phase
+                                                        gesture.move(beyondSlop = true)
+                                                        visualPhase = gesture.phase
+                                                        if (gesture.phase == NotePressSafety.Phase.DRAGGING) {
                                                             dragPreview = note to lastPosition
                                                             hoveredTarget = targetAt(lastPosition)
                                                             pointer.consume()
                                                         }
                                                     }
+                                                    // The scrolling parent may consume a change after our Main
+                                                    // pass. Never continue a stationary hold after that takeover.
+                                                    if (gesture.isTracking() && gesture.phase != NotePressSafety.Phase.DRAGGING) {
+                                                        val finalEvent = awaitPointerEvent(PointerEventPass.Final)
+                                                        if (finalEvent.changes.any { it.isConsumed }) gesture.cancel()
+                                                    }
                                                 }
                                             }
                                         }
+                                        if (!lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) return@awaitEachGesture
                                         when (gesture.phase) {
                                             NotePressSafety.Phase.RELEASED -> when (gesture.releasedFrom) {
                                                 NotePressSafety.Phase.DRAGGING ->
-                                                    onDropNote(note, targetAt(lastPosition))
+                                                    latestDropNote(note, targetAt(lastPosition))
                                                 NotePressSafety.Phase.LIFTED, NotePressSafety.Phase.WARNING ->
-                                                    onLiftNote(note) // Accessible fallback picker.
-                                                NotePressSafety.Phase.PRESSED -> onNote(note)
+                                                    latestLiftNote(note) // Accessible fallback picker.
+                                                NotePressSafety.Phase.PRESSED -> latestOpenNote(note)
                                                 else -> Unit
                                             }
                                             NotePressSafety.Phase.IGNITED -> {
                                                 // Once ignition is confirmed, the reversible data operation
                                                 // is not owned by the visual animation's coroutine.
-                                                if (gesture.mayCommitBurn()) onIgnite(note)
+                                                if (gesture.mayCommitBurn()) latestIgnite(note)
                                             }
                                             else -> Unit
                                         }

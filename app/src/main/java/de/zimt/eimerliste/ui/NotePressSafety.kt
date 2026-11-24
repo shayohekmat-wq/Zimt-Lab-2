@@ -39,7 +39,8 @@ internal class NotePressSafety {
         if (multiplePointers) { cancel(); return }
         if (beyondSlop) {
             disarmed = true
-            phase = Phase.DRAGGING
+            // Before the lift threshold, movement belongs to the scrolling parent.
+            phase = if (phase == Phase.PRESSED) Phase.CANCELLED else Phase.DRAGGING
         }
     }
 

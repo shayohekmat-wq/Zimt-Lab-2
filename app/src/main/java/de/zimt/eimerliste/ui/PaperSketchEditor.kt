@@ -107,7 +107,7 @@ private fun SketchCanvas(
     Canvas(
         modifier.pointerInput(color, widthDp) {
             awaitEachGesture {
-                val down = awaitFirstDown(requireUnconsumed = false)
+                val down = awaitFirstDown(requireUnconsumed = true)
                 val canvasW = size.width.toFloat().coerceAtLeast(1f)
                 val canvasH = size.height.toFloat().coerceAtLeast(1f)
                 fun point(at: Offset) = InkPoint(
@@ -116,11 +116,16 @@ private fun SketchCanvas(
                 )
                 val pts = arrayListOf(point(down.position))
                 latestActiveCallback(InkStroke(color, widthDp, pts.toList()))
+                var completed = false
                 try {
                     while (true) {
                         val event = awaitPointerEvent()
                         val change = event.changes.firstOrNull { it.id == down.id } ?: break
-                        if (!change.pressed) break
+                        if (event.changes.size != 1 || change.isConsumed) break
+                        if (!change.pressed) {
+                            completed = change.previousPressed
+                            break
+                        }
                         val p = point(change.position)
                         if (pts.size < PaperDrawingCodec.MAX_POINTS_PER_STROKE &&
                             (p.x != pts.last().x || p.y != pts.last().y)) {
@@ -129,7 +134,7 @@ private fun SketchCanvas(
                         }
                         change.consume()
                     }
-                    if (latestStrokes.size < PaperDrawingCodec.MAX_STROKES) {
+                    if (completed && latestStrokes.size < PaperDrawingCodec.MAX_STROKES) {
                         latestStrokeCallback(InkStroke(color, widthDp, pts.toList()))
                     }
                 } finally {

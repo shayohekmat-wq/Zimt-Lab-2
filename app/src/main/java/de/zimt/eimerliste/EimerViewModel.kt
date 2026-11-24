@@ -5,6 +5,8 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import de.zimt.eimerliste.data.EimerDatabase
 import de.zimt.eimerliste.data.EimerRepository
+import de.zimt.eimerliste.data.EimerBackupStore
+import de.zimt.eimerliste.data.EimerBackupSnapshot
 import de.zimt.eimerliste.domain.BucketMaterial
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flatMapLatest
@@ -13,7 +15,9 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.SharingStarted
 
 class EimerViewModel(application: Application) : AndroidViewModel(application) {
-    private val repository = EimerRepository(EimerDatabase.get(application).dao())
+    private val database = EimerDatabase.get(application)
+    private val repository = EimerRepository(database.dao())
+    private val backupStore = EimerBackupStore(database)
 
     val buckets = repository.buckets.stateIn(
         viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList()
@@ -55,6 +59,9 @@ class EimerViewModel(application: Application) : AndroidViewModel(application) {
 
     suspend fun undoBurn(noteId: String, deletedAt: Long) =
         repository.undoBurn(noteId, deletedAt)
+
+    suspend fun backupSnapshot() = backupStore.snapshot()
+    suspend fun restoreBackup(snapshot: EimerBackupSnapshot) = backupStore.merge(snapshot)
 
     suspend fun randomNote(bucketId: String) = repository.randomNote(bucketId)
 }

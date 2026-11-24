@@ -100,6 +100,17 @@ object BucketDesignPreferences {
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
             .putString(bucketId, designId).apply()
     }
+    /** Import only missing choices, retaining current selections and opaque legacy IDs. */
+    fun restoreMissing(context: Context, designs: Map<String, String>): Map<String, String> {
+        val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+        val missing = designs.filterKeys { !prefs.contains(it) }
+        if (missing.isEmpty()) return emptyMap()
+        val editor = prefs.edit()
+        missing.forEach { (bucketId, designId) -> editor.putString(bucketId, designId) }
+        check(editor.commit()) { "Designauswahl konnte nicht vollständig wiederhergestellt werden." }
+        return missing
+    }
+
     fun clear(context: Context, bucketId: String) {
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
             .remove(bucketId).apply()

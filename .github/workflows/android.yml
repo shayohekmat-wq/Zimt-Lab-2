@@ -92,7 +92,7 @@ jobs:
           VERSION=$(printf '%s\\n' "$BADGING" | sed -n "s/^package:.*versionCode='\\([0-9]*\\)'.*/\\1/p" | head -n 1)
           test "$PACKAGE" = "de.zimt.eimerliste"
           test -n "$VERSION"
-          test "$VERSION" -gt 38
+          test "$VERSION" -gt 45
           echo "Release manifest verified: $PACKAGE versionCode=$VERSION"
       - name: Prepare offline signing tool
         if: (github.event_name == 'push' && github.ref == 'refs/heads/development/integrated-milestone') || (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main')

@@ -1,0 +1,54 @@
+package de.zimt.eimerliste.data
+
+import androidx.room.Room
+import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.platform.app.InstrumentationRegistry
+import kotlinx.coroutines.runBlocking
+import org.junit.Assert.*
+import org.junit.Test
+import org.junit.runner.RunWith
+import java.util.UUID
+
+@RunWith(AndroidJUnit4::class)
+class EimerPersistenceTest {
+    @Test fun retryMoveBurnRestoreAndBackupSurviveDatabaseReopen() = runBlocking {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val dbName = "eimer-test-" + UUID.randomUUID()
+        var database = Room.databaseBuilder(context, EimerDatabase::class.java, dbName).build()
+        try {
+            val a = BucketEntity("a", "A", "wood", 1, 1)
+            val b = BucketEntity("b", "B", "zinc", 1, 1)
+            database.dao().addBucket(a)
+            database.dao().addBucket(b)
+            val repo = EimerRepository(database.dao())
+            val sketch = "ZIMT-SKETCH/1\nff000000,2:0,0|10000,10000\n"
+            val id = "stable-draft"
+            assertEquals(id, repo.createNote(a.id, "Text\nmit Absatz", sketch, id))
+            assertEquals(id, repo.createNote(a.id, "Text\nmit Absatz", sketch, id))
+            assertEquals(1, database.dao().snapshotNotes().size)
+            repo.moveNote(id, a.id, b.id)
+            val deletedAt = repo.burnNote(id)
+            database.close()
+            database = Room.databaseBuilder(context, EimerDatabase::class.java, dbName).build()
+            val persisted = database.dao().noteById(id)!!
+            assertEquals(id, persisted.id)
+            assertEquals(b.id, persisted.bucketId)
+            assertEquals(sketch, persisted.drawingPayload)
+            assertEquals(deletedAt, persisted.deletedAt)
+            EimerRepository(database.dao()).undoBurn(id, deletedAt)
+            val restored = database.dao().noteById(id)!!
+            assertNull(restored.deletedAt)
+            assertEquals("Text\nmit Absatz", restored.text)
+            val store = EimerBackupStore(database)
+            val snapshot = store.snapshot()
+            val merged = store.merge(snapshot)
+            assertEquals(EimerBackupMergeResult(0, 0, 0), merged)
+            val stale = snapshot.copy(notes = listOf(restored.copy(deletedAt = 999)))
+            assertEquals(1, store.merge(stale).conflicts)
+            assertNull(database.dao().noteById(id)!!.deletedAt)
+        } finally {
+            database.close()
+            context.deleteDatabase(dbName)
+        }
+    }
+}

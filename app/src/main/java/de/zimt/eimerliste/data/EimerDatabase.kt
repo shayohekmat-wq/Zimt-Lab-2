@@ -83,6 +83,16 @@ interface EimerDao {
     @Query("SELECT * FROM notes WHERE id = :id LIMIT 1")
     suspend fun noteById(id: String): NoteEntity?
 
+    // Backup includes inactive rows: restoring a snapshot must not resurrect a tombstone.
+    @Query("SELECT * FROM buckets ORDER BY createdAt ASC")
+    suspend fun snapshotBuckets(): List<BucketEntity>
+
+    @Query("SELECT * FROM notes ORDER BY createdAt ASC")
+    suspend fun snapshotNotes(): List<NoteEntity>
+
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun importBucket(bucket: BucketEntity): Long
+
     /**
      * One atomic SQL UPDATE preserves note ID, content, sketch and creation time.
      * The EXISTS guard prevents moving a note into a removed bucket.

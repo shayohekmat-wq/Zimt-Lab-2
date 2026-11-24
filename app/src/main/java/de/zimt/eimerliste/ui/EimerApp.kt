@@ -1,6 +1,8 @@
 package de.zimt.eimerliste.ui
 
 import android.animation.ValueAnimator
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.Spring
@@ -70,9 +72,12 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import de.zimt.eimerliste.EimerViewModel
 import de.zimt.eimerliste.data.BucketEntity
+import de.zimt.eimerliste.data.EimerBackupCodec
 import de.zimt.eimerliste.data.NoteEntity
 import de.zimt.eimerliste.domain.BucketMaterial
 import de.zimt.eimerliste.domain.NoteRules
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.launch
 import java.util.UUID
 import kotlinx.coroutines.delay
@@ -96,6 +101,8 @@ fun EimerApp(vm: EimerViewModel = viewModel()) {
         var recoveryBucket by rememberSaveable { mutableStateOf<String?>(null) }
         var noteMoveSaving by remember { mutableStateOf(false) }
         var createDialog by remember { mutableStateOf(false) }
+        var backupDialog by remember { mutableStateOf(false) }
+        var backupBusy by remember { mutableStateOf(false) }
 
         // A draft and its folded version are never deleted until the destination write succeeds.
         var draft by rememberSaveable { mutableStateOf("") }
@@ -124,6 +131,60 @@ fun EimerApp(vm: EimerViewModel = viewModel()) {
         val density = LocalDensity.current
         val appContext = LocalContext.current
         val designSelections = remember { mutableStateMapOf<String, String>() }
+        val exportDocument = rememberLauncherForActivityResult(
+            ActivityResultContracts.CreateDocument("application/json")
+        ) { uri ->
+            if (uri != null && !backupBusy) {
+                backupBusy = true
+                scope.launch {
+                    try {
+                        val snapshot = vm.backupSnapshot()
+                        withContext(Dispatchers.IO) {
+                            val designs = snapshot.buckets.mapNotNull { bucket ->
+                                BucketDesignPreferences.get(appContext, bucket.id)?.let { bucket.id to it }
+                            }.toMap()
+                            val bytes = EimerBackupCodec.encode(snapshot.copy(designs = designs))
+                            val output = checkNotNull(appContext.contentResolver.openOutputStream(uri, "wt"))
+                            output.use { it.write(bytes) }
+                        }
+                        snackbar.showSnackbar("Sicherung mit ${snapshot.notes.size} Zetteln gespeichert.")
+                    } catch (error: Exception) {
+                        snackbar.showSnackbar(error.message ?: "Sicherung fehlgeschlagen.")
+                    } finally {
+                        backupBusy = false
+                    }
+                }
+            }
+        }
+        val importDocument = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+            if (uri != null && !backupBusy) {
+                backupBusy = true
+                scope.launch {
+                    try {
+                        val snapshot = withContext(Dispatchers.IO) {
+                            val input = checkNotNull(appContext.contentResolver.openInputStream(uri))
+                            input.use { EimerBackupCodec.decode(it) }
+                        }
+                        val result = vm.restoreBackup(snapshot)
+                        val restoredDesigns = withContext(Dispatchers.IO) {
+                            BucketDesignPreferences.restoreMissing(appContext, snapshot.designs)
+                        }
+                        restoredDesigns.forEach { (id, design) ->
+                            if (BucketArtworkCatalog.isKnownDesignId(design)) designSelections[id] = design
+                        }
+                        haptics.performHapticFeedback(HapticFeedbackType.Confirm)
+                        snackbar.showSnackbar(
+                            "Import: ${result.bucketsAdded} Eimer, ${result.notesAdded} Zettel. " +
+                                "${result.conflicts} abweichende bestehende Einträge unverändert."
+                        )
+                    } catch (error: Exception) {
+                        snackbar.showSnackbar(error.message ?: "Import fehlgeschlagen.")
+                    } finally {
+                        backupBusy = false
+                    }
+                }
+            }
+        }
         LaunchedEffect(buckets) {
             val existingIds = buckets.mapTo(mutableSetOf()) { it.id }
             designSelections.keys.toList().filterNot { it in existingIds }
@@ -234,7 +295,8 @@ fun EimerApp(vm: EimerViewModel = viewModel()) {
             WoodBackdrop(Modifier.fillMaxSize())
             Column(Modifier.fillMaxSize()) {
                 if (!imeVisible) {
-                    Header(onAdd = { createDialog = true }, bucketCount = buckets.size)
+                    Header(onAdd = { createDialog = true }, onBackup = { if (!backupBusy) backupDialog = true },
+                        bucketCount = buckets.size)
                 } else {
                     Row(
                         Modifier.fillMaxWidth().padding(start = 20.dp, end = 20.dp, top = 6.dp, bottom = 5.dp),
@@ -409,6 +471,30 @@ fun EimerApp(vm: EimerViewModel = viewModel()) {
             SnackbarHost(
                 hostState = snackbar,
                 modifier = Modifier.align(Alignment.TopCenter).padding(top = 8.dp)
+            )
+        }
+
+        if (backupDialog) {
+            AlertDialog(
+                onDismissRequest = { backupDialog = false },
+                title = { Text("Sichern & wiederherstellen") },
+                text = {
+                    Text("Die Datei enthält Eimer, Zettel, Skizzen, verbrannte Zettel und Designauswahl. " +
+                        "Beim Import werden vorhandene Einträge nicht überschrieben. " +
+                        "Die Sicherung ist nicht verschlüsselt; bewahre sie privat auf.")
+                },
+                confirmButton = {
+                    TextButton(onClick = {
+                        backupDialog = false
+                        exportDocument.launch("Eimer-Liste-Sicherung.json")
+                    }) { Text("Exportieren") }
+                },
+                dismissButton = {
+                    TextButton(onClick = {
+                        backupDialog = false
+                        importDocument.launch(arrayOf("application/json", "text/plain", "application/octet-stream"))
+                    }) { Text("Importieren") }
+                }
             )
         }
 
@@ -630,7 +716,7 @@ fun EimerApp(vm: EimerViewModel = viewModel()) {
 }
 
 @Composable
-private fun Header(onAdd: () -> Unit, bucketCount: Int) {
+private fun Header(onAdd: () -> Unit, onBackup: () -> Unit, bucketCount: Int) {
     Column(Modifier.fillMaxWidth().padding(start = 22.dp, end = 20.dp, top = 24.dp, bottom = 9.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
             Column(Modifier.weight(1f)) {
@@ -643,7 +729,14 @@ private fun Header(onAdd: () -> Unit, bucketCount: Int) {
                     color = Ink.Paper
                 )
             }
-            Spacer(Modifier.width(12.dp))
+            Spacer(Modifier.width(8.dp))
+            Box(
+                Modifier.size(44.dp).clip(CircleShape)
+                    .clickable(onClick = onBackup)
+                    .semantics { contentDescription = "Eimer-Liste sichern und wiederherstellen" },
+                contentAlignment = Alignment.Center
+            ) { Text("↕", fontSize = 24.sp, color = Ink.Brass) }
+            Spacer(Modifier.width(5.dp))
             Box(
                 Modifier.size(48.dp).clip(CircleShape)
                     .background(Brush.verticalGradient(listOf(Ink.Brass, Ink.BrassDark)))

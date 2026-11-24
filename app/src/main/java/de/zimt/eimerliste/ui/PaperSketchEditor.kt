@@ -175,10 +175,16 @@ fun PaperSketchEditor(
     var editorHeightPx by remember { mutableFloatStateOf(1f) }
     val density = LocalDensity.current
 
-    // The enlarged sheet emerges from the small paper composer.
-    LaunchedEffect(Unit) {
-        paperZoom.animateTo(1f, tween(460, easing = FastOutSlowInEasing))
-        haptics.performHapticFeedback(HapticFeedbackType.SegmentTick)
+    // Wait for real geometry before showing the first frame, avoiding a
+    // one-frame flash of a full-size paper before it rolls upwards.
+    val geometryReady = paperHeightPx > 1f && editorHeightPx > 1f
+    LaunchedEffect(geometryReady) {
+        if (geometryReady && !leaving) {
+            if (ValueAnimator.areAnimatorsEnabled())
+                paperZoom.animateTo(1f, tween(460, easing = FastOutSlowInEasing))
+            else paperZoom.snapTo(1f)
+            haptics.performHapticFeedback(HapticFeedbackType.SegmentTick)
+        }
     }
 
     fun leaveAndKeepSketch(toText: Boolean = false, onFinished: () -> Unit) {
@@ -215,6 +221,7 @@ fun PaperSketchEditor(
                     paperTopPx = it.positionInParent().y
                 }
                 .graphicsLayer {
+                    alpha = if (geometryReady) 1f else 0f
                     transformOrigin = TransformOrigin(0.5f, 0f)
                     val t = if (ValueAnimator.areAnimatorsEnabled()) paperZoom.value else 1f
                     // The exact same geometric path is used in both directions.

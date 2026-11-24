@@ -2,6 +2,8 @@ package de.zimt.eimerliste.ui
 
 import android.os.Build
 import android.os.VibrationEffect
+import android.os.VibrationAttributes
+import android.media.AudioAttributes
 import android.os.Vibrator
 import android.os.VibratorManager
 import android.content.Context
@@ -62,7 +64,16 @@ internal class EimerHapticFeedback(private val view: View) {
         val timing = LongArray(18) { if (it % 2 == 0) 100L else 200L }
         val strengths = IntArray(18) { if (it % 2 == 0) (135 + it * 6).coerceAtMost(235) else 0 }
         return try {
-            vibrator.vibrate(VibrationEffect.createWaveform(timing, strengths, -1))
+            val effect = VibrationEffect.createWaveform(timing, strengths, -1)
+            if (Build.VERSION.SDK_INT >= 33) {
+                vibrator.vibrate(effect, VibrationAttributes.Builder()
+                    .setUsage(VibrationAttributes.USAGE_TOUCH).build())
+            } else {
+                @Suppress("DEPRECATION")
+                vibrator.vibrate(effect, AudioAttributes.Builder()
+                    .setUsage(AudioAttributes.USAGE_ASSISTANCE_SONIFICATION)
+                    .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION).build())
+            }
             val stop: () -> Unit = { vibrator.cancel() }
             stop
         } catch (_: SecurityException) {

@@ -49,6 +49,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.CustomAccessibilityAction
 import androidx.compose.ui.semantics.customActions
 import androidx.compose.ui.semantics.Role
@@ -468,7 +469,9 @@ fun EimerApp(vm: EimerViewModel = viewModel()) {
                 }
             }) {
             WoodBackdrop(Modifier.fillMaxSize())
-            Column(Modifier.fillMaxSize()) {
+            Column(Modifier.fillMaxSize().then(
+                if (openBucket != null) Modifier.clearAndSetSemantics {} else Modifier
+            )) {
                 if (!imeVisible) {
                     Header(onAdd = { createDialog = true }, onBackup = { if (!backupBusy) backupDialog = true },
                         bucketCount = buckets.size)

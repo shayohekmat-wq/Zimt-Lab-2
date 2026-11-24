@@ -55,9 +55,10 @@ internal fun NoteFire(progress: Float, warning: Boolean, modifier: Modifier = Mo
         if (size.width <= 0f || size.height <= 0f) return@Canvas
         val p = progress.coerceIn(0f, 1f)
         if (warning && p == 0f) {
+            val glowRadius = 9.dp.toPx()
             withTransform({
                 translate(size.width * .89f, size.height * .9f)
-                scale(9.dp.toPx(), 9.dp.toPx(), Offset.Zero)
+                scale(glowRadius, glowRadius, Offset.Zero)
             }) { drawCircle(art.emberGlow, radius = 1f, center = Offset.Zero) }
             return@Canvas
         }
@@ -81,8 +82,9 @@ internal fun NoteFire(progress: Float, warning: Boolean, modifier: Modifier = Mo
             val y = size.height * burnEdgeFraction(edgeProgress, f)
             val w = size.width / 10f * (.75f + .25f * beat)
             val height = (16.dp.toPx() + (i % 4) * 7.dp.toPx()) * (.4f + strength * beat)
+            val rootOffset = 2.dp.toPx()
             withTransform({
-                translate(x, y + 2.dp.toPx())
+                translate(x, y + rootOffset)
                 rotate(sin(p * 18f + i) * 13f, Offset.Zero)
                 scale(w, height, Offset.Zero)
             }) {

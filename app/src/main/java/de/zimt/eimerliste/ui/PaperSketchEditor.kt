@@ -288,7 +288,10 @@ fun PaperSketchEditor(
                                 CircleShape
                             )
                             .semantics { contentDescription = "Stiftfarbe ${i + 1}" }
-                            .clickable { color = paint }
+                            .clickable {
+                                color = paint
+                                haptics.performHapticFeedback(HapticFeedbackType.SegmentTick)
+                            }
                     )
                 }
                 Spacer(Modifier.width(6.dp))
@@ -299,7 +302,10 @@ fun PaperSketchEditor(
                             .border(if (selected) 2.dp else 1.dp,
                                 if (selected) Ink.Brass else Ink.Muted, CircleShape)
                             .semantics { contentDescription = if (brushWidth < 6f) "Feiner Stift" else "Weicher Pinsel" }
-                            .clickable { widthDp = brushWidth },
+                            .clickable {
+                                widthDp = brushWidth
+                                haptics.performHapticFeedback(HapticFeedbackType.SegmentTick)
+                            },
                         contentAlignment = Alignment.Center
                     ) {
                         Box(Modifier.size(if (brushWidth < 6f) 5.dp else 15.dp)
@@ -331,6 +337,7 @@ fun PaperSketchEditor(
                 IconButton(
                     onClick = {
                         if (strokes.isNotEmpty()) {
+                            haptics.performHapticFeedback(HapticFeedbackType.SegmentTick)
                             redoPayload = PaperDrawingCodec.encode(redo + strokes.last())
                             onPayloadChange(PaperDrawingCodec.encode(strokes.dropLast(1)))
                         }
@@ -340,6 +347,7 @@ fun PaperSketchEditor(
                 IconButton(
                     onClick = {
                         if (redo.isNotEmpty()) {
+                            haptics.performHapticFeedback(HapticFeedbackType.SegmentTick)
                             val next = PaperDrawingCodec.encode(strokes + redo.last())
                             if (next != null) {
                                 onPayloadChange(next)

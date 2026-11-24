@@ -24,8 +24,8 @@ object DraftPreferences {
     private fun decode(value: String?): String? =
         value?.let { Base64.decode(it, Base64.NO_WRAP).toString(Charsets.UTF_8) }
 
-    fun load(context: Context): DraftSnapshot {
-        val p = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+    fun load(context: Context, namespace: String = PREFS): DraftSnapshot {
+        val p = context.getSharedPreferences(namespace, Context.MODE_PRIVATE)
         if (p.getInt("format", 1) == 2) {
             return DraftSnapshot(
                 text = decode(p.getString("text64", null)) ?: "",
@@ -52,8 +52,8 @@ object DraftPreferences {
     fun flush(context: Context): Boolean =
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().commit()
 
-    fun saveIfChanged(context: Context, draft: DraftSnapshot) {
-        val p = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+    fun saveIfChanged(context: Context, draft: DraftSnapshot, namespace: String = PREFS) {
+        val p = context.getSharedPreferences(namespace, Context.MODE_PRIVATE)
         val text64 = encode(draft.text)
         val drawing64 = encode(draft.drawing)
         val folded64 = encode(draft.foldedText)
@@ -72,13 +72,13 @@ object DraftPreferences {
 }
 
 /** UI-thread session: animation-only recompositions must not re-encode a large sketch. */
-internal class DraftWriteSession(context: Context) {
+internal class DraftWriteSession(context: Context, private val namespace: String = "eimer-draft-v1") {
     private val appContext = context.applicationContext
     private var lastWritten: DraftSnapshot? = null
 
     fun write(snapshot: DraftSnapshot) {
         if (lastWritten == snapshot) return
-        DraftPreferences.saveIfChanged(appContext, snapshot)
+        DraftPreferences.saveIfChanged(appContext, snapshot, namespace)
         lastWritten = snapshot
     }
 }

@@ -44,6 +44,7 @@ internal fun eimerHapticPlan(type: HapticFeedbackType, sdk: Int): HapticPlan {
  */
 internal class EimerHapticFeedback(private val view: View) {
     private val context = view.context
+    private var generation = 0L
     private val vibrator: Vibrator?
         get() = if (Build.VERSION.SDK_INT >= 31)
             context.getSystemService(VibratorManager::class.java)?.defaultVibrator
@@ -53,6 +54,7 @@ internal class EimerHapticFeedback(private val view: View) {
         val motor = vibrator ?: return false
         if (!motor.hasVibrator()) return false
         return try {
+            generation++
             if (Build.VERSION.SDK_INT >= 33) motor.vibrate(effect, VibrationAttributes.Builder()
                 .setUsage(VibrationAttributes.USAGE_TOUCH).build())
             else {
@@ -78,7 +80,8 @@ internal class EimerHapticFeedback(private val view: View) {
             view.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
             return null
         }
-        return { motor.cancel() }
+        val warningGeneration = generation
+        return { if (generation == warningGeneration) motor.cancel() }
     }
 
     fun performHapticFeedback(type: HapticFeedbackType) {

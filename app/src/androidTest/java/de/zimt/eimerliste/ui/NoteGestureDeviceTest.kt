@@ -113,6 +113,17 @@ class NoteGestureDeviceTest {
             assertEquals(target.id, currentNote().bucketId)
             assertEquals(note.id, currentNote().id)
             openBucket(target.name)
+            // Drop the lifted paper into the normal tray and edit the same row.
+            val editStart = find(noteDesc).visibleBounds
+            val editDown = SystemClock.uptimeMillis()
+            inject(MotionEvent.ACTION_DOWN, editStart.centerX().toFloat(), editStart.centerY().toFloat(), editDown)
+            SystemClock.sleep(850)
+            inject(MotionEvent.ACTION_UP, editStart.centerX().toFloat(), editStart.centerY().toFloat(), editDown)
+            checkNotNull(device.wait(Until.findObject(By.text("Bearbeiten")), 10000)).click()
+            assertTrue(device.wait(Until.hasObject(By.text("ZETTEL BEARBEITEN")), 5000))
+            assertEquals(note.text, currentNote().text)
+            checkNotNull(device.wait(Until.findObject(By.text("Original behalten")), 5000)).click()
+            openBucket(target.name)
             val burn = find(noteDesc).visibleBounds
             val burnDown = SystemClock.uptimeMillis()
             inject(MotionEvent.ACTION_DOWN, burn.centerX().toFloat(), burn.centerY().toFloat(), burnDown)
@@ -142,6 +153,21 @@ class NoteGestureDeviceTest {
             assertEquals(note.id, currentNote().id)
             assertEquals(target.id, currentNote().bucketId)
             assertEquals(note.text, currentNote().text)
+            device.pressBack()
+            device.pressBack()
+            openBucket(target.name)
+            val longDrag = find(noteDesc).visibleBounds
+            val hold = SystemClock.uptimeMillis()
+            inject(MotionEvent.ACTION_DOWN, longDrag.centerX().toFloat(), longDrag.centerY().toFloat(), hold)
+            SystemClock.sleep(850)
+            inject(MotionEvent.ACTION_MOVE, longDrag.centerX().toFloat(), longDrag.centerY() - 55f, hold)
+            SystemClock.sleep(7600)
+            assertNull("No ignition during the drag warning", currentNote().deletedAt)
+            SystemClock.sleep(2600)
+            inject(MotionEvent.ACTION_UP, longDrag.centerX().toFloat(), longDrag.centerY() - 55f, hold, false)
+            val deadline = SystemClock.uptimeMillis() + 5000
+            while (currentNote().deletedAt == null && SystemClock.uptimeMillis() < deadline) SystemClock.sleep(100)
+            assertNotNull("Drag must ignite after 7s plus warning", currentNote().deletedAt)
         }
     }
 }

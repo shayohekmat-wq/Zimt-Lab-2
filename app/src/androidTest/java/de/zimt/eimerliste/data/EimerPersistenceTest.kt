@@ -39,6 +39,15 @@ class EimerPersistenceTest {
             val restored = database.dao().noteById(id)!!
             assertNull(restored.deletedAt)
             assertEquals("Text\nmit Absatz", restored.text)
+            val editRepo = EimerRepository(database.dao())
+            editRepo.placeEditedNote(id, b.id, b.id, "Bearbeitet\nAbsatz", sketch)
+            val edited = database.dao().noteById(id)!!
+            assertEquals(id, edited.id)
+            assertEquals(b.id, edited.bucketId)
+            assertEquals(restored.createdAt, edited.createdAt)
+            assertEquals("Bearbeitet\nAbsatz", edited.text)
+            assertEquals(sketch, edited.drawingPayload)
+            assertEquals(1, database.dao().snapshotNotes().size)
             val store = EimerBackupStore(database)
             val snapshot = store.snapshot()
             val merged = store.merge(snapshot)

@@ -32,7 +32,6 @@ import androidx.compose.material.icons.filled.Redo
 import androidx.compose.material.icons.filled.TextFields
 import androidx.compose.material3.Icon
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
-import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
@@ -169,7 +168,7 @@ fun PaperSketchEditor(
     var status by remember { mutableStateOf<String?>(null) }
     val paperZoom = remember { Animatable(0f) }
     val scope = rememberCoroutineScope()
-    val haptics = LocalHapticFeedback.current
+    val haptics = rememberEimerHapticFeedback()
     var leaving by remember { mutableStateOf(false) }
     var returnToText by remember { mutableStateOf(false) }
     var paperHeightPx by remember { mutableFloatStateOf(1f) }
@@ -266,7 +265,7 @@ fun PaperSketchEditor(
                     },
                     onActive = { active = it },
                     enabled = !leaving,
-                    modifier = Modifier.fillMaxSize()
+                    modifier = Modifier.fillMaxSize().semantics { contentDescription = "Zeichenfläche" }
                 )
             }
             // Keep text-mode access permanently visible, even on narrow Android screens.

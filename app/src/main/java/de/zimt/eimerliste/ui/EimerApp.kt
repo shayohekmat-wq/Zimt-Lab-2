@@ -49,7 +49,6 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
-import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.semantics.CustomAccessibilityAction
 import androidx.compose.ui.semantics.customActions
@@ -81,6 +80,7 @@ import de.zimt.eimerliste.data.BucketEntity
 import de.zimt.eimerliste.data.EimerBackupCodec
 import de.zimt.eimerliste.data.DraftPreferences
 import de.zimt.eimerliste.data.DraftSnapshot
+import de.zimt.eimerliste.data.DraftWriteSession
 import de.zimt.eimerliste.data.NoteEntity
 import de.zimt.eimerliste.domain.BucketMaterial
 import de.zimt.eimerliste.domain.NoteRules
@@ -127,7 +127,8 @@ fun EimerApp(vm: EimerViewModel = viewModel()) {
         var pendingPaper by rememberSaveable { mutableStateOf(initialDraft.foldedText) }
         var pendingNoteId by rememberSaveable { mutableStateOf(initialDraft.noteId) }
         val draftSnapshot = DraftSnapshot(draft, drawing, sketchOpen, pendingPaper, pendingNoteId)
-        SideEffect { DraftPreferences.saveIfChanged(appContext, draftSnapshot) }
+        val draftWriter = remember(appContext) { DraftWriteSession(appContext) }
+        SideEffect { draftWriter.write(draftSnapshot) }
         LaunchedEffect(pendingNoteId) {
             if (pendingNoteId != null) {
                 // Explicit folding is a durability boundary. Flush the queued preference
@@ -176,7 +177,7 @@ fun EimerApp(vm: EimerViewModel = viewModel()) {
         val snackbar = remember { SnackbarHostState() }
         val keyboard = LocalSoftwareKeyboardController.current
         val focus = LocalFocusManager.current
-        val haptics = LocalHapticFeedback.current
+        val haptics = rememberEimerHapticFeedback()
         val density = LocalDensity.current
         val designSelections = remember { mutableStateMapOf<String, String>() }
         val designWriteMutex = remember { Mutex() }
@@ -1064,6 +1065,7 @@ private fun PaperComposer(
                     enabled = enabled,
                     singleLine = false,
                     modifier = Modifier.weight(1f).focusRequester(focusRequester)
+                        .semantics { contentDescription = "Notiztext" }
                         .heightIn(min = 53.dp, max = if (compact) 78.dp else 134.dp),
                     textStyle = TextStyle(
                         fontFamily = FontFamily.Serif,

@@ -34,6 +34,8 @@ run_test de.zimt.eimerliste.data.DraftPersistenceTest#verifyDraftAfterRestart ve
 # already been verified, and this is the ephemeral debug emulator only.
 adb shell pm clear de.zimt.eimerliste.debug
 run_test de.zimt.eimerliste.ui.NoteGestureDeviceTest gestures
+adb shell pm clear de.zimt.eimerliste.debug
+run_test de.zimt.eimerliste.ui.ComposerDeviceTest composer
 
 # A failure in any independent test still fails the CI job.
 test "$failures" -eq 0

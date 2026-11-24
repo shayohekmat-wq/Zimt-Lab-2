@@ -70,3 +70,15 @@ object DraftPreferences {
             .remove("text").remove("drawing").remove("foldedText").apply()
     }
 }
+
+/** UI-thread session: animation-only recompositions must not re-encode a large sketch. */
+internal class DraftWriteSession(context: Context) {
+    private val appContext = context.applicationContext
+    private var lastWritten: DraftSnapshot? = null
+
+    fun write(snapshot: DraftSnapshot) {
+        if (lastWritten == snapshot) return
+        DraftPreferences.saveIfChanged(appContext, snapshot)
+        lastWritten = snapshot
+    }
+}

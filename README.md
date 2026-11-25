@@ -15,6 +15,8 @@ Ein eigenständiges Android-Lab für ZIMT: Gemeinsam Wünsche, Ideen und Erlebni
 
 Wichtig: Für den privaten Update-Kanal nur APKs mit dem seit 0.1.0 unveränderten Signaturzertifikat nutzen. Debug-APKs aus unterschiedlichen Rechnern/CI-Läufen sind nicht garantiert gegeneinander updatefähig. Die erste dauerhaft genutzte Installation benötigt einen **gleichbleibenden Release-Signaturschlüssel**. Mehr: [Update- und Datensicherheit](docs/RELEASE_AND_DATA.md).
 
+Für Release-Verantwortliche ist `python3 tools/eimer_signer.py status` der gemeinsame Einstieg auf dem geschützten Arbeitsplatz. Der Befehl prüft den eingebundenen Originalschlüssel. [Einrichtung für Codex und Team-Signierläufe](docs/RELEASE_AND_DATA.md#privater-signierzugang-für-laufende-updates)
+
 ## Projektführung
 - [Optimierter Build-Plan](docs/BUILD_PLAN.md)
 - [Technische Architektur](docs/ARCHITECTURE.md)

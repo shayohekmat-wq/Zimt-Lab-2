@@ -4,13 +4,18 @@
 
 ## Privater Signierzugang für laufende Updates
 
-Der bisher belegte Signierweg verwendet die beiden Originaldateien aus der [privaten Dateibibliothek](#privater-fundort-des-originalschlüssels). Ein dauerhaft erreichbarer Signierrechner ist bislang unbestätigt. Sobald ein solcher Zugang eingerichtet ist, prüft der autorisierte Lauf dort die Registrierung mit:
+**Einstieg für Release-Verantwortliche.** Den geprüften Entwicklungsstand auf dem geschützten Arbeitsplatz auschecken. Aus dem Repository-Stamm den Zugriff testen:
 
 ```sh
 python3 tools/eimer_signer.py status
 ```
 
-Der Befehl prüft den fest hinterlegten SHA-256-Fingerabdruck des Zertifikats und fordert mit dem zugehörigen privaten Schlüssel eine Signatur an. Ein erfolgreicher Aufruf genügt, um mit dem Signieren fortzufahren. Für das Werkzeug werden Python ab 3.11 und JDK-`keytool` benötigt. Zum Signieren müssen außerdem `aapt` und `apksigner` aus den Android SDK Build Tools im `PATH` stehen.
+Das Werkzeug liest die eingebundenen Originaldateien direkt, prüft den festen Zertifikatsfingerabdruck und fordert eine Testsignatur vom privaten Schlüssel an. Für die Prüfung werden Python ab 3.11 und JDK-`keytool` benötigt, für die APK zusätzlich `aapt` und `apksigner` aus den Android SDK Build Tools im `PATH`. Die beiden Quelldateien bleiben an ihrem Ablageort.
+
+- **Codex.** Der Projektinhaber wählt in seiner privaten Dateibibliothek `Eimer-Liste-Update-Schluessel.p12` und `Eimer-Liste-Update-Passwort.txt` für den geschützten Signierlauf aus. Der übliche Einhängepunkt ist `/workspace/library-files`. Meldet `status` einen fehlenden Namen, die Dateiauswahl des laufenden Auftrags prüfen.
+- **Gemeinsame Nutzung durch das Release-Team.** Der Verantwortliche für den privaten Bestand stellt dieselben zwei Dateien dem autorisierten Signierprozess über einen zugriffsgeschützten, möglichst nur lesbaren Mount bereit. Ein bestehender Team-Secretspeicher kann diesen Mount liefern. Die Pfadvariable `EIMER_LIBRARY_DIR` wird einmal in der privaten Runner- oder Arbeitsplatzkonfiguration hinterlegt. Entwickler benötigen im Repository nur den Befehl und in ihrem Release-System die Berechtigung, den Signierlauf auszulösen. Die Bereitstellung des Mounts und seiner Zugriffsrechte erfolgt im jeweiligen System.
+- **Explizite Auswahl.** `status --library-dir /absoluter/privater/pfad` und `sign --library-dir /absoluter/privater/pfad …` verwenden ausschließlich diesen Bestand. Es folgen in der Auswahlreihenfolge `EIMER_LIBRARY_DIR`, die explizite oder bereits vorhandene Registrierung und schließlich die Codex-Bibliothek. Fehler einer gewählten Quelle stoppen den Vorgang. Jede Originaldatei muss genau einmal im gewählten Ordner oder seinen Unterordnern vorkommen.
+- **Dateiformat.** Das PKCS12 und die Passwortdatei gehören dem Signierbenutzer oder root, sind für den Signierprozess lesbar und für Gruppe und andere Benutzer gesperrt (etwa 0400 oder 0600). Die Ordner im Mount sind gegen Änderungen durch Dritte geschützt. Die Passwortdatei enthält eine nichtleere Passwortzeile. Bei Begleittext oder getrennten Passwörtern den unten beschriebenen privaten Registrierungsweg verwenden.
 
 **Ziel einer dauerhaften Registrierung.** Das Standardverzeichnis ist `~/.local/share/zimt/eimerliste` (bei gesetztem `XDG_DATA_HOME` entsprechend unter diesem Datenverzeichnis). Ein bereits vorhandener privater, dauerhaft gespeicherter Bestand kann dem Signierprozess über den absoluten Verzeichnispfad `EIMER_SIGNING_DIR` bereitgestellt werden. Die Ablage enthält `Eimer-Liste-Update-Schluessel.p12`, `store.password` und `key.password`. Verzeichnis nur für den Signierbenutzer zugänglich (0700), Dateien 0600 oder nur lesbar 0400. Die Verbindung zum privaten Bestand muss bei einem Rechnerwechsel einmal für den neuen Signierkontext eingerichtet werden. Die Variable enthält ausschließlich einen Pfad.
 
@@ -22,7 +27,7 @@ python3 tools/eimer_signer.py enroll /privater/import/Eimer-Liste-Update-Schlues
 
 Bei getrenntem Schlüsselpasswort zusätzlich `--key-password-file /privater/import/key.password` angeben. Das Werkzeug erkennt den Alias über das Originalzertifikat, prüft den privaten Zugriff und registriert die Identität erst nach erfolgreicher Prüfung. Wiederholung prüft die schon registrierte Identität. Der stündliche Entwicklungsauftrag benötigt ausschließlich den Verweis auf diesen Zugang.
 
-**Kandidaten signieren.** Zuerst den erfolgreichen CI-Lauf, den Quell-Commit und die Prüfsumme der entpackten APK abgleichen. Die höchste bereits ausgegebene Versionsnummer aus der Release-Historie ermitteln. Im folgenden Beispiel bezeichnen die Variablen öffentliche Build-Metadaten.
+**Kandidaten signieren.** Den aktuellen Kandidaten nennt [L2-011 in der Arbeitsliste](WORK_QUEUE.md). Zuerst den erfolgreichen CI-Lauf, den Quell-Commit und die Prüfsumme der entpackten APK abgleichen. Die höchste bereits ausgegebene Versionsnummer aus der Release-Historie ermitteln. Im folgenden Beispiel bezeichnen die Variablen öffentliche Build-Metadaten.
 
 ```sh
 python3 tools/eimer_signer.py sign app-release-unsigned.apk Eimer-Liste-UPDATE.apk \

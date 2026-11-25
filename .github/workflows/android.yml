@@ -69,6 +69,10 @@ jobs:
           echo "Design QA contract present; visual/device acceptance requires separate evidence"
       - name: Compile debug and unit tests (isolated Room schema generation)
         run: gradle --no-daemon :app:assembleDebug :app:testDebugUnitTest
+      - name: Test private signing inputs with a disposable identity
+        env:
+          EIMER_TEST_APK: app/build/outputs/apk/debug/app-debug.apk
+        run: PATH="$ANDROID_HOME/build-tools/37.0.0:$PATH" python3 -B tools/test_eimer_signer.py -v
       - name: Upload JUnit reports even on test failure
         if: always()
         uses: actions/upload-artifact@v4

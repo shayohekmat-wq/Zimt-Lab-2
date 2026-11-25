@@ -4,7 +4,7 @@
 
 ## Privater Signierzugang für laufende Updates
 
-Der Einstieg für autorisierte Läufe ist auf dem privaten Signierrechner:
+Der bisher belegte Signierweg verwendet die beiden Originaldateien aus der [privaten Dateibibliothek](#privater-fundort-des-originalschlüssels). Ein dauerhaft erreichbarer Signierrechner ist bislang unbestätigt. Sobald ein solcher Zugang eingerichtet ist, prüft der autorisierte Lauf dort die Registrierung mit:
 
 ```sh
 python3 tools/eimer_signer.py status
@@ -12,7 +12,7 @@ python3 tools/eimer_signer.py status
 
 Der Befehl prüft den fest hinterlegten SHA-256-Fingerabdruck des Zertifikats und fordert mit dem zugehörigen privaten Schlüssel eine Signatur an. Ein erfolgreicher Aufruf genügt, um mit dem Signieren fortzufahren. Für das Werkzeug werden Python ab 3.11 und JDK-`keytool` benötigt. Zum Signieren müssen außerdem `aapt` und `apksigner` aus den Android SDK Build Tools im `PATH` stehen.
 
-**Fester Ablageort.** Das Standardverzeichnis ist `~/.local/share/zimt/eimerliste` (bei gesetztem `XDG_DATA_HOME` entsprechend unter diesem Datenverzeichnis). Ein bereits vorhandener privater, dauerhaft gespeicherter Bestand kann dem Signierprozess über den absoluten Verzeichnispfad `EIMER_SIGNING_DIR` bereitgestellt werden. Die Ablage enthält `Eimer-Liste-Update-Schluessel.p12`, `store.password` und `key.password`. Verzeichnis nur für den Signierbenutzer zugänglich (0700), Dateien 0600 oder nur lesbar 0400. Die Verbindung zum privaten Bestand muss bei einem Rechnerwechsel einmal für den neuen Signierkontext eingerichtet werden. Die Variable enthält ausschließlich einen Pfad.
+**Ziel einer dauerhaften Registrierung.** Das Standardverzeichnis ist `~/.local/share/zimt/eimerliste` (bei gesetztem `XDG_DATA_HOME` entsprechend unter diesem Datenverzeichnis). Ein bereits vorhandener privater, dauerhaft gespeicherter Bestand kann dem Signierprozess über den absoluten Verzeichnispfad `EIMER_SIGNING_DIR` bereitgestellt werden. Die Ablage enthält `Eimer-Liste-Update-Schluessel.p12`, `store.password` und `key.password`. Verzeichnis nur für den Signierbenutzer zugänglich (0700), Dateien 0600 oder nur lesbar 0400. Die Verbindung zum privaten Bestand muss bei einem Rechnerwechsel einmal für den neuen Signierkontext eingerichtet werden. Die Variable enthält ausschließlich einen Pfad.
 
 **Einmalige Registrierung.** Auf einem zugriffsbeschränkten Signierrechner mit verschlüsseltem persistentem Speicher die Originaldatei und die private Passwortdatei aus der Bibliothek einbinden. Das Werkzeug erwartet in der Passwortdatei das Passwort als einzelne Zeile. Wenn die Bibliotheksdatei Begleittext enthält, den Wert im privaten Kontext in einer geschützten Eingabedatei bereitstellen. Nur vertrauenswürdigen, geprüften Code im Signierkontext ausführen. Auf flüchtigen Build-Runnern und in geteilten Arbeitsbereichen keine Signierablage anlegen.
 
@@ -33,9 +33,9 @@ Das Werkzeug gibt die APK erst nach Prüfung von Paketkennung, Versionsfolge, AP
 
 ## Privater Fundort des Originalschlüssels
 
-Der dokumentierte Fundort ist die **private ChatGPT-Dateibibliothek des Projektinhabers**. Suche dort nach dem exakten Dateinamen `Eimer-Liste-Update-Schluessel.p12`. Die zugehörige Passwortdatei lag beim Signieren von Build 38 in derselben privaten Bibliothek. Einen stabilen Datei-Link oder eine Datei-ID nennt der damalige Bericht nicht. [Signiernachweis zu Build 38](https://github.com/shayohekmat-wq/Zimt-Lab-2/blob/5a92737946d451c895cd91b3ad42ba68a8520f3f/docs/BUILD_PLAN.md#L455)
+Der dokumentierte Fundort ist die **private ChatGPT-Dateibibliothek des Projektinhabers**. Der Projektinhaber hat dort die Originaldateien `Eimer-Liste-Update-Schluessel.p12` und `Eimer-Liste-Update-Passwort.txt` erneut gefunden. Einen stabilen Datei-Link oder eine Datei-ID nennt der damalige Bericht nicht. [Signiernachweis zu Build 38](https://github.com/shayohekmat-wq/Zimt-Lab-2/blob/5a92737946d451c895cd91b3ad42ba68a8520f3f/docs/BUILD_PLAN.md#L455)
 
-Ein autorisierter Lauf mit Bibliothekszugriff kann beide Dateien im privaten Signierkontext verwenden. In Codex kann die Auswahl eingebundener Bibliotheksdateien unter `/workspace/library-files` pro Lauf variieren. Prüfe den Zertifikatsfingerabdruck der signierten APK gegen die Release-Checkliste und vergleiche die APK mit dem gebauten Commit. Übergib nachfolgenden Läufen den Artefaktverweis und das Prüfergebnis. Der Entwicklungsbranch baut das unsignierte Release für die private Signierung.
+Ein autorisierter Lauf mit Bibliothekszugriff kann beide Dateien im privaten Signierkontext verwenden. Prüfe unter `/workspace/library-files` beide exakten Dateinamen auf Vorhandensein und Lesbarkeit. Ein leeres Verzeichnis bedeutet, dass diesem Lauf dort keine Bibliotheksdateien bereitgestellt wurden. Prüfe den Zertifikatsfingerabdruck der signierten APK gegen die Release-Checkliste und vergleiche die APK mit dem gebauten Commit. Übergib nachfolgenden Läufen den Artefaktverweis und das Prüfergebnis. Der Entwicklungsbranch baut das unsignierte Release für die private Signierung.
 
 ## Identität
 - `applicationId` bleibt über alle eigenständigen Lab-Builds identisch.

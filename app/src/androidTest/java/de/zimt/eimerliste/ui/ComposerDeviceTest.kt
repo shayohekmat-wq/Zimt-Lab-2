@@ -12,6 +12,7 @@ import androidx.test.uiautomator.Until
 import de.zimt.eimerliste.MainActivity
 import de.zimt.eimerliste.data.BucketEntity
 import de.zimt.eimerliste.data.EimerDatabase
+import de.zimt.eimerliste.data.DraftSnapshot
 import de.zimt.eimerliste.data.DraftPreferences
 import de.zimt.eimerliste.domain.PaperDrawingCodec
 import kotlinx.coroutines.runBlocking
@@ -35,6 +36,39 @@ class ComposerDeviceTest {
         while (DraftPreferences.load(context).text != text && SystemClock.uptimeMillis() < deadline)
             SystemClock.sleep(100)
         assertEquals(stage, text, DraftPreferences.load(context).text)
+    }
+
+    @Test fun unreadableFoldedDraftKeepsDrawingUntilExplicitRemoval() {
+        check(context.packageName.endsWith(".debug"))
+        val drawing = "ZIMT-SKETCH/2\nopaque\n"
+        val bucket = BucketEntity("recovery-bucket", "Entwurfsprüfung", "wood", 100, 100)
+        runBlocking { dao.addBucket(bucket) }
+        DraftPreferences.saveIfChanged(context, DraftSnapshot(text, drawing, foldedText = text, noteId = "recovery"))
+        ActivityScenario.launch(MainActivity::class.java).use {
+            find(By.text("ZIEH DEINEN ZETTEL IN EINEN EIMER"))
+            find(By.descStartsWith("Entwurfsprüfung,")).click()
+            find(By.text("Skizze nicht lesbar"))
+            find(By.text("Zum Text")).click()
+            find(By.desc("Notiztext"))
+            val kept = DraftPreferences.load(context)
+            assertEquals(text, kept.text)
+            assertEquals(drawing, kept.drawing)
+            assertNull(kept.foldedText)
+            find(By.desc("Zettel dreimal falten")).click()
+            find(By.text("Skizze nicht lesbar"))
+            assertTrue(runBlocking { dao.snapshotNotes().isEmpty() })
+            find(By.text("Skizze aus Entwurf entfernen")).click()
+            find(By.desc("Notiztext"))
+            find(By.desc("Zettel dreimal falten")).click()
+            find(By.text("ZIEH DEINEN ZETTEL IN EINEN EIMER"))
+            find(By.descStartsWith("Entwurfsprüfung,")).click()
+            val deadline = SystemClock.uptimeMillis() + 5000
+            while (runBlocking { dao.snapshotNotes().isEmpty() } && SystemClock.uptimeMillis() < deadline)
+                SystemClock.sleep(100)
+            val note = runBlocking { dao.snapshotNotes().single() }
+            assertEquals(text, note.text)
+            assertNull(note.drawingPayload)
+        }
     }
 
     @Test fun writeDrawReturnFoldAndTapBucketPreserveBothInputs() {

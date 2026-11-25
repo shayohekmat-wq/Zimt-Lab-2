@@ -91,7 +91,9 @@ class EimerRepository(private val dao: EimerDao) {
         val now = System.currentTimeMillis()
         require(draftId.isNotBlank()) { "Ungültige Zettel-ID." }
         val normalizedText = NoteRules.normalize(text)
-        val validDrawing = drawingPayload?.takeIf { PaperDrawingCodec.hasInk(it) }
+        require(drawingPayload == null || PaperDrawingCodec.hasInk(drawingPayload)) {
+            "Die Skizze kann nicht gelesen werden. Der Entwurf bleibt erhalten."
+        }
         // The stable ID belongs to the folded draft. A retry after a committed insert
         // must acknowledge the original row, not duplicate or overwrite it.
         val inserted = dao.addNote(
@@ -99,8 +101,8 @@ class EimerRepository(private val dao: EimerDao) {
                 id = draftId,
                 bucketId = bucketId,
                 text = normalizedText,
-                drawingPayload = validDrawing,
-                drawingPayloadVersion = if (validDrawing != null) 1 else null,
+                drawingPayload = drawingPayload,
+                drawingPayloadVersion = if (drawingPayload != null) 1 else null,
                 createdAt = now,
                 updatedAt = now
             )
@@ -108,7 +110,7 @@ class EimerRepository(private val dao: EimerDao) {
         if (inserted == -1L) {
             val original = dao.noteById(draftId)
             check(original != null && original.text == normalizedText &&
-                original.drawingPayload == validDrawing) {
+                original.drawingPayload == drawingPayload) {
                 "Die Zettel-ID ist bereits mit einem anderen Inhalt belegt."
             }
         }

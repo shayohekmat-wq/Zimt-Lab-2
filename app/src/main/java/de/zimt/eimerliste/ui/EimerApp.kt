@@ -84,6 +84,7 @@ import de.zimt.eimerliste.data.DraftWriteSession
 import de.zimt.eimerliste.data.supportsDrawingEdits
 import de.zimt.eimerliste.data.NoteEntity
 import de.zimt.eimerliste.domain.BucketMaterial
+import de.zimt.eimerliste.domain.PaperDrawingCodec
 import de.zimt.eimerliste.domain.NoteRules
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
@@ -522,9 +523,12 @@ fun EimerApp(vm: EimerViewModel = viewModel()) {
             onDispose { carryLifecycle.removeObserver(observer) }
         }
 
+        val unreadableDraftDrawing = remember(drawing) { drawing != null && !PaperDrawingCodec.hasInk(drawing) }
         val foldPaper: () -> Unit = {
             if (editingId != null) {
                 foldEditedNote()
+            } else if (unreadableDraftDrawing) {
+                sketchOpen = true
             } else if (movingNote == null && pendingPaper == null && buckets.isNotEmpty() && NoteRules.canSubmit(draft, drawing)) {
                 // Hide the IME before showing the movable, folded slip.
                 keyboard?.hide()
@@ -542,6 +546,15 @@ fun EimerApp(vm: EimerViewModel = viewModel()) {
             val textToSave = pendingPaper
             val destination = buckets.firstOrNull { it.id == targetId }
             if (textToSave != null && destination != null && paperReady && !saving) {
+                if (unreadableDraftDrawing) {
+                    draft = textToSave
+                    pendingPaper = null
+                    pendingNoteId = null
+                    dragOffset = Offset.Zero
+                    hoveredBucket = null
+                    sketchOpen = true
+                    return@deliver
+                }
                 val draftId = pendingNoteId ?: UUID.randomUUID().toString().also { pendingNoteId = it }
                 saving = true
                 scope.launch {
@@ -1076,6 +1089,11 @@ fun EimerApp(vm: EimerViewModel = viewModel()) {
                     if (editing) { editingDrawing = it; editingSketch = false }
                     else { drawing = it; sketchOpen = false }
                 },
+                onDiscardUnreadable = if (editing) null else ({
+                    drawing = null
+                    sketchOpen = false
+                    focusTextOnReturn = true
+                }),
                 onFold = foldSketch@{ finishedDrawing ->
                     if (editing) {
                         editingDrawing = finishedDrawing

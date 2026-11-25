@@ -35,7 +35,9 @@ run_test de.zimt.eimerliste.data.DraftPersistenceTest#verifyDraftAfterRestart ve
 adb shell pm clear de.zimt.eimerliste.debug
 run_test de.zimt.eimerliste.ui.NoteGestureDeviceTest gestures
 adb shell pm clear de.zimt.eimerliste.debug
-run_test de.zimt.eimerliste.ui.ComposerDeviceTest composer
+run_test de.zimt.eimerliste.ui.ComposerDeviceTest#writeDrawReturnFoldAndTapBucketPreserveBothInputs composer
+adb shell pm clear de.zimt.eimerliste.debug
+run_test de.zimt.eimerliste.ui.ComposerDeviceTest#unreadableFoldedDraftKeepsDrawingUntilExplicitRemoval composer-recovery
 
 # A failure in any independent test still fails the CI job.
 test "$failures" -eq 0

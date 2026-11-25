@@ -23,6 +23,14 @@ class EimerPersistenceTest {
             val repo = EimerRepository(database.dao())
             val sketch = "ZIMT-SKETCH/1\nff000000,2:0,0|10000,10000\n"
             val id = "stable-draft"
+            for (unreadable in listOf("ZIMT-SKETCH/2\nopaque", "ZIMT-SKETCH/1\nbroken")) {
+                try {
+                    repo.createNote(a.id, "Text mit Skizze", unreadable, id)
+                    fail("A new note must never silently omit its drawing")
+                } catch (expected: IllegalArgumentException) {
+                    assertTrue(database.dao().snapshotNotes().isEmpty())
+                }
+            }
             assertEquals(id, repo.createNote(a.id, "Text\nmit Absatz", sketch, id))
             assertEquals(id, repo.createNote(a.id, "Text\nmit Absatz", sketch, id))
             assertEquals(1, database.dao().snapshotNotes().size)

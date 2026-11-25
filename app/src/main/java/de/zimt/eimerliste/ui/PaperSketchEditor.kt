@@ -156,10 +156,27 @@ fun PaperSketchEditor(
     onPayloadChange: (String?) -> Unit,
     onTextEdit: (String?) -> Unit,
     onApply: (String?) -> Unit,
+    onDiscardUnreadable: (() -> Unit)?,
     onFold: (String?) -> Unit
 ) {
     // The composer owns the drawing. The editor owns only active input and redo history.
     val strokes = remember(drawingPayload) { PaperDrawingCodec.decode(drawingPayload) }
+    if (drawingPayload != null && strokes.isEmpty()) {
+        AlertDialog(
+            onDismissRequest = { onTextEdit(drawingPayload) },
+            title = { Text("Skizze nicht lesbar") },
+            text = { Text("Diese App-Version kann die Skizze nicht öffnen. Beim Zurückgehen bleibt sie erhalten.") },
+            confirmButton = {
+                TextButton(onClick = { onTextEdit(drawingPayload) }) { Text("Zum Text") }
+            },
+            dismissButton = {
+                if (onDiscardUnreadable != null) {
+                    TextButton(onClick = onDiscardUnreadable) { Text("Skizze aus Entwurf entfernen") }
+                }
+            }
+        )
+        return
+    }
     var redoPayload by rememberSaveable { mutableStateOf<String?>(null) }
     val redo = remember(redoPayload) { PaperDrawingCodec.decode(redoPayload) }
     var active by remember { mutableStateOf<InkStroke?>(null) }
@@ -367,14 +384,7 @@ fun PaperSketchEditor(
             ) {
                 Spacer(Modifier.width(4.dp))
                 Button(
-                    onClick = {
-                        val encoded = PaperDrawingCodec.encode(strokes)
-                        if (strokes.isNotEmpty() && encoded == null) {
-                            status = "Die Zeichnung ist zu groß, bitte einen Strich zurücknehmen."
-                        } else {
-                            leaveAndKeepSketch { onFold(encoded) }
-                        }
-                    },
+                    onClick = { leaveAndKeepSketch { onFold(drawingPayload) } },
                     enabled = !leaving,
                     colors = ButtonDefaults.buttonColors(containerColor = Ink.Brass, contentColor = Ink.InkBlack)
                 ) { PaperSubmitGlyph() }

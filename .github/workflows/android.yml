@@ -179,7 +179,8 @@ jobs:
             --ks-pass env:EIMER_RELEASE_STORE_PASSWORD --key-pass env:EIMER_RELEASE_KEY_PASSWORD \
             --v2-signing-enabled true --v3-signing-enabled true --out Eimer-Liste-UPDATE.apk "$apk"
           report=$("$signer" verify --verbose --print-certs Eimer-Liste-UPDATE.apk)
-          certificates=$(sed -n 's/^Signer #[0-9]* certificate SHA-256 digest: //p' <<< "$report")
+          certificates=$(sed -En 's/^(Signer #[0-9]+|V3\.0 Signer:) certificate SHA-256 digest: ([0-9a-f]{64})$/\2/p' <<< "$report")
+          grep -Fxq 'Number of signers: 1' <<< "$report"
           [[ "$certificates" == "40e6b73383a29f9ca792595b369329e2ab8f9165f49eec69b4eb57a8ffe26fe1" ]]
           grep -Fxq 'Verified using v2 scheme (APK Signature Scheme v2): true' <<< "$report"
           grep -Fxq 'Verified using v3 scheme (APK Signature Scheme v3): true' <<< "$report"

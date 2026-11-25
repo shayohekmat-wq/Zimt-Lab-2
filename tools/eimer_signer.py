@@ -173,9 +173,11 @@ def sign(args, files):
             "--v3-signing-enabled", "true", "--v4-signing-enabled", "false",
             "--out", signed, candidate)
         report = run("apksigner", "verify", "--verbose", "--print-certs", signed).decode()
-        signers = re.findall(r"^Signer #\d+ certificate SHA-256 digest: ([0-9a-f]+)$", report, re.M)
+        # Build Tools 37 labels the single V3 signer by scheme instead of ordinal.
+        signers = re.findall(r"^(?:Signer #\d+|V3\.0 Signer:) certificate SHA-256 digest: ([0-9a-f]{64})$", report, re.M)
         schemes = [f"Verified using v{v} scheme (APK Signature Scheme v{v}): true" for v in (2, 3)]
-        if signers != [CERT_SHA256] or any(line not in report.splitlines() for line in schemes):
+        required = ["Number of signers: 1", *schemes]
+        if signers != [CERT_SHA256] or any(line not in report.splitlines() for line in required):
             raise ValueError("Originalzertifikat oder APK-Signaturschema konnte nicht bestätigt werden.")
         digest = fingerprint(signed)
         os.link(signed, args.output)  # Atomic and never overwrites an existing artifact.

@@ -6,6 +6,7 @@ import java.io.InputStream
 import java.nio.ByteBuffer
 import org.json.JSONArray
 import org.json.JSONObject
+import org.json.JSONTokener
 
 /** Portable, app-ID-independent format. Existing Room schema and stable IDs stay unchanged. */
 data class EimerBackupSnapshot(
@@ -60,7 +61,16 @@ object EimerBackupCodec {
             require(bytes.size() <= MAX_BYTES - count) { "Die Sicherungsdatei ist zu groß." }
             bytes.write(buffer, 0, count)
         }
-        val root = JSONObject(Charsets.UTF_8.newDecoder().decode(ByteBuffer.wrap(bytes.toByteArray())).toString())
+        val json = Charsets.UTF_8.newDecoder().decode(ByteBuffer.wrap(bytes.toByteArray())).toString()
+        // Some JSONTokener versions treat a literal NUL as end-of-input.
+        require('\u0000' !in json) { "Die Sicherungsdatei enthält ein ungültiges Nullzeichen." }
+        val tokens = JSONTokener(json)
+        val root = JSONObject(tokens)
+        while (tokens.more()) {
+            require(tokens.next() in " \t\r\n") {
+                "Die Datei enthält weitere Daten nach der Sicherung. Bitte eine einzelne Sicherung auswählen."
+            }
+        }
         require(root.string("format") == FORMAT && root.long("version") == VERSION.toLong()) {
             "Unbekanntes Sicherungsformat oder Version."
         }

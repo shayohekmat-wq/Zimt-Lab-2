@@ -17,6 +17,20 @@ class EimerBackupCodecTest {
         assertEquals(snapshot, decoded)
     }
 
+    @Test fun trailingJsonWhitespaceIsAccepted() {
+        val file = EimerBackupCodec.encode(snapshot) + " \r\n\t".toByteArray()
+        assertEquals(snapshot, EimerBackupCodec.decode(file.inputStream()))
+    }
+
+    @Test fun appendedDataIsRejectedIncludingAfterANul() {
+        val first = EimerBackupCodec.encode(snapshot)
+        for (suffix in listOf(first, "{".toByteArray(), byteArrayOf(0) + first, "//end".toByteArray())) {
+            assertThrows(IllegalArgumentException::class.java) {
+                EimerBackupCodec.decode((first + suffix).inputStream())
+            }
+        }
+    }
+
     @Test fun duplicateBucketIsRejected() {
         assertThrows(IllegalArgumentException::class.java) {
             EimerBackupCodec.encode(snapshot.copy(buckets = listOf(bucket, bucket)))

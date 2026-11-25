@@ -59,7 +59,17 @@ class EimerPersistenceTest {
             val targetDb = Room.databaseBuilder(context, EimerDatabase::class.java, targetDbName).build()
             try {
                 val targetStore = EimerBackupStore(targetDb)
-                assertEquals(EimerBackupMergeResult(2, 1, 0), targetStore.merge(snapshot))
+                val export = EimerBackupCodec.encode(snapshot)
+                try {
+                    targetStore.merge(EimerBackupCodec.decode((export + export).inputStream()))
+                    fail("Concatenated backups must be rejected before any rows are inserted")
+                } catch (expected: IllegalArgumentException) {
+                    assertTrue(targetStore.snapshot().buckets.isEmpty())
+                    assertTrue(targetStore.snapshot().notes.isEmpty())
+                }
+                val padded = export + "\r\n".toByteArray()
+                assertEquals(EimerBackupMergeResult(2, 1, 0),
+                    targetStore.merge(EimerBackupCodec.decode(padded.inputStream())))
                 assertEquals(snapshot, targetStore.snapshot())
                 assertEquals(EimerBackupMergeResult(0, 0, 0), targetStore.merge(snapshot))
                 // Backups may contain a newer sketch format even though the Room schema is unchanged.

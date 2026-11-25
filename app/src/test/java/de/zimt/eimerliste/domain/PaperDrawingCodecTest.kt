@@ -19,6 +19,15 @@ class PaperDrawingCodecTest {
         assertEquals(.77f,decoded[0].points[1].y,.00011f)
     }
 
+    @Test fun reencodingAfterAnEditPreservesAllExistingStrokeWidths() {
+        val payload = "ZIMT-SKETCH/1\nff000000,2.75:0,0\nff123456,3:10000,10000\n"
+        val strokes = PaperDrawingCodec.decode(payload)
+        assertEquals(listOf(2.75f, 3f), strokes.map { it.widthDp })
+        assertEquals(payload, PaperDrawingCodec.encode(strokes))
+        val edited = PaperDrawingCodec.decode(PaperDrawingCodec.encode(strokes + sample))
+        assertEquals(strokes + sample, edited)
+    }
+
     @Test fun aDrawingOnlyNoteIsValid() {
         val drawing=PaperDrawingCodec.encode(sample)
         assertTrue(NoteRules.canSubmit("",drawing))

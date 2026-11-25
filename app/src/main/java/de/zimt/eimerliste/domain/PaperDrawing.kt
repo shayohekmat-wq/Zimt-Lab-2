@@ -24,8 +24,10 @@ object PaperDrawingCodec {
         strokes.forEach { stroke ->
             if (stroke.points.isEmpty() || stroke.points.size > MAX_POINTS_PER_STROKE) return null
             if (stroke.widthDp !in 1f..24f) return null
+            // Keep the existing V1 spelling for integer widths, including old app brushes.
+            val width = stroke.widthDp.toString().removeSuffix(".0")
             out.append(stroke.argb.toUInt().toString(16).padStart(8,'0')).append(',')
-                .append(stroke.widthDp.toInt()).append(':')
+                .append(width).append(':')
             stroke.points.forEachIndexed { i,p ->
                 if (!p.x.isFinite() || !p.y.isFinite()) return null
                 if (i > 0) out.append('|')

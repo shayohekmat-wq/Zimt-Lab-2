@@ -6,6 +6,11 @@ on:
   pull_request:
     branches: [main]
   workflow_dispatch:
+    inputs:
+      previous_version_code:
+        description: Highest versionCode already distributed (required when signing)
+        type: string
+        required: false
 
 concurrency:
   group: android-${{ github.workflow }}-${{ github.ref }}
@@ -18,11 +23,8 @@ jobs:
   build:
     runs-on: ubuntu-latest
     timeout-minutes: 25
-    env:
-      EIMER_RELEASE_KEYSTORE_B64: ${{ secrets.EIMER_RELEASE_KEYSTORE_B64 }}
-      EIMER_RELEASE_STORE_PASSWORD: ${{ secrets.EIMER_RELEASE_STORE_PASSWORD }}
-      EIMER_RELEASE_KEY_ALIAS: ${{ secrets.EIMER_RELEASE_KEY_ALIAS }}
-      EIMER_RELEASE_KEY_PASSWORD: ${{ secrets.EIMER_RELEASE_KEY_PASSWORD }}
+    outputs:
+      candidate_sha256: ${{ steps.manifest.outputs.sha256 }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -78,7 +80,8 @@ jobs:
       - name: Compile release after debug (avoid concurrent KSP schema writes)
         if: (github.event_name == 'push' && github.ref == 'refs/heads/development/integrated-milestone') || (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main')
         run: gradle --no-daemon :app:assembleRelease
-      - name: Verify release package and monotonically increasing version
+      - name: Verify release package and build version
+        id: manifest
         if: (github.event_name == 'push' && github.ref == 'refs/heads/development/integrated-milestone') || (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main')
         shell: bash
         run: |
@@ -93,6 +96,7 @@ jobs:
           test "$PACKAGE" = "de.zimt.eimerliste"
           test -n "$VERSION"
           test "$VERSION" -gt 45
+          sha256sum "$APK" | cut -d " " -f 1 | sed "s/^/sha256=/" >> "$GITHUB_OUTPUT"
           echo "Release manifest verified: $PACKAGE versionCode=$VERSION"
       - name: Prepare offline signing tool
         if: (github.event_name == 'push' && github.ref == 'refs/heads/development/integrated-milestone') || (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main')
@@ -109,37 +113,6 @@ jobs:
           path: app/build/outputs/apk/release/*unsigned.apk
           if-no-files-found: error
           retention-days: 14
-      - name: Privately sign update (only when repository secrets are provisioned)
-        if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && env.EIMER_RELEASE_KEYSTORE_B64 != ''
-        shell: bash
-        run: |
-          set -euo pipefail
-          umask 077
-          printf '%s' "$EIMER_RELEASE_KEYSTORE_B64" | base64 --decode > "$RUNNER_TEMP/eimer-release.p12"
-          test -s "$RUNNER_TEMP/eimer-release.p12"
-          UNSIGNED=$(find app/build/outputs/apk/release -name '*unsigned.apk' -print -quit)
-          test -n "$UNSIGNED"
-          SIGNER="$ANDROID_HOME/build-tools/37.0.0/lib/apksigner.jar"
-          java -cp "$SIGNER" com.android.apksigner.ApkSignerTool sign \
-            --ks "$RUNNER_TEMP/eimer-release.p12" \
-            --ks-key-alias "$EIMER_RELEASE_KEY_ALIAS" \
-            --ks-pass env:EIMER_RELEASE_STORE_PASSWORD \
-            --key-pass env:EIMER_RELEASE_KEY_PASSWORD \
-            --out "app/build/outputs/apk/release/Eimer-Liste-UPDATE.apk" "$UNSIGNED"
-          java -cp "$SIGNER" com.android.apksigner.ApkSignerTool verify --verbose --print-certs \
-            app/build/outputs/apk/release/Eimer-Liste-UPDATE.apk > "$RUNNER_TEMP/apk-verification.txt"
-          grep -F "certificate SHA-256 digest: 40e6b73383a29f9ca792595b369329e2ab8f9165f49eec69b4eb57a8ffe26fe1" "$RUNNER_TEMP/apk-verification.txt"
-          grep -F "Verified using v2 scheme (APK Signature Scheme v2): true" "$RUNNER_TEMP/apk-verification.txt"
-          grep -F "Verified using v3 scheme (APK Signature Scheme v3): true" "$RUNNER_TEMP/apk-verification.txt"
-          rm -f "$RUNNER_TEMP/eimer-release.p12"
-      - name: Upload verified signed update
-        if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && env.EIMER_RELEASE_KEYSTORE_B64 != ''
-        uses: actions/upload-artifact@v4
-        with:
-          name: Eimer-Liste-update-SIGNED
-          path: app/build/outputs/apk/release/Eimer-Liste-UPDATE.apk
-          if-no-files-found: error
-          retention-days: 60
       - name: Upload offline signing tool
         if: (github.event_name == 'push' && github.ref == 'refs/heads/development/integrated-milestone') || (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main')
         uses: actions/upload-artifact@v4
@@ -156,3 +129,62 @@ jobs:
           path: app/build/outputs/apk/debug/*.apk
           if-no-files-found: error
           retention-days: 7
+
+  sign:
+    needs: build
+    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Download this build's unsigned candidate
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: eimerliste-UNSIGNED-release-for-private-signing
+          path: candidate
+      - name: Verify candidate and sign with the configured update key
+        id: sign
+        shell: bash
+        env:
+          CANDIDATE_SHA256: ${{ needs.build.outputs.candidate_sha256 }}
+          PREVIOUS_VERSION_CODE: ${{ inputs.previous_version_code }}
+          EIMER_RELEASE_KEYSTORE_B64: ${{ secrets.EIMER_RELEASE_KEYSTORE_B64 }}
+          EIMER_RELEASE_STORE_PASSWORD: ${{ secrets.EIMER_RELEASE_STORE_PASSWORD }}
+          EIMER_RELEASE_KEY_ALIAS: ${{ secrets.EIMER_RELEASE_KEY_ALIAS }}
+          EIMER_RELEASE_KEY_PASSWORD: ${{ secrets.EIMER_RELEASE_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          if [[ -z "$EIMER_RELEASE_KEYSTORE_B64" ]]; then
+            echo "Private offline signing remains available for this candidate."
+            exit 0
+          fi
+          : "${EIMER_RELEASE_STORE_PASSWORD:?}" "${EIMER_RELEASE_KEY_ALIAS:?}" "${EIMER_RELEASE_KEY_PASSWORD:?}"
+          [[ "$PREVIOUS_VERSION_CODE" =~ ^[1-9][0-9]{0,9}$ ]]
+          apk=candidate/app-release-unsigned.apk
+          [[ "$CANDIDATE_SHA256" =~ ^[a-f0-9]{64}$ ]]
+          printf '%s  %s\n' "$CANDIDATE_SHA256" "$apk" | sha256sum --check --status
+          # Use SDK tools from the clean runner, independent of the application build.
+          signer=$(find "$ANDROID_HOME/build-tools" -name apksigner -type f | sort -V | tail -1)
+          badging=$("$(dirname "$signer")/aapt" dump badging "$apk")
+          version=$(sed -n "s/^package: name='de\.zimt\.eimerliste' versionCode='\([0-9]*\)'.*/\1/p" <<< "$badging")
+          [[ "$version" =~ ^[1-9][0-9]{0,9}$ && "$version" -gt "$PREVIOUS_VERSION_CODE" ]]
+          umask 077
+          keystore=$(mktemp "$RUNNER_TEMP/eimer-XXXXXX")
+          trap 'rm -f "$keystore"' EXIT
+          printf '%s' "$EIMER_RELEASE_KEYSTORE_B64" | base64 --decode > "$keystore"
+          "$signer" sign --ks "$keystore" --ks-type PKCS12 --ks-key-alias "$EIMER_RELEASE_KEY_ALIAS" \
+            --ks-pass env:EIMER_RELEASE_STORE_PASSWORD --key-pass env:EIMER_RELEASE_KEY_PASSWORD \
+            --v2-signing-enabled true --v3-signing-enabled true --out Eimer-Liste-UPDATE.apk "$apk"
+          report=$("$signer" verify --verbose --print-certs Eimer-Liste-UPDATE.apk)
+          certificates=$(sed -n 's/^Signer #[0-9]* certificate SHA-256 digest: //p' <<< "$report")
+          [[ "$certificates" == "40e6b73383a29f9ca792595b369329e2ab8f9165f49eec69b4eb57a8ffe26fe1" ]]
+          grep -Fxq 'Verified using v2 scheme (APK Signature Scheme v2): true' <<< "$report"
+          grep -Fxq 'Verified using v3 scheme (APK Signature Scheme v3): true' <<< "$report"
+          echo "verified=true" >> "$GITHUB_OUTPUT"
+      - name: Upload verified signed update
+        if: steps.sign.outputs.verified == 'true'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: Eimer-Liste-update-SIGNED
+          path: Eimer-Liste-UPDATE.apk
+          if-no-files-found: error
+          retention-days: 60
